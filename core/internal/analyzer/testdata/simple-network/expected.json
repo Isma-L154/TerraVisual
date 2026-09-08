@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "aws_vpc.main",
+      "address": "aws_vpc.main",
+      "type": "aws_vpc",
+      "provider": "aws",
+      "category": "other",
+      "label": "main",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {
+        "cidr_block": {
+          "known": true,
+          "value": "10.0.0.0/16"
+        },
+        "name": {
+          "known": true,
+          "value": "terravisual-staging"
+        }
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 16,
+        "startCol": 1,
+        "endLine": 16,
+        "endCol": 26
+      }
+    },
+    {
+      "id": "aws_subnet.public",
+      "address": "aws_subnet.public",
+      "type": "aws_subnet",
+      "provider": "aws",
+      "category": "other",
+      "label": "public",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {
+        "cidr_block": {
+          "known": true,
+          "value": "10.0.1.0/24"
+        },
+        "vpc_id": {
+          "known": false,
+          "reason": "it depends on aws_vpc.main.id, which Terraform only determines when the infrastructure is created"
+        }
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 21,
+        "startCol": 1,
+        "endLine": 21,
+        "endCol": 31
+      }
+    },
+    {
+      "id": "aws_instance.web",
+      "address": "aws_instance.web",
+      "type": "aws_instance",
+      "provider": "aws",
+      "category": "other",
+      "label": "web",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {
+        "instance_type": {
+          "known": true,
+          "value": "t3.micro"
+        },
+        "name": {
+          "known": true,
+          "value": "terravisual-staging-web"
+        },
+        "subnet_id": {
+          "known": false,
+          "reason": "it depends on aws_subnet.public.id, which Terraform only determines when the infrastructure is created"
+        }
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 26,
+        "startCol": 1,
+        "endLine": 26,
+        "endCol": 30
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "aws_subnet.public-\u003eaws_vpc.main#vpc_id",
+      "from": "aws_subnet.public",
+      "to": "aws_vpc.main",
+      "kind": "reference",
+      "label": "vpc_id",
+      "source": {
+        "file": "main.tf",
+        "startLine": 22,
+        "startCol": 3,
+        "endLine": 22,
+        "endCol": 31
+      }
+    },
+    {
+      "id": "aws_instance.web-\u003eaws_subnet.public#subnet_id",
+      "from": "aws_instance.web",
+      "to": "aws_subnet.public",
+      "kind": "reference",
+      "label": "subnet_id",
+      "source": {
+        "file": "main.tf",
+        "startLine": 27,
+        "startCol": 3,
+        "endLine": 27,
+        "endCol": 39
+      }
+    }
+  ],
+  "diagnostics": [],
+  "stats": {
+    "files": 1,
+    "resources": 3,
+    "durationMs": 0,
+    "truncated": false
+  }
+}

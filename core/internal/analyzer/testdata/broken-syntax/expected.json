@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "aws_s3_bucket.assets",
+      "address": "aws_s3_bucket.assets",
+      "type": "aws_s3_bucket",
+      "provider": "aws",
+      "category": "other",
+      "label": "assets",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {
+        "bucket": {
+          "known": true,
+          "value": "terravisual-assets"
+        }
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 1,
+        "startCol": 1,
+        "endLine": 1,
+        "endCol": 34
+      }
+    }
+  ],
+  "edges": [],
+  "diagnostics": [
+    {
+      "severity": "error",
+      "code": "syntax-error",
+      "message": "Invalid multi-line string: Quoted strings may not be split over multiple lines. To produce a multi-line string, either use the \\n escape to represent a newline character or use the \"heredoc\" multi-line template syntax.",
+      "source": {
+        "file": "main.tf",
+        "startLine": 8,
+        "startCol": 28,
+        "endLine": 9,
+        "endCol": 1
+      }
+    },
+    {
+      "severity": "error",
+      "code": "syntax-error",
+      "message": "Unterminated template string: No closing marker was found for the string.",
+      "source": {
+        "file": "main.tf",
+        "startLine": 8,
+        "startCol": 28,
+        "endLine": 9,
+        "endCol": 1
+      }
+    },
+    {
+      "severity": "error",
+      "code": "syntax-error",
+      "message": "Missing name for resource: All resource blocks must have 2 labels (type, name).",
+      "source": {
+        "file": "main.tf",
+        "startLine": 7,
+        "startCol": 20,
+        "endLine": 7,
+        "endCol": 21
+      }
+    }
+  ],
+  "stats": {
+    "files": 1,
+    "resources": 1,
+    "durationMs": 0,
+    "truncated": false
+  }
+}
