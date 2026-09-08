@@ -36,7 +36,7 @@ describe('nesting', () => {
         node({ id: 'vpc', isContainer: true, category: 'network', label: 'main' }),
         node({ id: 'subnet', parentId: 'vpc', isContainer: true, category: 'network', label: 'a' }),
         node({ id: 'instance', parentId: 'subnet', label: 'web' }),
-      ])
+      ]),
     );
 
     const vpc = result.boxes.get('vpc')!;
@@ -55,7 +55,7 @@ describe('nesting', () => {
       model([
         node({ id: 'vpc', isContainer: true }),
         node({ id: 'a', parentId: 'vpc', label: 'a' }),
-      ])
+      ]),
     );
     const three = layout(
       model([
@@ -63,7 +63,7 @@ describe('nesting', () => {
         node({ id: 'a', parentId: 'vpc', label: 'a' }),
         node({ id: 'b', parentId: 'vpc', label: 'b' }),
         node({ id: 'c', parentId: 'vpc', label: 'c' }),
-      ])
+      ]),
     );
 
     expect(three.boxes.get('vpc')!.width).toBeGreaterThan(one.boxes.get('vpc')!.width);
@@ -83,7 +83,7 @@ describe('nesting', () => {
         node({ id: 'instance', parentId: 'subnet' }),
         node({ id: 'subnet', parentId: 'vpc', isContainer: true }),
         node({ id: 'vpc', isContainer: true }),
-      ])
+      ]),
     );
 
     expect(result.order.indexOf('vpc')).toBeLessThan(result.order.indexOf('subnet'));
@@ -96,7 +96,7 @@ describe('nesting', () => {
         node({ id: 'vpc', isContainer: true }),
         node({ id: 'subnet', parentId: 'vpc', isContainer: true }),
         node({ id: 'instance', parentId: 'subnet' }),
-      ])
+      ]),
     );
 
     expect(result.boxes.get('vpc')!.depth).toBe(0);
@@ -148,7 +148,7 @@ describe('stability while typing', () => {
         node({ id: 'vpc', isContainer: true }),
         node({ id: 'a', parentId: 'vpc', label: 'a' }),
         node({ id: 'b', parentId: 'vpc', label: 'b' }),
-      ])
+      ]),
     );
     const after = layout(
       model([
@@ -156,7 +156,7 @@ describe('stability while typing', () => {
         node({ id: 'a', parentId: 'vpc', label: 'a' }),
         node({ id: 'b', parentId: 'vpc', label: 'b' }),
         node({ id: 'c', parentId: 'vpc', label: 'c' }),
-      ])
+      ]),
     );
 
     expect(after.boxes.get('a')).toEqual(before.boxes.get('a'));
@@ -184,7 +184,7 @@ describe('unplaced nodes', () => {
       model([
         node({ id: 'orphan', unplaced: true, catalogued: false, label: 'orphan' }),
         node({ id: 'vpc', isContainer: true, label: 'vpc' }),
-      ])
+      ]),
     );
 
     const orphan = result.boxes.get('orphan')!;
@@ -217,7 +217,7 @@ describe('robustness', () => {
           id: `n${depth}`,
           isContainer: true,
           ...(depth > 0 ? { parentId: `n${depth - 1}` } : {}),
-        })
+        }),
       );
     }
 
@@ -234,7 +234,7 @@ describe('absolute positions', () => {
         node({ id: 'vpc', isContainer: true }),
         node({ id: 'subnet', parentId: 'vpc', isContainer: true }),
         node({ id: 'instance', parentId: 'subnet' }),
-      ])
+      ]),
     );
     const input = model([
       node({ id: 'vpc', isContainer: true }),
@@ -247,7 +247,7 @@ describe('absolute positions', () => {
 
     expect(absolute.x).toBeGreaterThan(relative.x);
     expect(absolute.x).toBe(
-      relative.x + result.boxes.get('subnet')!.x + result.boxes.get('vpc')!.x
+      relative.x + result.boxes.get('subnet')!.x + result.boxes.get('vpc')!.x,
     );
   });
 });
