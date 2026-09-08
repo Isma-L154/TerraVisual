@@ -85,12 +85,21 @@ export class Workspace {
     return [...this.#files.keys()].sort();
   }
 
+  /**
+   * Whether a file is present.
+   *
+   * A query, so an unusable path is an answer rather than an exception: asking
+   * about "" or about something that escapes the workspace means "no". Only
+   * `write` refuses, because writing somewhere impossible is a real mistake.
+   */
   has(path: string): boolean {
-    return this.#files.has(this.#normalise(path));
+    const normalised = this.#tryNormalise(path);
+    return normalised !== null && this.#files.has(normalised);
   }
 
   read(path: string): string | undefined {
-    return this.#files.get(this.#normalise(path));
+    const normalised = this.#tryNormalise(path);
+    return normalised === null ? undefined : this.#files.get(normalised);
   }
 
   /** Every file, in the shape the analyzer expects. */
@@ -149,7 +158,9 @@ export class Workspace {
 
   /** Removes a file. Returns whether there was one to remove. */
   remove(path: string): boolean {
-    const normalised = this.#normalise(path);
+    const normalised = this.#tryNormalise(path);
+    if (normalised === null) return false;
+
     const existing = this.#files.get(normalised);
     if (existing === undefined) return false;
 
@@ -181,6 +192,14 @@ export class Workspace {
 
   #normalise(path: string): string {
     return normalisePath(path);
+  }
+
+  #tryNormalise(path: string): string | null {
+    try {
+      return normalisePath(path);
+    } catch {
+      return null;
+    }
   }
 
   #emit(change: WorkspaceChange): void {
