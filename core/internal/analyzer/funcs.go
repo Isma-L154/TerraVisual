@@ -3,6 +3,8 @@ package analyzer
 import (
 	"sort"
 
+	"github.com/zclconf/go-cty/cty"
+
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 
@@ -81,6 +83,17 @@ func functions() map[string]function.Function {
 		"sort":            stdlib.SortFunc,
 		"values":          stdlib.ValuesFunc,
 		"zipmap":          stdlib.ZipmapFunc,
+
+		// type conversion
+		//
+		// Common enough that leaving them out made toset(...) in a for_each
+		// fail for a reason that looked like a problem with for_each.
+		"tobool":   stdlib.MakeToFunc(cty.Bool),
+		"tolist":   stdlib.MakeToFunc(cty.List(cty.DynamicPseudoType)),
+		"tomap":    stdlib.MakeToFunc(cty.Map(cty.DynamicPseudoType)),
+		"tonumber": stdlib.MakeToFunc(cty.Number),
+		"toset":    stdlib.MakeToFunc(cty.Set(cty.DynamicPseudoType)),
+		"tostring": stdlib.MakeToFunc(cty.String),
 
 		// encoding
 		"base64decode": encodingfuncs.Base64DecodeFunc,
