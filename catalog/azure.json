@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "type": "azurerm_resource_group",
+      "provider": "azure",
+      "category": "network",
+      "displayName": "Resource Group",
+      "icon": "azure/resource-group",
+      "isContainer": true,
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group"
+    },
+    {
+      "type": "azurerm_virtual_network",
+      "provider": "azure",
+      "category": "network",
+      "displayName": "Virtual Network",
+      "icon": "azure/virtual-network",
+      "isContainer": true,
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network"
+    },
+    {
+      "type": "azurerm_subnet",
+      "provider": "azure",
+      "category": "network",
+      "displayName": "Subnet",
+      "icon": "azure/subnet",
+      "isContainer": true,
+      "parentRules": [
+        { "attribute": "virtual_network_name", "priority": 1 },
+        { "attribute": "resource_group_name", "priority": 2 }
+      ],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet"
+    },
+    {
+      "type": "azurerm_network_security_group",
+      "provider": "azure",
+      "category": "security",
+      "displayName": "Network Security Group",
+      "icon": "azure/network-security-group",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group"
+    },
+    {
+      "type": "azurerm_network_interface",
+      "provider": "azure",
+      "category": "network",
+      "displayName": "Network Interface",
+      "icon": "azure/network-interface",
+      "isContainer": true,
+      "parentRules": [
+        { "attribute": "ip_configuration.subnet_id", "priority": 1 },
+        { "attribute": "resource_group_name", "priority": 2 }
+      ],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface"
+    },
+    {
+      "type": "azurerm_linux_virtual_machine",
+      "provider": "azure",
+      "category": "compute",
+      "displayName": "Linux Virtual Machine",
+      "icon": "azure/virtual-machine",
+      "parentRules": [
+        { "attribute": "network_interface_ids", "priority": 1 },
+        { "attribute": "resource_group_name", "priority": 2 }
+      ],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine"
+    },
+    {
+      "type": "azurerm_public_ip",
+      "provider": "azure",
+      "category": "network",
+      "displayName": "Public IP",
+      "icon": "azure/public-ip",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip"
+    },
+    {
+      "type": "azurerm_lb",
+      "provider": "azure",
+      "category": "loadbalancer",
+      "displayName": "Load Balancer",
+      "icon": "azure/load-balancer",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "edgeRules": [{ "attribute": "frontend_ip_configuration.public_ip_address_id", "kind": "traffic" }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/lb"
+    },
+    {
+      "type": "azurerm_storage_account",
+      "provider": "azure",
+      "category": "storage",
+      "displayName": "Storage Account",
+      "icon": "azure/storage-account",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account"
+    },
+    {
+      "type": "azurerm_managed_disk",
+      "provider": "azure",
+      "category": "storage",
+      "displayName": "Managed Disk",
+      "icon": "azure/managed-disk",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/managed_disk"
+    },
+    {
+      "type": "azurerm_postgresql_flexible_server",
+      "provider": "azure",
+      "category": "database",
+      "displayName": "PostgreSQL Server",
+      "icon": "azure/postgresql",
+      "parentRules": [
+        { "attribute": "delegated_subnet_id", "priority": 1 },
+        { "attribute": "resource_group_name", "priority": 2 }
+      ],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/postgresql_flexible_server"
+    },
+    {
+      "type": "azurerm_linux_function_app",
+      "provider": "azure",
+      "category": "serverless",
+      "displayName": "Function App",
+      "icon": "azure/function-app",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "edgeRules": [{ "attribute": "storage_account_name", "kind": "data" }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_function_app"
+    },
+    {
+      "type": "azurerm_kubernetes_cluster",
+      "provider": "azure",
+      "category": "container",
+      "displayName": "Kubernetes Cluster",
+      "icon": "azure/kubernetes",
+      "isContainer": true,
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster"
+    },
+    {
+      "type": "azurerm_user_assigned_identity",
+      "provider": "azure",
+      "category": "identity",
+      "displayName": "Managed Identity",
+      "icon": "azure/managed-identity",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity"
+    },
+    {
+      "type": "azurerm_log_analytics_workspace",
+      "provider": "azure",
+      "category": "observability",
+      "displayName": "Log Analytics Workspace",
+      "icon": "azure/log-analytics",
+      "parentRules": [{ "attribute": "resource_group_name", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace"
+    }
+  ]
+}

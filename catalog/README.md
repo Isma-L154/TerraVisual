@@ -11,7 +11,9 @@ than a missing one: the user has no reason to doubt it.
 
 ## Adding a resource type
 
-Add an entry to the file for its provider. No code changes are needed — that is
+Add an entry to the file for its provider — or add a whole new file for a new
+provider. **No code changes are needed either way**: the analyzer embeds every
+file in this directory and the interface discovers them the same way — that is
 the point of [ADR-0004](../docs/adr/0004-data-driven-resource-catalog.md), and
 the tests exist to keep it true.
 
@@ -58,6 +60,21 @@ inside says nothing.
 **Categories are shared across providers on purpose.** A VPC and an Azure VNet
 are both `network` so that a learner can see they play the same role. Reach for
 `other` rarely: it is where meaning goes to disappear.
+
+## Judgement calls worth knowing about
+
+**An Azure VM sits inside its network interface.** That is the chain Azure
+actually has — VM to NIC to subnet to virtual network to resource group — and
+showing the intermediate step is truthful about how Azure networking works
+rather than a simplification that hides it.
+
+**GCP containment often lives in a nested block.** A compute instance reaches
+its subnetwork through `network_interface.subnetwork`, which is why parent
+rules accept dotted paths.
+
+**Categories are deliberately shared across providers.** A VPC, a VNet and a
+GCP network are all `network`, so a learner can see they play the same role.
+The boxes stay separate; the vocabulary does not.
 
 ## What happens to types that are not here
 

@@ -106,8 +106,14 @@ describe('catalog presentation', () => {
     expect(displayType('some_exotic_thing')).toBe('some_exotic_thing');
   });
 
-  it('reads the same catalog the analyzer does', () => {
-    expect(catalogSize()).toBeGreaterThanOrEqual(12);
+  it('reads the same catalogs the analyzer does', () => {
+    // Three providers, discovered from the directory rather than listed.
+    expect(catalogSize()).toBeGreaterThanOrEqual(40);
+  });
+
+  it('names types from every provider', () => {
+    expect(displayType('azurerm_virtual_network')).toBe('Virtual Network');
+    expect(displayType('google_compute_instance')).toBe('Compute Instance');
   });
 });
 
