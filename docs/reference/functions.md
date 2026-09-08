@@ -14,7 +14,7 @@ itself by name, with the reason, and the value becomes unknown. A subtly wrong
 answer in a teaching tool teaches the wrong thing, which is worse than a gap
 that says so.
 
-## Supported (77)
+## Supported (83)
 
 - `abs`
 - `alltrue`
@@ -82,6 +82,12 @@ that says so.
 - `sum`
 - `timeadd`
 - `title`
+- `tobool`
+- `tolist`
+- `tomap`
+- `tonumber`
+- `toset`
+- `tostring`
 - `transpose`
 - `trim`
 - `trimprefix`

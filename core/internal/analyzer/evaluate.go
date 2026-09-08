@@ -193,10 +193,37 @@ func (e *evaluator) seedReferences(p parsed) {
 
 // refreshResourceValues republishes what has been evaluated so far, so a
 // resource referencing another resource's literal value can resolve it.
+//
+// Expanded resources are republished the way Terraform sees them: a block with
+// count becomes a tuple, so `aws_subnet.public[0]` indexes it, and a block with
+// for_each becomes an object keyed by each key. Publishing only the first
+// instance would make an index into the others silently unknown.
 func (e *evaluator) refreshResourceValues(nodes []model.Node) {
-	byType := map[string]map[string]cty.Value{}
+	type group struct {
+		kind      string
+		instances []cty.Value
+		byKey     map[string]cty.Value
+	}
+
+	byType := map[string]map[string]*group{}
 
 	for _, node := range nodes {
+		base, _ := splitInstanceAddress(node.Address)
+		parts := strings.SplitN(base, ".", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		rType, rName := parts[0], parts[1]
+
+		if byType[rType] == nil {
+			byType[rType] = map[string]*group{}
+		}
+		g := byType[rType][rName]
+		if g == nil {
+			g = &group{byKey: map[string]cty.Value{}}
+			byType[rType][rName] = g
+		}
+
 		attrs := map[string]cty.Value{}
 		for name, attribute := range node.Attributes {
 			if !attribute.Known {
@@ -215,20 +242,61 @@ func (e *evaluator) refreshResourceValues(nodes []model.Node) {
 				attrs[name] = cty.DynamicVal
 			}
 		}
+		object := cty.ObjectVal(nonEmptyAttrs(attrs))
 
-		parts := strings.SplitN(node.Address, ".", 2)
-		if len(parts) != 2 {
-			continue
+		switch {
+		case node.Expansion == nil:
+			g.kind = ""
+			g.instances = []cty.Value{object}
+		case node.Expansion.Kind == "for_each":
+			g.kind = "for_each"
+			g.byKey[node.Expansion.Key] = object
+		default:
+			g.kind = "count"
+			g.instances = append(g.instances, object)
 		}
-		if byType[parts[0]] == nil {
-			byType[parts[0]] = map[string]cty.Value{}
-		}
-		byType[parts[0]][parts[1]] = cty.ObjectVal(attrs)
 	}
 
 	for rType, byName := range byType {
-		e.ctx.Variables[rType] = objectOrPlaceholder(byName)
+		values := map[string]cty.Value{}
+		for rName, g := range byName {
+			switch g.kind {
+			case "for_each":
+				values[rName] = objectOrPlaceholder(g.byKey)
+			case "count":
+				if len(g.instances) == 0 {
+					values[rName] = cty.DynamicVal
+					continue
+				}
+				values[rName] = cty.TupleVal(g.instances)
+			default:
+				if len(g.instances) == 1 {
+					values[rName] = g.instances[0]
+					continue
+				}
+				values[rName] = cty.DynamicVal
+			}
+		}
+		e.ctx.Variables[rType] = objectOrPlaceholder(values)
 	}
+}
+
+// splitInstanceAddress separates "aws_subnet.public[0]" into its base address
+// and its instance suffix.
+func splitInstanceAddress(address string) (base string, suffix string) {
+	if index := strings.IndexByte(address, '['); index >= 0 {
+		return address[:index], address[index:]
+	}
+	return address, ""
+}
+
+// nonEmptyAttrs keeps cty.ObjectVal from panicking on a resource that declares
+// nothing at all.
+func nonEmptyAttrs(attrs map[string]cty.Value) map[string]cty.Value {
+	if len(attrs) == 0 {
+		return map[string]cty.Value{"__none__": cty.StringVal("")}
+	}
+	return attrs
 }
 
 // evaluateAttribute turns one attribute expression into a model attribute.
@@ -236,11 +304,17 @@ func (e *evaluator) refreshResourceValues(nodes []model.Node) {
 // Every failure path produces an unknown with a reason a learner can act on.
 // There is no path that returns a guess.
 func (e *evaluator) evaluateAttribute(expr hcl.Expression) model.Attribute {
+	return e.evaluateAttributeIn(e.ctx, expr)
+}
+
+// evaluateAttributeIn evaluates in a specific scope, which is how an expanded
+// instance sees its own count.index or each.key rather than the block's.
+func (e *evaluator) evaluateAttributeIn(ctx *hcl.EvalContext, expr hcl.Expression) model.Attribute {
 	if name, reason, ok := e.unsupportedFunction(expr); ok {
 		return model.Unknown(fmt.Sprintf("uses %s(), which this analyzer does not support: %s", name, reason))
 	}
 
-	value, diags := expr.Value(e.ctx)
+	value, diags := expr.Value(ctx)
 	if diags.HasErrors() {
 		return model.Unknown(e.explain(expr, firstDiagnostic(diags)))
 	}

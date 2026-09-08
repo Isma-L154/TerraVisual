@@ -26,7 +26,6 @@ const (
 	MaxFiles      = 1000
 	MaxTotalBytes = 8 << 20 // 8 MiB of source
 	MaxFileBytes  = 2 << 20 // 2 MiB in any single file
-	MaxNodes      = 20000
 	MaxEdges      = 50000
 )
 
@@ -78,7 +77,10 @@ func analyze(files map[string]string) model.Result {
 	result.Edges = edges
 	result.Diagnostics = diags.list()
 	result.Stats.Resources = declared
-	result.Stats.Truncated = result.Stats.Truncated || len(nodes) >= MaxNodes || len(edges) >= MaxEdges
+	result.Stats.Truncated = result.Stats.Truncated ||
+		len(nodes) >= MaxTotalInstances ||
+		len(edges) >= MaxEdges ||
+		hasTruncatedExpansion(nodes)
 	result.Stats.DurationMs = int(time.Since(started).Milliseconds())
 
 	return result
@@ -100,20 +102,25 @@ func evaluateResources(e *evaluator, p parsed, diags *diagnostics) ([]model.Node
 		nodes = nil
 		edges = nil
 		references = map[string]map[string][]string{}
-		for _, block := range p.resources {
-			node, blockEdges, blockRefs := evaluateResource(e, block, last, diags)
-			nodes = append(nodes, node)
-			edges = append(edges, blockEdges...)
-			references[node.Address] = blockRefs
 
-			if len(nodes) >= MaxNodes {
-				diags.add(model.Diagnostic{
-					Severity: "warning",
-					Code:     "too-many-resources",
-					Message: fmt.Sprintf(
-						"This workspace declares more than %d resources. Only the first %d are shown.",
-						MaxNodes, MaxNodes),
-				})
+		for _, block := range p.resources {
+			blockNodes, blockEdges, blockRefs := evaluateResource(e, block, last, diags)
+			nodes = append(nodes, blockNodes...)
+			edges = append(edges, blockEdges...)
+			for address, refs := range blockRefs {
+				references[address] = refs
+			}
+
+			if len(nodes) >= MaxTotalInstances {
+				if last {
+					diags.add(model.Diagnostic{
+						Severity: "warning",
+						Code:     "too-many-resources",
+						Message: fmt.Sprintf(
+							"This workspace produces more than %d resource instances. The rest are not shown.",
+							MaxTotalInstances),
+					})
+				}
 				break
 			}
 		}
@@ -135,25 +142,14 @@ func evaluateResources(e *evaluator, p parsed, diags *diagnostics) ([]model.Node
 	return nodes, edges, references
 }
 
-func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagnostics) (model.Node, []model.Edge, map[string][]string) {
+// evaluateResource turns one resource block into however many instances it
+// declares.
+//
+// Each instance is evaluated in its own child scope, so count.index and
+// each.key resolve to that instance's values rather than to the block's.
+func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagnostics) ([]model.Node, []model.Edge, map[string]map[string][]string) {
 	rType, rName := block.Labels[0], block.Labels[1]
-	address := rType + "." + rName
-
-	node := model.Node{
-		ID:       address,
-		Address:  address,
-		Type:     rType,
-		Provider: providerFor(rType),
-		// The catalog decides category, containment and iconography (#8).
-		// Until it exists every resource is honestly uncatalogued rather than
-		// guessed into a category.
-		Category:   "other",
-		Label:      rName,
-		Catalogued: false,
-		Unplaced:   true,
-		Attributes: map[string]model.Attribute{},
-		Source:     toRange(block.DefRange),
-	}
+	base := rType + "." + rName
 
 	attrs, attrDiags := block.Body.JustAttributes()
 	if report {
@@ -162,51 +158,72 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 
 	names := make([]string, 0, len(attrs))
 	for name := range attrs {
+		if name == "count" || name == "for_each" {
+			continue
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)
 
-	var edges []model.Edge
-	references := map[string][]string{}
-	for _, name := range names {
-		attr := attrs[name]
+	instances := expandBlock(e, block, attrs, base, report, diags)
 
-		if name == "count" || name == "for_each" {
-			if report {
-				diags.add(model.Diagnostic{
-					Severity: "info",
-					Code:     "expansion-not-supported",
-					Message: fmt.Sprintf(
-						"%s uses %s. This analyzer does not expand it yet, so it is shown as a single resource.",
-						address, name),
+	nodes := make([]model.Node, 0, len(instances))
+	var edges []model.Edge
+	references := map[string]map[string][]string{}
+
+	for _, item := range instances {
+		address := base + item.suffix
+
+		scope := e.ctx.NewChild()
+		scope.Variables = item.scope
+
+		node := model.Node{
+			ID:       address,
+			Address:  address,
+			Type:     rType,
+			Provider: providerFor(rType),
+			// The catalog supplies category and containment later; until then
+			// a resource is honestly uncatalogued rather than guessed into a
+			// category.
+			Category:   "other",
+			Label:      rName,
+			Catalogued: false,
+			Unplaced:   true,
+			Attributes: map[string]model.Attribute{},
+			Expansion:  item.expansion,
+			Source:     toRange(block.DefRange),
+		}
+
+		instanceRefs := map[string][]string{}
+		for _, name := range names {
+			attr := attrs[name]
+			node.Attributes[name] = e.evaluateAttributeIn(scope, attr.Expr)
+
+			for _, target := range referencedResources(attr.Expr, e.declaredResources) {
+				if target == base {
+					continue
+				}
+				instanceRefs[name] = append(instanceRefs[name], target)
+				edges = append(edges, model.Edge{
+					ID:   address + "->" + target + "#" + name,
+					From: address,
+					To:   target,
+					// Which references earn a *drawn* connection is an
+					// editorial decision recorded in the catalog (#19). The
+					// model carries all of them so that decision has something
+					// to work from.
+					Kind:   "reference",
+					Label:  name,
 					Source: toRange(attr.Range),
 				})
 			}
-			continue
 		}
 
-		node.Attributes[name] = e.evaluateAttribute(attr.Expr)
-
-		for _, target := range referencedResources(attr.Expr, e.declaredResources) {
-			if target == address {
-				continue
-			}
-			references[name] = append(references[name], target)
-			edges = append(edges, model.Edge{
-				ID:   address + "->" + target + "#" + name,
-				From: address,
-				To:   target,
-				// Which references earn a *drawn* connection is an editorial
-				// decision recorded in the catalog (#19). The model carries all
-				// of them; the diagram shows the few that teach something.
-				Kind:   "reference",
-				Label:  name,
-				Source: toRange(attr.Range),
-			})
-		}
+		references[address] = instanceRefs
+		nodes = append(nodes, node)
 	}
 
-	return node, edges, references
+	return nodes, edges, references
 }
 
 // reportUnsupportedBlocks says plainly what the analyzer skipped.
@@ -291,6 +308,18 @@ func enforceLimits(files map[string]string) (map[string]string, []model.Diagnost
 	}
 
 	return accepted, reported
+}
+
+// hasTruncatedExpansion reports whether any resource produced fewer instances
+// than it declares. The interface has to be able to say the picture is partial
+// rather than presenting it as complete.
+func hasTruncatedExpansion(nodes []model.Node) bool {
+	for _, node := range nodes {
+		if node.Expansion != nil && node.Expansion.Truncated {
+			return true
+		}
+	}
+	return false
 }
 
 // providerFor derives the provider from the resource type prefix.

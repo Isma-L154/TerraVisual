@@ -50,8 +50,21 @@ func applyCatalog(nodes []model.Node, p placement, diags *diagnostics) []model.N
 	}
 
 	existing := make(map[string]bool, len(nodes))
+	// A reference names a resource, not an instance: `subnet_id =
+	// aws_subnet.public[0].id` and `aws_subnet.public.id` both point at the
+	// same block. Containment has to pick one instance, so it picks the first
+	// in address order -- stable, and the only defensible choice when a
+	// resource can be drawn in exactly one place.
+	firstInstance := map[string]string{}
 	for _, node := range nodes {
 		existing[node.Address] = true
+		base, suffix := splitInstanceAddress(node.Address)
+		if suffix == "" {
+			continue
+		}
+		if current, seen := firstInstance[base]; !seen || node.Address < current {
+			firstInstance[base] = node.Address
+		}
 	}
 
 	// First pass: presentation and containment from the catalog.
@@ -68,7 +81,7 @@ func applyCatalog(nodes []model.Node, p placement, diags *diagnostics) []model.N
 			}
 		}
 
-		node.ParentID = resolveParent(*node, entry, known, p.references, existing)
+		node.ParentID = resolveParent(*node, entry, known, p.references, existing, firstInstance)
 	}
 
 	// Second pass: the frame. Only providers that actually appear get a
@@ -104,6 +117,7 @@ func resolveParent(
 	known bool,
 	references map[string]map[string][]string,
 	existing map[string]bool,
+	firstInstance map[string]string,
 ) string {
 	if !known {
 		return ""
@@ -124,8 +138,14 @@ func resolveParent(
 		sort.Strings(sorted)
 
 		for _, target := range sorted {
-			if target != node.Address && existing[target] {
+			if target == node.Address {
+				continue
+			}
+			if existing[target] {
 				return target
+			}
+			if instance, expanded := firstInstance[target]; expanded && instance != node.Address {
+				return instance
 			}
 		}
 	}
