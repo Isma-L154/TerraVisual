@@ -1,16 +1,43 @@
+import { useCallback, useMemo, useState } from 'react';
+
+import { Editor } from './editor/Editor';
+import { DiagnosticsList } from './editor/DiagnosticsList';
+import { STARTER_FILE, STARTER_WORKSPACE } from './app/examples';
+import { useAnalysis } from './app/useAnalysis';
+import { createWorkspace } from './workspace/workspace';
+
 /**
  * The application shell.
  *
- * This is scaffolding (issue #3). The panes are placeholders and say so —
- * a shell that looks finished but does nothing is the kind of thing that
- * quietly becomes the product. The editor arrives in #6, the diagram in #10,
- * and the accessible tree in #11.
- *
- * The structure is deliberate even at this stage: landmark regions, a skip
- * link and headings, because retrofitting semantics onto a finished layout is
- * far harder than starting with them (NFR-6).
+ * The editor and the diagnostics are real. The diagram is not built yet (#10)
+ * and says so rather than showing an empty frame that looks like a bug.
  */
 export function App() {
+  const workspace = useMemo(() => createWorkspace(STARTER_WORKSPACE).workspace, []);
+  const [activePath, setActivePath] = useState(STARTER_FILE);
+  const [content, setContent] = useState(() => workspace.read(STARTER_FILE) ?? '');
+
+  const analysis = useAnalysis(workspace);
+
+  const handleChange = useCallback(
+    (next: string) => {
+      setContent(next);
+      workspace.write(activePath, next);
+    },
+    [workspace, activePath],
+  );
+
+  const openFile = useCallback(
+    (path: string) => {
+      setActivePath(path);
+      setContent(workspace.read(path) ?? '');
+    },
+    [workspace],
+  );
+
+  const diagnostics = analysis.model?.diagnostics ?? [];
+  const paths = workspace.list();
+
   return (
     <>
       <a className="skip-link" href="#workspace">
@@ -23,14 +50,59 @@ export function App() {
       </header>
 
       <main id="workspace" className="workspace">
-        <section className="pane" aria-labelledby="editor-heading">
-          <h2 id="editor-heading">Code</h2>
-          <p className="placeholder">The editor is not built yet.</p>
+        <section className="pane pane-editor" aria-labelledby="editor-heading">
+          <div className="pane-header">
+            <h2 id="editor-heading">Code</h2>
+            {paths.length > 1 ? (
+              <nav aria-label="Workspace files" className="file-tabs">
+                {paths.map((path) => (
+                  <button
+                    key={path}
+                    type="button"
+                    className="file-tab"
+                    aria-current={path === activePath ? 'true' : undefined}
+                    onClick={() => openFile(path)}
+                  >
+                    {path}
+                  </button>
+                ))}
+              </nav>
+            ) : null}
+          </div>
+
+          <Editor
+            path={activePath}
+            content={content}
+            diagnostics={diagnostics}
+            onChange={handleChange}
+          />
         </section>
 
         <section className="pane" aria-labelledby="diagram-heading">
-          <h2 id="diagram-heading">Infrastructure</h2>
-          <p className="placeholder">The diagram is not built yet.</p>
+          <div className="pane-header">
+            <h2 id="diagram-heading">Infrastructure</h2>
+            <AnalysisStatus analyzing={analysis.analyzing} error={analysis.error} />
+          </div>
+
+          <p className="placeholder">
+            The diagram is not built yet.
+            {analysis.model
+              ? ` The analyzer found ${plural(analysis.model.stats.resources, 'resource')}.`
+              : ''}
+          </p>
+        </section>
+
+        <section className="pane pane-diagnostics" aria-labelledby="diagnostics-heading">
+          <div className="pane-header">
+            <h2 id="diagnostics-heading">Problems</h2>
+          </div>
+          {analysis.error ? (
+            <p className="diagnostic-error" role="alert">
+              {analysis.error}
+            </p>
+          ) : (
+            <DiagnosticsList diagnostics={diagnostics} />
+          )}
         </section>
       </main>
 
@@ -42,4 +114,23 @@ export function App() {
       </footer>
     </>
   );
+}
+
+/**
+ * Whether analysis is running.
+ *
+ * Announced politely rather than assertively: it changes on every keystroke,
+ * and an assertive live region would interrupt a screen reader constantly.
+ */
+function AnalysisStatus({ analyzing, error }: { analyzing: boolean; error: string | null }) {
+  if (error) return null;
+  return (
+    <span className="analysis-status" role="status" aria-live="polite">
+      {analyzing ? 'Analyzing…' : ''}
+    </span>
+  );
+}
+
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
