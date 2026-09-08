@@ -127,6 +127,10 @@ func analyzeModule(m *moduleTree, callerCtx *hcl.EvalContext, diags *diagnostics
 		e.ctx.Variables["module"] = objectOrPlaceholder(outputs)
 	}
 
+	for _, block := range m.parsed.modules {
+		e.declaredModules[block.Labels[0]] = true
+	}
+
 	e.seedReferences(m.parsed)
 	reportUnsupportedBlocks(m.parsed, diags)
 
@@ -356,6 +360,9 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 		for _, name := range names {
 			attr := attrs[name]
 			node.Attributes[name] = e.evaluateAttributeIn(scope, attr.Expr)
+			if report && !node.Attributes[name].Known {
+				e.reportUndeclared(attr.Expr, attr.Range)
+			}
 
 			for _, target := range referencedResources(attr.Expr, e.declaredResources) {
 				if target == base {

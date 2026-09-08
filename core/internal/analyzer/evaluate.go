@@ -34,6 +34,13 @@ type evaluator struct {
 	declaredResources map[string]bool
 	declaredData      map[string]bool
 	variablesNoValue  map[string]bool
+
+	// What the workspace declares, used to tell "not knowable yet" from
+	// "does not exist" (#37).
+	declaredVariables map[string]bool
+	declaredLocals    map[string]bool
+	declaredModules   map[string]bool
+	declaredTypes     map[string]bool
 }
 
 func newEvaluator(diags *diagnostics) *evaluator {
@@ -46,6 +53,10 @@ func newEvaluator(diags *diagnostics) *evaluator {
 		declaredResources: map[string]bool{},
 		declaredData:      map[string]bool{},
 		variablesNoValue:  map[string]bool{},
+		declaredVariables: map[string]bool{},
+		declaredLocals:    map[string]bool{},
+		declaredModules:   map[string]bool{},
+		declaredTypes:     map[string]bool{},
 	}
 }
 
@@ -59,6 +70,7 @@ func (e *evaluator) resolveVariables(blocks []*hcl.Block, inputs map[string]cty.
 
 	for _, block := range blocks {
 		name := block.Labels[0]
+		e.declaredVariables[name] = true
 
 		// A value passed in by the caller wins over the default, which is what
 		// makes a module reusable: the same module in two places describes two
@@ -112,6 +124,7 @@ func (e *evaluator) resolveLocals(bodies []hcl.Body) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
+			e.declaredLocals[name] = true
 			queue = append(queue, pending{name: name, expr: attrs[name].Expr})
 		}
 	}
@@ -172,6 +185,7 @@ func (e *evaluator) seedReferences(p parsed) {
 	for _, block := range p.resources {
 		rType, rName := block.Labels[0], block.Labels[1]
 		e.declaredResources[rType+"."+rName] = true
+		e.declaredTypes[rType] = true
 		if resources[rType] == nil {
 			resources[rType] = map[string]cty.Value{}
 		}
