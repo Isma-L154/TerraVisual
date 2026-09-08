@@ -193,6 +193,9 @@ export interface Entry {
   documentationUrl?: string;
 }
 export interface ParentRule {
+  /**
+   * The attribute whose reference this rule reads. A dotted path reaches inside a nested block, which is where some providers put their containment: an Azure network interface's subnet lives in ip_configuration.subnet_id, not at the top level.
+   */
   attribute: string;
   /**
    * Lower wins. Ties are a catalog bug and the tests reject them.
@@ -200,6 +203,9 @@ export interface ParentRule {
   priority: number;
 }
 export interface EdgeRule {
+  /**
+   * The attribute whose reference this rule reads. A dotted path reaches inside a nested block, which is where some providers put their containment: an Azure network interface's subnet lives in ip_configuration.subnet_id, not at the top level.
+   */
   attribute: string;
   /**
    * traffic: something sends requests to something else. data: something reads or writes something else. control: something governs something else.
