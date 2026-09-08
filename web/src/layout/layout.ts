@@ -124,12 +124,7 @@ export function layout(model: InfraModel): Layout {
     const rows = pack(children.map(measure));
     rows.positions.forEach((position, index) => {
       const child = children[index]!;
-      place(
-        child,
-        METRICS.padding + position.x,
-        METRICS.headerHeight + position.y,
-        depth + 1
-      );
+      place(child, METRICS.padding + position.x, METRICS.headerHeight + position.y, depth + 1);
     });
   };
 
@@ -231,7 +226,7 @@ function maxRootRowWidth(): number {
 export function absolutePosition(
   layoutResult: Layout,
   model: InfraModel,
-  id: string
+  id: string,
 ): { x: number; y: number } | null {
   const byId = new Map(model.nodes.map((node) => [node.id, node]));
 
