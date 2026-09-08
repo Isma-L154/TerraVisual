@@ -8,6 +8,7 @@ import { Outline } from './outline/Outline';
 import { STARTER_FILE, STARTER_WORKSPACE } from './app/examples';
 import type { Diagnostic, Range } from './model';
 import { useAnalysis } from './app/useAnalysis';
+import { hasSource, nodeAtLine } from './app/locate';
 import { createWorkspace } from './workspace/workspace';
 
 /**
@@ -64,6 +65,45 @@ export function App() {
     [revealSource],
   );
 
+  /**
+   * Selecting something in the diagram or the outline, which also reveals the
+   * code that declares it.
+   *
+   * Only an explicit selection jumps. Moving the cursor selects a node too
+   * (below), and if that also jumped, the editor would fight the person typing
+   * in it.
+   */
+  const selectNode = useCallback(
+    (id: string | null) => {
+      // Re-selecting what is already selected must not jump again: the cursor
+      // may have moved on within the same resource, and yanking it back would
+      // fight the person typing.
+      if (id === selectedId) return;
+
+      setSelectedId(id);
+      if (!id) return;
+
+      const target = analysis.model?.nodes.find((node) => node.id === id);
+      if (target && hasSource(target)) revealSource(target.source);
+    },
+    [analysis.model, revealSource, selectedId],
+  );
+
+  /**
+   * The other direction: the cursor moving highlights the node it is inside.
+   *
+   * This one deliberately does not scroll the diagram. Somebody typing has
+   * their attention in the editor, and a diagram that panned on every
+   * keystroke would be a distraction rather than a help.
+   */
+  const handleCursorLine = useCallback(
+    (line: number) => {
+      const id = nodeAtLine(analysis.model, activePath, line);
+      if (id) setSelectedId(id);
+    },
+    [analysis.model, activePath],
+  );
+
   const diagnostics = analysis.model?.diagnostics ?? [];
   const paths = workspace.list();
   const selected = analysis.model?.nodes.find((node) => node.id === selectedId) ?? null;
@@ -106,6 +146,7 @@ export function App() {
             diagnostics={diagnostics}
             reveal={reveal}
             onChange={handleChange}
+            onCursorLine={handleCursorLine}
           />
         </section>
 
@@ -148,9 +189,9 @@ export function App() {
           ) : null}
 
           {view === 'diagram' ? (
-            <Diagram model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+            <Diagram model={analysis.model} selectedId={selectedId} onSelect={selectNode} />
           ) : (
-            <Outline model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+            <Outline model={analysis.model} selectedId={selectedId} onSelect={selectNode} />
           )}
         </section>
 

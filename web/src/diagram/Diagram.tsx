@@ -56,9 +56,14 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
         nodes={withSelection}
         edges={[]}
         nodeTypes={nodeTypes}
-        onSelectionChange={({ nodes: selected }: OnSelectionChangeParams) =>
-          onSelect(selected[0]?.id ?? null)
-        }
+        onSelectionChange={({ nodes: selected }: OnSelectionChangeParams) => {
+          // React Flow reports a selection change whether the user made it or
+          // it arrived through props. Without this guard, a selection driven
+          // by the cursor would be reported straight back, revealing code,
+          // moving the cursor, and looping forever.
+          const next = selected[0]?.id ?? null;
+          if (next !== selectedId) onSelect(next);
+        }}
         fitView
         // Layout is ours, so React Flow must not move anything.
         nodesDraggable={false}
