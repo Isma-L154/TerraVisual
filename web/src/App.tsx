@@ -4,6 +4,7 @@ import { Editor } from './editor/Editor';
 import { DiagnosticsList } from './editor/DiagnosticsList';
 import { Diagram } from './diagram/Diagram';
 import { NodeDetails } from './diagram/NodeDetails';
+import { Outline } from './outline/Outline';
 import { STARTER_FILE, STARTER_WORKSPACE } from './app/examples';
 import { useAnalysis } from './app/useAnalysis';
 import { createWorkspace } from './workspace/workspace';
@@ -19,6 +20,7 @@ export function App() {
   const [activePath, setActivePath] = useState(STARTER_FILE);
   const [content, setContent] = useState(() => workspace.read(STARTER_FILE) ?? '');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, setView] = useState<'diagram' | 'outline'>('diagram');
 
   const analysis = useAnalysis(workspace);
 
@@ -85,10 +87,37 @@ export function App() {
         <section className="pane" aria-labelledby="diagram-heading">
           <div className="pane-header">
             <h2 id="diagram-heading">Infrastructure</h2>
-            <AnalysisStatus analyzing={analysis.analyzing} error={analysis.error} />
+            <div className="pane-tools">
+              {/* Two ways to read the same model, not a picture and a fallback.
+                  A spatial canvas is a poor way to read a hierarchy, however
+                  accessible its individual nodes are. */}
+              <div className="view-switch" role="group" aria-label="How to view the infrastructure">
+                <button
+                  type="button"
+                  className="file-tab"
+                  aria-pressed={view === 'diagram'}
+                  onClick={() => setView('diagram')}
+                >
+                  Diagram
+                </button>
+                <button
+                  type="button"
+                  className="file-tab"
+                  aria-pressed={view === 'outline'}
+                  onClick={() => setView('outline')}
+                >
+                  Outline
+                </button>
+              </div>
+              <AnalysisStatus analyzing={analysis.analyzing} error={analysis.error} />
+            </div>
           </div>
 
-          <Diagram model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+          {view === 'diagram' ? (
+            <Diagram model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+          ) : (
+            <Outline model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+          )}
         </section>
 
         <section className="pane pane-details" aria-labelledby="details-heading">
