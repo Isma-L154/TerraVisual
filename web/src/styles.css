@@ -12,6 +12,21 @@
   --muted: #5a5a68;
   --accent: #3b5bdb;
 
+  --active-line: #eef0f7;
+  --selection: #cdd8f7;
+
+  --severity-error: #b42318;
+  --severity-warning: #a15c07;
+  --severity-info: #35507a;
+
+  --syntax-comment: #6b7280;
+  --syntax-string: #0a7d55;
+  --syntax-number: #9a3412;
+  --syntax-keyword: #7c3aed;
+  --syntax-property: #1d4ed8;
+  --syntax-type: #b45309;
+  --syntax-function: #0369a1;
+
   --radius: 10px;
   --gap: 16px;
 }
@@ -24,6 +39,21 @@
     --text: #e8e8f0;
     --muted: #a0a0b4;
     --accent: #8da2fb;
+
+    --active-line: #20202c;
+    --selection: #2f3a5c;
+
+    --severity-error: #f9827a;
+    --severity-warning: #e8b45c;
+    --severity-info: #93b4ea;
+
+    --syntax-comment: #7b7b90;
+    --syntax-string: #5fd6a0;
+    --syntax-number: #f0a06a;
+    --syntax-keyword: #c39bf5;
+    --syntax-property: #86b0ff;
+    --syntax-type: #f0c274;
+    --syntax-function: #6fc7e8;
   }
 }
 
@@ -80,15 +110,24 @@ body {
 .workspace {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: var(--gap);
   padding: 12px 24px 24px;
   align-items: stretch;
-  min-height: 60vh;
+  height: calc(100vh - 150px);
+  min-height: 420px;
+}
+
+.pane-diagnostics {
+  grid-column: 1 / -1;
+  max-height: 22vh;
+  overflow: auto;
 }
 
 @media (max-width: 800px) {
   .workspace {
     grid-template-columns: 1fr;
+    height: auto;
   }
 }
 
@@ -130,4 +169,149 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* --- panes --------------------------------------------------------------- */
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pane-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.pane-header h2 {
+  margin: 0;
+}
+
+.pane-editor {
+  padding: 16px 0 0;
+}
+
+.pane-editor .pane-header {
+  padding: 0 16px;
+}
+
+/* --- editor -------------------------------------------------------------- */
+
+.editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.file-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.file-tab {
+  font: inherit;
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.file-tab[aria-current='true'] {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.analysis-status {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 8ch;
+  text-align: right;
+}
+
+/* --- diagnostics --------------------------------------------------------- */
+
+.diagnostics-empty,
+.diagnostics-summary {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.diagnostics-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagnostic {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.diagnostic:hover {
+  border-color: var(--border);
+}
+
+/* Severity is carried by the word, not only by the colour: colour alone is
+   invisible to a colourblind user and to anyone listening rather than looking. */
+.diagnostic-severity {
+  flex: 0 0 auto;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.diagnostic-error .diagnostic-severity {
+  color: var(--severity-error);
+}
+
+.diagnostic-warning .diagnostic-severity {
+  color: var(--severity-warning);
+}
+
+.diagnostic-info .diagnostic-severity {
+  color: var(--severity-info);
+}
+
+.diagnostic-message {
+  flex: 1 1 auto;
+}
+
+.diagnostic-location {
+  flex: 0 0 auto;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.diagnostic-error[role='alert'],
+p.diagnostic-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--severity-error);
 }
