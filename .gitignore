@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 *.wasm
+*.exe
 web/public/*.wasm
 .vite/
 .wrangler/
@@ -15,7 +16,8 @@ coverage/
 playwright-report/
 test-results/
 *.out
-core/**/testdata/fuzz/
+**/testdata/fuzz/
+spike/wasm-core/fixtures/
 
 # --- Environment ---
 .env
