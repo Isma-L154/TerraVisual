@@ -6,10 +6,23 @@
  * which is the whole point of ADR-0004.
  */
 
-import awsCatalog from '../../../catalog/aws.json';
 import type { Catalog, CatalogEntry } from '../model';
 
-const catalogs: Catalog[] = [awsCatalog as Catalog];
+/**
+ * Every catalog file, discovered rather than listed.
+ *
+ * ADR-0004 says adding a provider means adding data and never touching code.
+ * A hand-written import list would have quietly made that false: a new
+ * provider would need a line here, and the one that was forgotten would be
+ * invisible in the interface while working perfectly in the analyzer.
+ */
+const modules = import.meta.glob<{ default: Catalog }>('../../../catalog/*.json', {
+  eager: true,
+});
+
+const catalogs: Catalog[] = Object.keys(modules)
+  .sort()
+  .map((path) => modules[path]!.default);
 
 const byType = new Map<string, CatalogEntry>();
 for (const catalog of catalogs) {
