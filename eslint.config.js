@@ -13,6 +13,8 @@ export default tseslint.config(
       'core/**',
       // Generated from the JSON Schema. Not ours to lint.
       '**/generated/**',
+      // Wrangler's build scratch directory.
+      '.wrangler/**',
     ],
   },
 
@@ -40,6 +42,15 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+
+  {
+    // The deployment Worker runs in a service-worker-shaped global scope, so
+    // it gets the web platform globals rather than Node's.
+    files: ['deploy/**/*.ts'],
+    languageOptions: {
+      globals: { ...globals.serviceworker, ...globals.browser },
     },
   },
 

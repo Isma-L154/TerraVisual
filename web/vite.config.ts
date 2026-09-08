@@ -17,6 +17,9 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
+    // The deployment Worker lives outside web/ but is TypeScript we own, so it
+    // is tested by the same runner rather than by a second one to configure.
+    include: ['src/**/*.test.{ts,tsx}', '../deploy/**/*.test.ts'],
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],

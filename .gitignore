@@ -24,6 +24,8 @@ spike/wasm-core/fixtures/
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 
 # --- Editors and OS ---
 .vscode/
