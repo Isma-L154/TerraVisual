@@ -1,0 +1,41 @@
+{
+  "name": "terravisual",
+  "private": true,
+  "type": "module",
+  "description": "See the infrastructure your Terraform describes, as you write it.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build:core && npm run build:web",
+    "build:core": "node scripts/build-core.mjs",
+    "build:web": "npm run build --workspace web",
+    "dev": "npm run dev --workspace web",
+    "test": "npm run test:core && npm run test:web",
+    "test:core": "node scripts/go.mjs test ./...",
+    "test:web": "npm run test --workspace web",
+    "fuzz": "node scripts/go.mjs test ./internal/analyzer -run XXX -fuzz FuzzAnalyze -fuzztime 30s",
+    "typecheck": "npm run typecheck --workspace web",
+    "lint": "eslint .",
+    "lint:core": "node scripts/go.mjs vet ./...",
+    "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "verify": "npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.10.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.12.0",
+    "prettier": "3.9.6",
+    "typescript-eslint": "8.70.0"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 100
+  }
+}
