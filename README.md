@@ -85,6 +85,7 @@ collaboration. The reasoning for each exclusion is in the architecture proposal.
 | [Architecture proposal](docs/architecture/architecture-proposal.md) | Requirements, design, security model, testing strategy, risks, roadmap |
 | [Decision records](docs/adr/) | Why the significant choices were made, and what they cost |
 | [Security](docs/security/) | The baseline audits, what they found, and what they could not verify |
+| [Testing](docs/testing/) | The testing layers, and the accessibility audit |
 
 ## License
 

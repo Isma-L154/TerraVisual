@@ -16,8 +16,11 @@ import type { ImportResult } from './workspace/import';
 /**
  * The application shell.
  *
- * The editor and the diagnostics are real. The diagram is not built yet (#10)
- * and says so rather than showing an empty frame that looks like a bug.
+ * Four panes over one model: the code, the infrastructure it describes, the
+ * details of whatever is selected, and the problems. Selection is held here
+ * rather than in any of them, because it is the thread that ties the panes
+ * together — clicking a node reveals its code, and moving the cursor
+ * highlights its node.
  */
 export function App() {
   const { workspace, origin, loading, storageAvailable, reset } = useSession();

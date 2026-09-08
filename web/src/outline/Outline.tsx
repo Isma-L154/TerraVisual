@@ -2,8 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { InfraModel } from '../model';
 import { CategoryIcon } from '../diagram/CategoryIcon';
-import { displayType } from '../diagram/catalog';
-import { buildTree, connectionsByNode, describe, visibleItems, type OutlineItem } from './tree';
+import { connectionsByNode, displayType } from '../diagram/catalog';
+import { buildTree, describe, visibleItems, type OutlineItem } from './tree';
 
 export type OutlineProps = {
   model: InfraModel | null;
@@ -137,7 +137,13 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
     const hasChildren = children.length > 0;
     const expanded = hasChildren && !collapsed.has(node.id);
     const parent = model.nodes.find((candidate) => candidate.id === node.parentId);
-    const siblings = visible.filter((other) => other.level === level);
+    // Siblings are the items with the same parent, not every item at the same
+    // depth. Counting by depth made a screen reader announce "2 of 14" where
+    // 14 was every resource on that level of the whole diagram, which tells
+    // somebody navigating by ear nothing about where they are.
+    const siblings = visible.filter(
+      (other) => other.level === level && other.node.parentId === node.parentId,
+    );
 
     return (
       <li

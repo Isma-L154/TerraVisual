@@ -1,10 +1,30 @@
 import { useMemo } from 'react';
-import { Background, Controls, ReactFlow, type OnSelectionChangeParams } from '@xyflow/react';
+import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
 import { nodeTypes } from './nodes';
-import { toFlowEdges, toFlowNodes } from './toFlow';
+import { toFlowEdges, toFlowNodes, type DiagramNode } from './toFlow';
+
+/**
+ * What a screen reader is told about the diagram's controls.
+ *
+ * These replace React Flow's defaults, which describe a diagram whose nodes
+ * can be dragged and deleted. Ours cannot: positions come from the layout
+ * module, and the only way to change the picture is to change the Terraform.
+ * Saying so is the point — an instruction that does nothing wastes the time of
+ * exactly the users this view exists for.
+ */
+const ARIA_LABELS = {
+  'node.a11yDescription.default':
+    'Press enter or space to select. Selecting shows its details and highlights the code that declares it.',
+  'node.a11yDescription.keyboardDisabled':
+    'Press enter or space to select. Selecting shows its details and highlights the code that declares it.',
+  // Edges are neither focusable nor selectable here — a connection is a fact
+  // about two resources rather than a thing to operate. The outline names each
+  // resource's connections, which is where somebody reading by ear finds them.
+  'edge.a11yDescription.default': 'A connection between two resources.',
+};
 
 export type DiagramProps = {
   model: InfraModel | null;
@@ -58,13 +78,36 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
         nodes={withSelection}
         edges={edges}
         nodeTypes={nodeTypes}
-        onSelectionChange={({ nodes: selected }: OnSelectionChangeParams) => {
-          // React Flow reports a selection change whether the user made it or
-          // it arrived through props. Without this guard, a selection driven
-          // by the cursor would be reported straight back, revealing code,
-          // moving the cursor, and looping forever.
-          const next = selected[0]?.id ?? null;
-          if (next !== selectedId) onSelect(next);
+        /*
+         * Selection.
+         *
+         * `nodes` is controlled — the array is derived from the model on every
+         * render — and React Flow will not apply a selection to a controlled
+         * array by itself. It emits the change and waits for the owner to
+         * apply it. Without this handler it emits into nothing: clicking a
+         * node did nothing, and Enter on a focused node did nothing, which
+         * made the diagram reachable by keyboard but not operable by it.
+         *
+         * The state that gets applied is `selectedId` upstream, which is also
+         * what the editor and the outline read, so there is still one source
+         * of truth rather than React Flow keeping a second opinion.
+         */
+        onNodesChange={(changes: NodeChange<DiagramNode>[]) => {
+          let next: string | null | undefined;
+
+          for (const change of changes) {
+            if (change.type !== 'select') continue;
+            // A click on B arrives as "deselect A, select B", in that order,
+            // so the last selection in the batch is the one that counts.
+            if (change.selected) next = change.id;
+            else if (next === undefined && change.id === selectedId) next = null;
+          }
+
+          // Undefined means nothing in this batch was about selection.
+          // Comparing against the current value keeps a selection that arrived
+          // through props from being reported straight back, which would
+          // reveal code, move the cursor, and loop.
+          if (next !== undefined && next !== selectedId) onSelect(next);
         }}
         fitView
         // Layout is ours, so React Flow must not move anything.
@@ -75,6 +118,11 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
         minZoom={0.1}
         maxZoom={2}
         aria-label="Infrastructure diagram"
+        // React Flow's default descriptions are read aloud on every node and
+        // offer to move and delete things. Neither is possible here — the
+        // layout is ours and the diagram reports what the code says — so the
+        // defaults would be instructions to do something that cannot be done.
+        ariaLabelConfig={ARIA_LABELS}
       >
         <Background gap={20} size={1} />
         <Controls showInteractive={false} />

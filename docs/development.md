@@ -37,6 +37,7 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run build:core` | Compiles the analyzer to WebAssembly **and fails if it exceeds the size budget** |
 | `npm run test` | Go tests and web tests |
 | `npm run test:core` / `test:web` | One side only |
+| `npm run test:e2e` | Accessibility and the keyboard journey, in a real browser. Builds first, then serves the build through the deployment Worker so the tests run under the production CSP |
 | `npm run fuzz` | 30 seconds of fuzzing against the analyzer |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` / `lint:core` | ESLint / `go vet` |
@@ -84,10 +85,12 @@ Some conventions worth stating, because they are easy to break by accident:
 
 ## Continuous integration
 
-Four jobs run on every pull request: the Go core (format, vet, race tests, a
+Five jobs run on every pull request: the Go core (format, vet, race tests, a
 short fuzz run, and the size-budgeted WebAssembly build), the browser
-application (typecheck, lint, format, tests, build), security checks
-(`govulncheck` and `npm audit`), and dependency review.
+application (typecheck, lint, format, tests, build), the accessibility and
+keyboard journey in a real browser, security checks (`govulncheck` and
+`npm audit`), and dependency review.
 
-`npm run verify` runs the same things locally, so a red pipeline should rarely
-be a surprise.
+`npm run verify` runs everything except the browser suite, which needs a build
+and a browser and so has its own command, `npm run test:e2e`. Between the two, a
+red pipeline should rarely be a surprise.
