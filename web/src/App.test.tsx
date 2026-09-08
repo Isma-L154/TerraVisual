@@ -1,25 +1,29 @@
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
 
+// The session loads asynchronously now — a shared link is decoded, then
+// storage is consulted, then the example is used. So these tests wait, which
+// is what a real visitor does too.
+//
 // jsdom has no Worker, so analysis always fails here. That is useful rather
 // than awkward: these tests double as proof that the interface stays usable
-// when the analyzer is unavailable, which is exactly what a user on a slow
+// when the analyzer is unavailable, which is what somebody on a slow
 // connection sees for the first second.
 
 describe('App shell', () => {
-  it('exposes landmark regions and headings', () => {
+  it('exposes landmark regions and headings', async () => {
     render(<App />);
 
-    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /terravisual/i })).toBeInTheDocument();
   });
 
-  it('names each pane so screen reader users can tell them apart', () => {
+  it('names each pane so screen reader users can tell them apart', async () => {
     render(<App />);
 
-    expect(screen.getByRole('region', { name: /code/i })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /code/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /infrastructure/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /problems/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /details/i })).toBeInTheDocument();
@@ -28,32 +32,44 @@ describe('App shell', () => {
   // The privacy claim is the product's central promise (NFR-1). Removing it
   // from the interface should be a deliberate act with a failing test behind
   // it, not an accident during a redesign.
-  it('states the privacy guarantee', () => {
+  it('states the privacy guarantee', async () => {
     render(<App />);
 
-    expect(screen.getByText(/never leaves your browser/i)).toBeInTheDocument();
+    expect(await screen.findByText(/never leaves your browser/i)).toBeInTheDocument();
   });
 
   // Without a Worker there is never a model, so the diagram says what it is
   // waiting for rather than showing an empty frame that reads as a bug.
-  it('says what the diagram is waiting for when there is no model yet', () => {
+  it('says what the diagram is waiting for when there is no model yet', async () => {
     render(<App />);
 
-    expect(screen.getByTestId('diagram-waiting')).toBeInTheDocument();
+    expect(await screen.findByTestId('diagram-waiting')).toBeInTheDocument();
   });
 
-  it('invites a selection in the details pane', () => {
+  it('invites a selection in the details pane', async () => {
     render(<App />);
 
-    expect(screen.getByTestId('details-empty')).toBeInTheDocument();
+    expect(await screen.findByTestId('details-empty')).toBeInTheDocument();
   });
 
   // A blank editor is a bad first screen for a teaching tool: it asks somebody
   // who came here to learn Terraform to already know some.
-  it('opens with an example workspace rather than an empty page', () => {
+  it('opens with an example workspace rather than an empty page', async () => {
     render(<App />);
 
-    expect(screen.getByTestId('editor')).toBeInTheDocument();
+    expect(await screen.findByTestId('editor')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /terraform source/i })).toBeInTheDocument();
+  });
+
+  it('offers a way to bring an existing project in', async () => {
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /import project/i })).toBeInTheDocument();
+  });
+
+  it('offers a way to start over', async () => {
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /^reset$/i })).toBeInTheDocument();
   });
 });

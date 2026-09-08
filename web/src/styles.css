@@ -769,3 +769,33 @@ code {
   font-size: 12px;
   color: var(--muted);
 }
+
+/* --- sharing ------------------------------------------------------------- */
+
+.share {
+  margin-bottom: 8px;
+}
+
+.share-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.share-link {
+  margin-top: 6px;
+  width: 100%;
+  max-width: 60ch;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.footer-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}

@@ -59,6 +59,20 @@ describe('confinement', () => {
     expect(() => workspace.write('../outside.tf', 'x')).toThrow(InvalidPathError);
     expect(workspace.size).toBe(0);
   });
+
+  // Asking is not the same as writing. A query about an unusable path means
+  // "no", because the caller is asking a question, not making a mistake.
+  it('answers questions about unusable paths instead of throwing', () => {
+    const workspace = new Workspace();
+    workspace.write('main.tf', 'x');
+
+    for (const path of ['', '../escape.tf', '/absolute.tf']) {
+      expect(workspace.has(path)).toBe(false);
+      expect(workspace.read(path)).toBeUndefined();
+      expect(workspace.remove(path)).toBe(false);
+    }
+    expect(workspace.size).toBe(1);
+  });
 });
 
 // Limits produce errors rather than silent truncation. A workspace that
