@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: core/go.mod
-          cache-dependency-path: core/go.sum
+          cache-dependency-path: '**/go.sum'
 
       - uses: actions/setup-node@v5
         with:
@@ -97,18 +97,27 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: core/go.mod
-          cache-dependency-path: core/go.sum
+          cache-dependency-path: '**/go.sum'
 
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
 
+      # Every Go module, not just core. A core-only scan would have missed a
+      # reachable denial-of-service in golang.org/x/text that the spike module
+      # pulled in through hcl — and reachability is the whole point of
+      # govulncheck over an advisory feed.
       - name: Known vulnerabilities in Go dependencies
-        working-directory: core
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          status=0
+          for dir in $(find . -name go.mod -not -path './node_modules/*' -exec dirname {} \;); do
+            echo "::group::govulncheck $dir"
+            (cd "$dir" && govulncheck ./...) || status=1
+            echo "::endgroup::"
+          done
+          exit $status
 
       - run: npm ci
 
