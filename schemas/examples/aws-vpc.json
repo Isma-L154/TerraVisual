@@ -12,9 +12,18 @@
       "unplaced": false,
       "catalogued": true,
       "attributes": {
-        "cidr_block": { "known": true, "value": "10.0.0.0/16" }
+        "cidr_block": {
+          "known": true,
+          "value": "10.0.0.0/16"
+        }
       },
-      "source": { "file": "main.tf", "startLine": 1, "startCol": 1, "endLine": 4, "endCol": 2 }
+      "source": {
+        "file": "main.tf",
+        "startLine": 1,
+        "startCol": 1,
+        "endLine": 4,
+        "endCol": 2
+      }
     },
     {
       "id": "aws_subnet.public",
@@ -28,9 +37,18 @@
       "unplaced": false,
       "catalogued": true,
       "attributes": {
-        "cidr_block": { "known": true, "value": "10.0.1.0/24" }
+        "cidr_block": {
+          "known": true,
+          "value": "10.0.1.0/24"
+        }
       },
-      "source": { "file": "main.tf", "startLine": 6, "startCol": 1, "endLine": 10, "endCol": 2 }
+      "source": {
+        "file": "main.tf",
+        "startLine": 6,
+        "startCol": 1,
+        "endLine": 10,
+        "endCol": 2
+      }
     },
     {
       "id": "aws_instance.web[0]",
@@ -44,14 +62,27 @@
       "unplaced": false,
       "catalogued": true,
       "attributes": {
-        "instance_type": { "known": true, "value": "t3.micro" },
+        "instance_type": {
+          "known": true,
+          "value": "t3.micro"
+        },
         "ami": {
           "known": false,
           "reason": "depends on a data source, which needs cloud credentials"
         }
       },
-      "expansion": { "kind": "count", "index": 0, "total": 2 },
-      "source": { "file": "main.tf", "startLine": 12, "startCol": 1, "endLine": 18, "endCol": 2 }
+      "expansion": {
+        "kind": "count",
+        "index": 0,
+        "total": 2
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 12,
+        "startCol": 1,
+        "endLine": 18,
+        "endCol": 2
+      }
     },
     {
       "id": "some_exotic_thing.x",
@@ -64,7 +95,13 @@
       "unplaced": true,
       "catalogued": false,
       "attributes": {},
-      "source": { "file": "extra.tf", "startLine": 1, "startCol": 1, "endLine": 3, "endCol": 2 }
+      "source": {
+        "file": "extra.tf",
+        "startLine": 1,
+        "startCol": 1,
+        "endLine": 3,
+        "endCol": 2
+      }
     }
   ],
   "edges": [
@@ -73,7 +110,14 @@
       "from": "aws_instance.web[0]",
       "to": "aws_db_instance.primary",
       "kind": "data",
-      "source": { "file": "main.tf", "startLine": 16, "startCol": 3, "endLine": 16, "endCol": 44 }
+      "source": {
+        "file": "main.tf",
+        "startLine": 16,
+        "startCol": 3,
+        "endLine": 16,
+        "endCol": 44
+      },
+      "drawn": true
     }
   ],
   "diagnostics": [
@@ -81,8 +125,19 @@
       "severity": "warning",
       "code": "unresolved-value",
       "message": "The value of 'ami' depends on a data source and cannot be determined without cloud credentials.",
-      "source": { "file": "main.tf", "startLine": 14, "startCol": 3, "endLine": 14, "endCol": 26 }
+      "source": {
+        "file": "main.tf",
+        "startLine": 14,
+        "startCol": 3,
+        "endLine": 14,
+        "endCol": 26
+      }
     }
   ],
-  "stats": { "files": 2, "resources": 4, "durationMs": 37, "truncated": false }
+  "stats": {
+    "files": 2,
+    "resources": 4,
+    "durationMs": 37,
+    "truncated": false
+  }
 }

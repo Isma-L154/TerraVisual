@@ -4,7 +4,8 @@
  * A blank editor is a bad first screen for a teaching tool: it asks somebody
  * who came here to learn Terraform to already know some. This example is small
  * enough to read in one go and deliberately shows the three things the product
- * is for — containment, values that resolve, and values that honestly cannot.
+ * is for: containment, values that resolve, values that honestly cannot, and
+ * one connection worth drawing.
  */
 export const STARTER_WORKSPACE: Record<string, string> = {
   'main.tf': `# Everything here runs in your browser. Nothing is uploaded.
@@ -35,6 +36,19 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   cidr_block = cidrsubnet("10.0.0.0/16", 8, 2)
+}
+
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
 }
 
 resource "aws_instance" "web" {

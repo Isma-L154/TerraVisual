@@ -76,6 +76,8 @@ func analyze(files map[string]string) model.Result {
 		edges = []model.Edge{}
 	}
 
+	edges = applyEdgeRules(nodes, edges, diags)
+
 	result.Nodes = nodes
 	result.Edges = edges
 	result.Diagnostics = diags.list()

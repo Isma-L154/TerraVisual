@@ -4,7 +4,7 @@ import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
 import { nodeTypes } from './nodes';
-import { toFlowNodes } from './toFlow';
+import { toFlowEdges, toFlowNodes } from './toFlow';
 
 export type DiagramProps = {
   model: InfraModel | null;
@@ -28,6 +28,8 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
     () => (model ? toFlowNodes(model) : { nodes: [], layout: null }),
     [model],
   );
+
+  const edges = useMemo(() => (model ? toFlowEdges(model) : []), [model]);
 
   const withSelection = useMemo(
     () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
@@ -54,7 +56,7 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
     <div className="diagram" data-testid="diagram">
       <ReactFlow
         nodes={withSelection}
-        edges={[]}
+        edges={edges}
         nodeTypes={nodeTypes}
         onSelectionChange={({ nodes: selected }: OnSelectionChangeParams) => {
           // React Flow reports a selection change whether the user made it or
