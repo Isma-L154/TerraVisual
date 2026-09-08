@@ -22,6 +22,7 @@ describe('App shell', () => {
     expect(screen.getByRole('region', { name: /code/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /infrastructure/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /problems/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /details/i })).toBeInTheDocument();
   });
 
   // The privacy claim is the product's central promise (NFR-1). Removing it
@@ -33,10 +34,18 @@ describe('App shell', () => {
     expect(screen.getByText(/never leaves your browser/i)).toBeInTheDocument();
   });
 
-  it('says plainly that the diagram is not built yet', () => {
+  // Without a Worker there is never a model, so the diagram says what it is
+  // waiting for rather than showing an empty frame that reads as a bug.
+  it('says what the diagram is waiting for when there is no model yet', () => {
     render(<App />);
 
-    expect(screen.getByText(/diagram is not built yet/i)).toBeInTheDocument();
+    expect(screen.getByTestId('diagram-waiting')).toBeInTheDocument();
+  });
+
+  it('invites a selection in the details pane', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('details-empty')).toBeInTheDocument();
   });
 
   // A blank editor is a bad first screen for a teaching tool: it asks somebody
