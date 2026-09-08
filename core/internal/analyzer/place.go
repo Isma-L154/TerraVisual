@@ -32,6 +32,9 @@ type placement struct {
 	// provider block declares it. With aliases or an unresolvable value there
 	// is no single answer, and inventing one would misplace every resource.
 	regions map[string]string
+
+	// modules maps a node to the module it was declared in.
+	modules map[string]string
 }
 
 // applyCatalog turns evaluated resources into placed, categorised nodes.
@@ -84,6 +87,16 @@ func applyCatalog(nodes []model.Node, p placement, diags *diagnostics) []model.N
 		node.ParentID = resolveParent(*node, entry, known, p.references, existing, firstInstance)
 	}
 
+	// Module membership is applied after containment, and overrides it when
+	// the two disagree.
+	//
+	// A resource in module "compute" that sits in a VPC from module "network"
+	// is inside that VPC in reality, and this puts it in the module box
+	// instead. That is a deliberate trade: modules are what the user wrote,
+	// and a module box that turned out empty because its contents scattered
+	// across other people's VPCs would teach nothing about modules at all.
+	nodes = applyModuleMembership(nodes, p.modules)
+
 	// Second pass: the frame. Only providers that actually appear get a
 	// container, so an AWS-only workspace does not sprout empty Azure boxes.
 	nodes = addSyntheticContainers(nodes, p.regions)
@@ -104,6 +117,73 @@ func applyCatalog(nodes []model.Node, p placement, diags *diagnostics) []model.N
 
 	guardAgainstCycles(nodes, diags)
 	return nodes
+}
+
+// applyModuleMembership keeps a module's contents inside its own box.
+func applyModuleMembership(nodes []model.Node, membership map[string]string) []model.Node {
+	if len(membership) == 0 {
+		return nodes
+	}
+
+	// A module container's provider is the one its contents agree on, so an
+	// all-AWS module sits inside the AWS frame. A mixed module has no single
+	// answer and stays at the top level rather than being filed under one of
+	// the providers it uses.
+	providers := map[string]map[string]bool{}
+	for _, node := range nodes {
+		if node.Type == "module" || node.ModulePath == "" {
+			continue
+		}
+		if providers[node.ModulePath] == nil {
+			providers[node.ModulePath] = map[string]bool{}
+		}
+		providers[node.ModulePath][node.Provider] = true
+	}
+
+	for i := range nodes {
+		node := &nodes[i]
+
+		if node.Type == "module" {
+			modulePath := strings.TrimPrefix(node.ID, "module.")
+			if unanimous := onlyProvider(providers[modulePath]); unanimous != "" {
+				node.Provider = unanimous
+			}
+			if node.ModulePath != "" {
+				node.ParentID = "module." + node.ModulePath
+			}
+			continue
+		}
+
+		if node.ModulePath == "" {
+			continue
+		}
+
+		container := "module." + node.ModulePath
+		if node.ParentID == "" {
+			node.ParentID = container
+			continue
+		}
+		if membership[node.ParentID] != node.ModulePath {
+			node.ParentID = container
+		}
+	}
+
+	return nodes
+}
+
+// onlyProvider returns the single provider in a set, or "" when there is not
+// exactly one.
+func onlyProvider(set map[string]bool) string {
+	if len(set) != 1 {
+		return ""
+	}
+	for provider := range set {
+		if provider == "" || provider == "unknown" {
+			return ""
+		}
+		return provider
+	}
+	return ""
 }
 
 // resolveParent walks the catalog's rules in priority order and takes the first
@@ -201,7 +281,9 @@ func addSyntheticContainers(nodes []model.Node, regions map[string]string) []mod
 // isSynthetic reports whether a node is part of the frame rather than
 // something the user wrote.
 func isSynthetic(id string) bool {
-	return strings.HasPrefix(id, providerNodePrefix) || strings.HasPrefix(id, regionNodePrefix)
+	return strings.HasPrefix(id, providerNodePrefix) ||
+		strings.HasPrefix(id, regionNodePrefix) ||
+		strings.HasPrefix(id, "module.")
 }
 
 func syntheticNode(id, nodeType, provider, label, parentID string) model.Node {

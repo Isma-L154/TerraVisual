@@ -54,11 +54,19 @@ func newEvaluator(diags *diagnostics) *evaluator {
 // A variable without a default is genuinely undeterminable until someone
 // supplies a value, so it becomes unknown rather than an empty string. The
 // name is remembered so anything depending on it can say why.
-func (e *evaluator) resolveVariables(blocks []*hcl.Block) {
+func (e *evaluator) resolveVariables(blocks []*hcl.Block, inputs map[string]cty.Value) {
 	values := map[string]cty.Value{}
 
 	for _, block := range blocks {
 		name := block.Labels[0]
+
+		// A value passed in by the caller wins over the default, which is what
+		// makes a module reusable: the same module in two places describes two
+		// different pieces of infrastructure.
+		if supplied, given := inputs[name]; given {
+			values[name] = supplied
+			continue
+		}
 		content, _, diags := block.Body.PartialContent(variableSchema)
 		e.diags.addHCL(diags)
 		if content == nil {

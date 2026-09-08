@@ -260,9 +260,7 @@ data "aws_region" "current" {}
 		codes[d.Code] = true
 	}
 
-	// Silence would be the worst outcome: a user whose infrastructure lives in
-	// modules would see an empty diagram and no explanation for it.
-	for _, code := range []string{"modules-not-supported", "data-source-not-resolved"} {
+	for _, code := range []string{"module-not-found", "data-source-not-resolved"} {
 		if !codes[code] {
 			t.Errorf("expected a %q diagnostic, got %v", code, codes)
 		}

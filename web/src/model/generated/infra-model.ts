@@ -65,6 +65,10 @@ export interface Node {
   };
   expansion?: Expansion;
   source: Range;
+  /**
+   * The module this node was declared in, absent at the root. Recorded so the interface can say where a resource came from, and so containment can keep a module's contents together.
+   */
+  modulePath?: string;
 }
 /**
  * Unknown is a first-class value. There is no ambiguous null or empty string standing in for 'not determinable', so the interface can always tell 'empty' from 'unknown'.
