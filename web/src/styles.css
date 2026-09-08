@@ -19,12 +19,12 @@
   --severity-warning: #a15c07;
   --severity-info: #35507a;
 
-  --syntax-comment: #6b7280;
-  --syntax-string: #0a7d55;
+  --syntax-comment: #5f6570;
+  --syntax-string: #097049;
   --syntax-number: #9a3412;
   --syntax-keyword: #7c3aed;
   --syntax-property: #1d4ed8;
-  --syntax-type: #b45309;
+  --syntax-type: #a34a08;
   --syntax-function: #0369a1;
 
   --cat-network: #2563eb;
@@ -60,7 +60,7 @@
     --severity-warning: #e8b45c;
     --severity-info: #93b4ea;
 
-    --syntax-comment: #7b7b90;
+    --syntax-comment: #9090a6;
     --syntax-string: #5fd6a0;
     --syntax-number: #f0a06a;
     --syntax-keyword: #c39bf5;
@@ -233,6 +233,20 @@ body {
   overflow: hidden;
 }
 
+/*
+ * How to get out of the editor.
+ *
+ * Visible rather than hidden from sight: Tab is captured for indentation, and
+ * a sighted keyboard user needs the way out as much as a screen reader user
+ * does (WCAG 2.1.2). It is the editor's accessible description as well, so it
+ * is announced on entry and read on the page.
+ */
+.editor-hint {
+  margin: 6px 2px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .file-tabs {
   display: flex;
   gap: 4px;
@@ -352,6 +366,23 @@ p.diagnostic-error {
 
 .react-flow__attribution {
   display: none;
+}
+
+/*
+ * Focus on a diagram node.
+ *
+ * React Flow's own stylesheet sets `outline: none` on a focused selectable
+ * node, which removes the only indication a keyboard user has of where they
+ * are (WCAG 2.4.7). This puts it back, and needs the `.diagram` prefix to
+ * outrank the rule it is undoing.
+ *
+ * The offset is negative because a node's box is its whole footprint in the
+ * layout: an outside ring would overlap the neighbour.
+ */
+.diagram .react-flow__node.selectable:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: 8px;
 }
 
 .dg-container,

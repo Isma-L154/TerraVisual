@@ -8,6 +8,47 @@ import { buildTree, countItems, describe as describeItem, visibleItems } from '.
 
 const example = awsVpc as InfraModel;
 
+/**
+ * Two VPCs, each with one subnet.
+ *
+ * The shape matters: the subnets share a level but not a parent, which is the
+ * only arrangement where counting by depth and counting by parent disagree.
+ */
+const twoVpcs: InfraModel = {
+  ...example,
+  nodes: [
+    vpc('aws_vpc.a', 'a'),
+    subnet('aws_subnet.a-public', 'a-public', 'aws_vpc.a'),
+    vpc('aws_vpc.b', 'b'),
+    subnet('aws_subnet.b-public', 'b-public', 'aws_vpc.b'),
+  ],
+  edges: [],
+};
+
+function vpc(id: string, label: string) {
+  return { ...base(id, label), type: 'aws_vpc', isContainer: true };
+}
+
+function subnet(id: string, label: string, parentId: string) {
+  return { ...base(id, label), type: 'aws_subnet', isContainer: true, parentId };
+}
+
+function base(id: string, label: string) {
+  return {
+    id,
+    address: id,
+    type: 'aws_vpc',
+    provider: 'aws',
+    category: 'network' as const,
+    label,
+    isContainer: false,
+    unplaced: false,
+    catalogued: true,
+    attributes: {},
+    source: { file: 'main.tf', startLine: 1, startCol: 1, endLine: 3, endCol: 2 },
+  };
+}
+
 function renderOutline(model: InfraModel | null = example, selectedId: string | null = null) {
   const onSelect = vi.fn();
   const result = render(<Outline model={model} selectedId={selectedId} onSelect={onSelect} />);
@@ -110,6 +151,23 @@ describe('tree semantics', () => {
       'aria-selected',
       'true',
     );
+  });
+
+  // A screen reader announces "2 of 5" from these attributes, so counting the
+  // wrong set is not a detail: it tells somebody navigating by ear that there
+  // are things beside this one which are not there.
+  it('counts siblings within their parent, not everything at the same depth', () => {
+    render(<Outline model={twoVpcs} selectedId={null} onSelect={vi.fn()} />);
+
+    const first = screen.getByRole('treeitem', { name: /a-public/i });
+    const second = screen.getByRole('treeitem', { name: /b-public/i });
+
+    // Each subnet is an only child, even though both sit at level 2.
+    for (const item of [first, second]) {
+      expect(item).toHaveAttribute('aria-level', '2');
+      expect(item).toHaveAttribute('aria-setsize', '1');
+      expect(item).toHaveAttribute('aria-posinset', '1');
+    }
   });
 
   // One tab stop for the whole tree. Making every item tabbable would be

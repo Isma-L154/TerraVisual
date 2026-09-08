@@ -22,8 +22,8 @@
     "typecheck": "npm run typecheck --workspace web",
     "lint": "eslint . --max-warnings 0",
     "lint:core": "node scripts/gofmt-check.mjs && node scripts/go.mjs vet ./...",
-    "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
-    "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/e2e/**/*.ts\" \"web/*.{ts,json,html}\" \"playwright.config.ts\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/e2e/**/*.ts\" \"web/*.{ts,json,html}\" \"playwright.config.ts\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
     "verify": "npm run generate:check && npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build",
     "generate": "node scripts/generate-types.mjs && node scripts/build-catalog.mjs",
     "generate:check": "node scripts/generate-types.mjs --check && node scripts/build-catalog.mjs --check",
@@ -31,10 +31,15 @@
     "deploy": "npm run build && wrangler deploy",
     "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "preview:worker": "npm run build && wrangler dev",
-    "check:headers": "node scripts/check-headers.mjs"
+    "check:headers": "node scripts/check-headers.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "axe-core": "4.13.0",
     "eslint": "10.10.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.12.0",

@@ -7,30 +7,7 @@
  */
 
 import type { InfraModel, InfraNode } from '../model';
-import { displayType } from '../diagram/catalog';
-
-/**
- * The connections leaving each node, as phrases.
- *
- * Only the ones the diagram draws: the outline is a peer view of the same
- * picture, not a more detailed one, and reading out every reference would bury
- * the few that matter.
- */
-export function connectionsByNode(model: InfraModel): Map<string, string[]> {
-  const labels = new Map(model.nodes.map((node) => [node.id, node.label]));
-  const out = new Map<string, string[]>();
-
-  for (const edge of model.edges) {
-    if (!edge.drawn) continue;
-    const target = labels.get(edge.to);
-    if (!target) continue;
-
-    const phrase = edge.label ? `${edge.label} to ${target}` : `connects to ${target}`;
-    out.set(edge.from, [...(out.get(edge.from) ?? []), phrase]);
-  }
-
-  return out;
-}
+import { announce } from '../diagram/catalog';
 
 export type OutlineItem = {
   node: InfraNode;
@@ -106,38 +83,7 @@ export function visibleItems(items: OutlineItem[], collapsed: ReadonlySet<string
  * a description of an infrastructure.
  */
 export function describe(item: OutlineItem, parent?: InfraNode, connections?: string[]): string {
-  const { node } = item;
-  const parts: string[] = [`${node.label}, ${displayType(node.type)}`];
-
-  if (node.provider && node.provider !== 'unknown' && node.type !== 'provider') {
-    parts.push(node.provider);
-  }
-  if (parent) {
-    parts.push(`in ${parent.label}`);
-  }
-  if (!node.catalogued) {
-    parts.push('resource type not in the catalog');
-  }
-  if (node.unplaced) {
-    parts.push('could not be placed');
-  }
-
-  const unknown = Object.values(node.attributes).filter((attribute) => !attribute.known).length;
-  if (unknown > 0) {
-    parts.push(`${unknown} value${unknown === 1 ? '' : 's'} not determinable`);
-  }
-
-  if (item.children.length > 0) {
-    parts.push(`contains ${item.children.length}`);
-  }
-
-  // An arrow nobody can hear is information available only to people who can
-  // see it, which is the thing this view exists to prevent.
-  if (connections && connections.length > 0) {
-    parts.push(...connections);
-  }
-
-  return parts.join(', ');
+  return announce(item.node, parent, connections, item.children.length);
 }
 
 /** Total items in a tree, used for aria-setsize on the roots and by tests. */

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { EditorState, type Extension } from '@codemirror/state';
 import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
@@ -46,6 +46,7 @@ export function Editor({
 }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
+  const hintId = useId();
 
   // Held in refs so the extensions can read current values without the view
   // being rebuilt every time a callback identity changes. Synced in an effect
@@ -74,9 +75,11 @@ export function Editor({
       hcl(),
       editorTheme,
       EditorView.lineWrapping,
-      // Tab indents inside the editor. That is a real accessibility trade-off,
-      // and the mitigation is that Escape then Tab still moves focus out,
-      // which keyboard-only users need in order to leave.
+      // Tab indents inside the editor. That is a real accessibility trade-off:
+      // it makes Tab stop moving focus, so WCAG 2.1.2 requires that the way out
+      // be advertised rather than merely to exist. Escape then Tab leaves, and
+      // the hint below the editor says so — in text, to everybody, because a
+      // sighted keyboard user is just as stuck as a screen reader user.
       keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -87,7 +90,10 @@ export function Editor({
           cursorHandler.current(update.state.doc.lineAt(position).number);
         }
       }),
-      EditorView.contentAttributes.of({ 'aria-label': `Terraform source, ${path}` }),
+      EditorView.contentAttributes.of({
+        'aria-label': `Terraform source, ${path}`,
+        'aria-describedby': hintId,
+      }),
     ];
 
     const instance = new EditorView({
@@ -103,7 +109,7 @@ export function Editor({
     // Deliberately keyed on the file alone: a different file is a different
     // document, and its undo history should not continue the previous one's.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
+  }, [path, hintId]);
 
   // Content arriving from elsewhere — an import, a shared link, an example —
   // is applied without disturbing what the user is doing locally.
@@ -152,5 +158,12 @@ export function Editor({
     instance.focus();
   }, [reveal, path]);
 
-  return <div className="editor" ref={host} data-testid="editor" />;
+  return (
+    <>
+      <div className="editor" ref={host} data-testid="editor" />
+      <p className="editor-hint" id={hintId}>
+        Tab indents. To leave the editor, press Escape and then Tab.
+      </p>
+    </>
+  );
 }

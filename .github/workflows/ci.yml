@@ -88,6 +88,47 @@ jobs:
       - name: Build
         run: npm run build:web
 
+  e2e:
+    name: Accessibility and keyboard journey
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # The suite runs against the deployment Worker serving the real build, so
+      # it needs the analyzer as well as the application: an accessibility pass
+      # over a page whose diagram never arrives would prove nothing.
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: '**/go.sum'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Accessibility and keyboard journey
+        run: npx playwright test
+
+      # Only on failure, and only for a week: a trace is a recording of a
+      # browser session and there is no reason to keep one that passed.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   security:
     name: Security checks
     runs-on: ubuntu-latest

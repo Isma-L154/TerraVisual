@@ -2,6 +2,7 @@ import { MarkerType, type Edge as FlowEdge, type Node as FlowNode } from '@xyflo
 
 import type { Edge, InfraModel, InfraNode } from '../model';
 import { layout, type Layout } from '../layout/layout';
+import { announce, connectionsByNode } from './catalog';
 
 export type DiagramNodeData = {
   node: InfraNode;
@@ -54,9 +55,14 @@ export function toFlowNodes(model: InfraModel): { nodes: DiagramNode[]; layout: 
   const byId = new Map(model.nodes.map((node) => [node.id, node]));
 
   const withChildren = new Set<string>();
+  const childCount = new Map<string, number>();
   for (const node of model.nodes) {
-    if (node.parentId) withChildren.add(node.parentId);
+    if (!node.parentId) continue;
+    withChildren.add(node.parentId);
+    childCount.set(node.parentId, (childCount.get(node.parentId) ?? 0) + 1);
   }
+
+  const connections = connectionsByNode(model);
 
   const nodes: DiagramNode[] = [];
 
@@ -83,6 +89,15 @@ export function toFlowNodes(model: InfraModel): { nodes: DiagramNode[]; layout: 
       // rearrangement.
       draggable: false,
       selectable: true,
+      // Without this a screen reader announces "node, group" and then reads
+      // whatever text happens to be inside. The outline's wording is reused so
+      // the two views describe the same resource the same way.
+      ariaLabel: announce(
+        node,
+        parentId ? byId.get(parentId) : undefined,
+        connections.get(id),
+        childCount.get(id) ?? 0,
+      ),
       data: {
         node,
         depth: box.depth,
