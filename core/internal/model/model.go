@@ -70,12 +70,12 @@ type Expansion struct {
 }
 
 type Edge struct {
-	ID    string `json:"id"`
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Kind  string `json:"kind"`
-	Label string `json:"label,omitempty"`
-	Source Range `json:"source"`
+	ID     string `json:"id"`
+	From   string `json:"from"`
+	To     string `json:"to"`
+	Kind   string `json:"kind"`
+	Label  string `json:"label,omitempty"`
+	Source Range  `json:"source"`
 }
 
 type Diagnostic struct {
