@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "aws_instance.web",
+      "address": "aws_instance.web",
+      "type": "aws_instance",
+      "provider": "aws",
+      "category": "other",
+      "label": "web",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {
+        "alert_to": {
+          "known": false,
+          "reason": "it depends on var.operator_email, which has no default value"
+        },
+        "ami": {
+          "known": false,
+          "reason": "it depends on data.aws_ami.ubuntu, and data sources are read from the cloud provider, which needs credentials"
+        },
+        "generated_at": {
+          "known": false,
+          "reason": "uses timestamp(), which this analyzer does not support: changes on every run, so it has no fixed value here"
+        },
+        "instance_type": {
+          "known": true,
+          "value": "t3.micro"
+        },
+        "user_data": {
+          "known": false,
+          "reason": "uses file(), which this analyzer does not support: reads from disk, which the browser has no access to"
+        }
+      },
+      "source": {
+        "file": "main.tf",
+        "startLine": 13,
+        "startCol": 1,
+        "endLine": 13,
+        "endCol": 30
+      }
+    }
+  ],
+  "edges": [],
+  "diagnostics": [
+    {
+      "severity": "info",
+      "code": "data-source-not-resolved",
+      "message": "data.aws_ami.ubuntu is read from the cloud provider, which needs credentials, so anything depending on it is shown as unknown.",
+      "source": {
+        "file": "main.tf",
+        "startLine": 9,
+        "startCol": 1,
+        "endLine": 9,
+        "endCol": 24
+      }
+    }
+  ],
+  "stats": {
+    "files": 1,
+    "resources": 1,
+    "durationMs": 0,
+    "truncated": false
+  }
+}
