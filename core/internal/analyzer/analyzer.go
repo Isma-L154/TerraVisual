@@ -313,19 +313,10 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 	rType, rName := block.Labels[0], block.Labels[1]
 	base := rType + "." + rName
 
-	attrs, attrDiags := block.Body.JustAttributes()
+	attrs, _, attrDiags := readBody(block.Body)
 	if report {
 		diags.addHCL(attrDiags)
 	}
-
-	names := make([]string, 0, len(attrs))
-	for name := range attrs {
-		if name == "count" || name == "for_each" {
-			continue
-		}
-		names = append(names, name)
-	}
-	sort.Strings(names)
 
 	instances := expandBlock(e, block, attrs, base, report, diags)
 
@@ -357,20 +348,26 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 		}
 
 		instanceRefs := map[string][]string{}
-		for _, name := range names {
-			attr := attrs[name]
-			node.Attributes[name] = e.evaluateAttributeIn(scope, attr.Expr)
-			if report && !node.Attributes[name].Known {
-				e.reportUndeclared(attr.Expr, attr.Range)
-			}
+		ranges := map[string]hcl.Range{}
 
-			for _, target := range referencedResources(attr.Expr, e.declaredResources) {
+		bodyDiags := evaluateBody(e, scope, block.Body, "", 0, node.Attributes, instanceRefs,
+			func(path string, attr *hcl.Attribute) {
+				ranges[path] = attr.Range
+				if report && !node.Attributes[path].Known {
+					e.reportUndeclared(attr.Expr, attr.Range)
+				}
+			})
+		if report {
+			diags.addHCL(bodyDiags)
+		}
+
+		for path, targets := range instanceRefs {
+			for _, target := range targets {
 				if target == base {
 					continue
 				}
-				instanceRefs[name] = append(instanceRefs[name], target)
 				edges = append(edges, model.Edge{
-					ID:   address + "->" + target + "#" + name,
+					ID:   address + "->" + target + "#" + path,
 					From: address,
 					To:   target,
 					// Which references earn a *drawn* connection is an
@@ -378,8 +375,8 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 					// model carries all of them so that decision has something
 					// to work from.
 					Kind:   "reference",
-					Label:  name,
-					Source: toRange(attr.Range),
+					Label:  path,
+					Source: toRange(ranges[path]),
 				})
 			}
 		}

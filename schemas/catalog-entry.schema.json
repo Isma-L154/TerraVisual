@@ -5,20 +5,33 @@
   "description": "Per-provider domain knowledge. This is not an icon table: it is where we decide, resource type by resource type, which reference means 'lives inside'. Terraform has no concept of containment, so the nesting the product draws is a decision recorded here. One file, two consumers -- the Go analyzer applies the rules, the interface reads the presentation.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "entries"],
+  "required": [
+    "schemaVersion",
+    "entries"
+  ],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
     "entries": {
       "type": "array",
-      "items": { "$ref": "#/$defs/entry" }
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
     }
   },
-
   "$defs": {
     "entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "provider", "category", "displayName", "icon"],
+      "required": [
+        "type",
+        "provider",
+        "category",
+        "displayName",
+        "icon"
+      ],
       "properties": {
         "type": {
           "description": "The Terraform resource type this entry describes.",
@@ -26,7 +39,13 @@
           "pattern": "^[a-z][a-z0-9_]*$",
           "maxLength": 128
         },
-        "provider": { "enum": ["aws", "azure", "gcp"] },
+        "provider": {
+          "enum": [
+            "aws",
+            "azure",
+            "gcp"
+          ]
+        },
         "category": {
           "description": "Comparable across providers on purpose, so a learner can see that a VPC and a VNet play the same role.",
           "enum": [
@@ -43,7 +62,11 @@
             "other"
           ]
         },
-        "displayName": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
         "icon": {
           "description": "Path within the icon set, without extension.",
           "type": "string",
@@ -59,13 +82,17 @@
           "description": "Which attribute makes this resource a child of another, in priority order. For an aws_instance, subnet_id beats vpc_id: the more specific placement wins.",
           "type": "array",
           "maxItems": 8,
-          "items": { "$ref": "#/$defs/parentRule" }
+          "items": {
+            "$ref": "#/$defs/parentRule"
+          }
         },
         "edgeRules": {
           "description": "Which references earn a drawn connection. Deliberately few: drawing every dependency produces the unreadable tangle this product exists to avoid.",
           "type": "array",
           "maxItems": 16,
-          "items": { "$ref": "#/$defs/edgeRule" }
+          "items": {
+            "$ref": "#/$defs/edgeRule"
+          }
         },
         "labelTemplate": {
           "description": "How the node is labelled. Supports {{name}} and attribute references.",
@@ -80,16 +107,19 @@
         }
       }
     },
-
     "parentRule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["attribute", "priority"],
+      "required": [
+        "attribute",
+        "priority"
+      ],
       "properties": {
         "attribute": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]*$",
-          "maxLength": 128
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 256,
+          "description": "The attribute whose reference this rule reads. A dotted path reaches inside a nested block, which is where some providers put their containment: an Azure network interface's subnet lives in ip_configuration.subnet_id, not at the top level."
         },
         "priority": {
           "description": "Lower wins. Ties are a catalog bug and the tests reject them.",
@@ -99,27 +129,38 @@
         }
       }
     },
-
     "edgeRule": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["attribute", "kind"],
+      "required": [
+        "attribute",
+        "kind"
+      ],
       "properties": {
         "attribute": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]*$",
-          "maxLength": 128
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 256,
+          "description": "The attribute whose reference this rule reads. A dotted path reaches inside a nested block, which is where some providers put their containment: an Azure network interface's subnet lives in ip_configuration.subnet_id, not at the top level."
         },
         "kind": {
           "description": "traffic: something sends requests to something else. data: something reads or writes something else. control: something governs something else.",
-          "enum": ["traffic", "data", "control", "security"]
+          "enum": [
+            "traffic",
+            "data",
+            "control",
+            "security"
+          ]
         },
         "show": {
           "description": "False records the relationship in the model without drawing it. Security group wiring is real and useful to query, and ruinous to draw.",
           "type": "boolean",
           "default": true
         },
-        "label": { "type": "string", "maxLength": 64 }
+        "label": {
+          "type": "string",
+          "maxLength": 64
+        }
       }
     }
   }
