@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"sort"
+
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 
@@ -23,7 +25,7 @@ import (
 // function would be worse than omitting it: a subtly wrong answer in a
 // teaching tool teaches the wrong thing.
 func functions() map[string]function.Function {
-	return map[string]function.Function{
+	table := map[string]function.Function{
 		// strings
 		"chomp":      stdlib.ChompFunc,
 		"format":     stdlib.FormatFunc,
@@ -56,15 +58,16 @@ func functions() map[string]function.Function {
 		"signum":   stdlib.SignumFunc,
 
 		// collections
-		"chunklist":       stdlib.ChunklistFunc,
-		"coalescelist":    stdlib.CoalesceListFunc,
-		"compact":         stdlib.CompactFunc,
-		"concat":          stdlib.ConcatFunc,
-		"contains":        stdlib.ContainsFunc,
-		"distinct":        stdlib.DistinctFunc,
-		"element":         stdlib.ElementFunc,
-		"flatten":         stdlib.FlattenFunc,
-		"keys":            stdlib.KeysFunc,
+		"chunklist":    stdlib.ChunklistFunc,
+		"coalescelist": stdlib.CoalesceListFunc,
+		"compact":      stdlib.CompactFunc,
+		"concat":       stdlib.ConcatFunc,
+		"contains":     stdlib.ContainsFunc,
+		"distinct":     stdlib.DistinctFunc,
+		"element":      stdlib.ElementFunc,
+		"flatten":      stdlib.FlattenFunc,
+		"keys":         stdlib.KeysFunc,
+		// Overridden by extraFunctions: cty's version rejects objects.
 		"length":          stdlib.LengthFunc,
 		"lookup":          stdlib.LookupFunc,
 		"merge":           stdlib.MergeFunc,
@@ -106,6 +109,35 @@ func functions() map[string]function.Function {
 		"uuid":   uuidfuncs.V4Func,
 		"uuidv5": uuidfuncs.V5Func,
 	}
+
+	// The ones with no public implementation to borrow, written here.
+	for name, implementation := range extraFunctions() {
+		table[name] = implementation
+	}
+
+	return table
+}
+
+// SupportedFunctions lists the Terraform functions this analyzer evaluates.
+// Exported so the coverage document is generated from the table itself rather
+// than from a list somebody has to remember to update.
+func SupportedFunctions() []string {
+	names := make([]string, 0, len(functions()))
+	for name := range functions() {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// UnsupportedFunctions lists what is deliberately not implemented, with the
+// reason a user will read.
+func UnsupportedFunctions() map[string]string {
+	out := make(map[string]string, len(knownUnsupportedFunctions))
+	for name, reason := range knownUnsupportedFunctions {
+		out[name] = reason
+	}
+	return out
 }
 
 // knownUnsupportedFunctions are Terraform functions this analyzer does not
@@ -118,14 +150,16 @@ var knownUnsupportedFunctions = map[string]string{
 	"templatefile": "reads a template from disk, which the browser has no access to",
 	"pathexpand":   "depends on the machine Terraform runs on",
 	"timestamp":    "changes on every run, so it has no fixed value here",
-	"try":          "not implemented yet",
-	"can":          "not implemented yet",
-	"one":          "not implemented yet",
-	"sum":          "not implemented yet",
-	"transpose":    "not implemented yet",
-	"defaults":     "not implemented yet",
-	"nonsensitive": "not implemented yet",
-	"sensitive":    "not implemented yet",
 	"yamldecode":   "not implemented yet",
 	"yamlencode":   "not implemented yet",
+
+	// These are not merely unimplemented: they are about error handling and
+	// about values Terraform marks sensitive, and both depend on machinery
+	// this analyzer does not have. Guessing at them would produce answers that
+	// look right and are not.
+	"try":          "catches evaluation errors, which this analyzer reports rather than swallows",
+	"can":          "tests whether an expression errors, which this analyzer reports instead",
+	"sensitive":    "marks a value sensitive, and nothing here tracks that marking",
+	"nonsensitive": "removes a sensitive marking, and nothing here tracks that marking",
+	"defaults":     "deprecated in Terraform and not implemented here",
 }
