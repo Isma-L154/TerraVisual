@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "type": "aws_vpc",
+      "provider": "aws",
+      "category": "network",
+      "displayName": "VPC",
+      "icon": "aws/vpc",
+      "isContainer": true,
+      "labelTemplate": "{{name}}",
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc"
+    },
+    {
+      "type": "aws_subnet",
+      "provider": "aws",
+      "category": "network",
+      "displayName": "Subnet",
+      "icon": "aws/subnet",
+      "isContainer": true,
+      "parentRules": [{ "attribute": "vpc_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet"
+    },
+    {
+      "type": "aws_internet_gateway",
+      "provider": "aws",
+      "category": "network",
+      "displayName": "Internet Gateway",
+      "icon": "aws/internet-gateway",
+      "parentRules": [{ "attribute": "vpc_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway"
+    },
+    {
+      "type": "aws_nat_gateway",
+      "provider": "aws",
+      "category": "network",
+      "displayName": "NAT Gateway",
+      "icon": "aws/nat-gateway",
+      "parentRules": [{ "attribute": "subnet_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway"
+    },
+    {
+      "type": "aws_route_table",
+      "provider": "aws",
+      "category": "network",
+      "displayName": "Route Table",
+      "icon": "aws/route-table",
+      "parentRules": [{ "attribute": "vpc_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table"
+    },
+    {
+      "type": "aws_security_group",
+      "provider": "aws",
+      "category": "security",
+      "displayName": "Security Group",
+      "icon": "aws/security-group",
+      "parentRules": [{ "attribute": "vpc_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group"
+    },
+    {
+      "type": "aws_instance",
+      "provider": "aws",
+      "category": "compute",
+      "displayName": "EC2 Instance",
+      "icon": "aws/ec2",
+      "parentRules": [{ "attribute": "subnet_id", "priority": 1 }],
+      "edgeRules": [
+        { "attribute": "vpc_security_group_ids", "kind": "security", "show": false },
+        { "attribute": "iam_instance_profile", "kind": "control", "show": false }
+      ],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance"
+    },
+    {
+      "type": "aws_lb",
+      "provider": "aws",
+      "category": "loadbalancer",
+      "displayName": "Load Balancer",
+      "icon": "aws/load-balancer",
+      "parentRules": [{ "attribute": "subnets", "priority": 1 }],
+      "edgeRules": [{ "attribute": "security_groups", "kind": "security", "show": false }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb"
+    },
+    {
+      "type": "aws_lb_target_group",
+      "provider": "aws",
+      "category": "loadbalancer",
+      "displayName": "Target Group",
+      "icon": "aws/target-group",
+      "parentRules": [{ "attribute": "vpc_id", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group"
+    },
+    {
+      "type": "aws_db_subnet_group",
+      "provider": "aws",
+      "category": "database",
+      "displayName": "DB Subnet Group",
+      "icon": "aws/db-subnet-group",
+      "parentRules": [{ "attribute": "subnet_ids", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_subnet_group"
+    },
+    {
+      "type": "aws_db_instance",
+      "provider": "aws",
+      "category": "database",
+      "displayName": "RDS Instance",
+      "icon": "aws/rds",
+      "parentRules": [{ "attribute": "db_subnet_group_name", "priority": 1 }],
+      "edgeRules": [{ "attribute": "vpc_security_group_ids", "kind": "security", "show": false }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance"
+    },
+    {
+      "type": "aws_s3_bucket",
+      "provider": "aws",
+      "category": "storage",
+      "displayName": "S3 Bucket",
+      "icon": "aws/s3",
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket"
+    },
+    {
+      "type": "aws_lambda_function",
+      "provider": "aws",
+      "category": "serverless",
+      "displayName": "Lambda Function",
+      "icon": "aws/lambda",
+      "edgeRules": [{ "attribute": "role", "kind": "control", "show": false }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function"
+    },
+    {
+      "type": "aws_iam_role",
+      "provider": "aws",
+      "category": "identity",
+      "displayName": "IAM Role",
+      "icon": "aws/iam-role",
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role"
+    },
+    {
+      "type": "aws_cloudwatch_log_group",
+      "provider": "aws",
+      "category": "observability",
+      "displayName": "Log Group",
+      "icon": "aws/cloudwatch-logs",
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group"
+    },
+    {
+      "type": "aws_ecs_cluster",
+      "provider": "aws",
+      "category": "container",
+      "displayName": "ECS Cluster",
+      "icon": "aws/ecs-cluster",
+      "isContainer": true,
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_cluster"
+    },
+    {
+      "type": "aws_ecs_service",
+      "provider": "aws",
+      "category": "container",
+      "displayName": "ECS Service",
+      "icon": "aws/ecs-service",
+      "parentRules": [{ "attribute": "cluster", "priority": 1 }],
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service"
+    }
+  ]
+}

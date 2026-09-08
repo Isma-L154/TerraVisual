@@ -21,6 +21,7 @@ var fileSchema = &hcl.BodySchema{
 		{Type: "data", LabelNames: []string{"type", "name"}},
 		{Type: "module", LabelNames: []string{"name"}},
 		{Type: "output", LabelNames: []string{"name"}},
+		{Type: "provider", LabelNames: []string{"name"}},
 	},
 }
 
@@ -42,6 +43,7 @@ type parsed struct {
 	resources []*hcl.Block
 	data      []*hcl.Block
 	modules   []*hcl.Block
+	providers []*hcl.Block
 }
 
 // parseWorkspace parses every file and collects the blocks it recognises.
@@ -86,6 +88,8 @@ func parseWorkspace(files map[string]string, diags *diagnostics) parsed {
 				out.data = append(out.data, block)
 			case "module":
 				out.modules = append(out.modules, block)
+			case "provider":
+				out.providers = append(out.providers, block)
 			}
 		}
 	}

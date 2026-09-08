@@ -290,20 +290,6 @@ resource "wildly_custom_thing" "d" {}
 	}
 }
 
-// Until the catalog exists, every resource is honestly uncatalogued rather
-// than guessed into a category.
-func TestResourcesAreMarkedUncatalogued(t *testing.T) {
-	result := analyzeSource(t, `resource "aws_vpc" "main" {}`)
-
-	n := node(t, result, "aws_vpc.main")
-	if n.Catalogued {
-		t.Error("nothing is catalogued until the catalog is built")
-	}
-	if !n.Unplaced {
-		t.Error("without containment rules a node cannot claim a place")
-	}
-}
-
 func TestLimitsAreEnforcedAndReported(t *testing.T) {
 	t.Run("file too large", func(t *testing.T) {
 		result := Analyze(map[string]string{
@@ -311,8 +297,8 @@ func TestLimitsAreEnforcedAndReported(t *testing.T) {
 			"ok.tf":   `resource "aws_vpc" "main" {}`,
 		})
 
-		if len(result.Nodes) != 1 {
-			t.Errorf("the oversized file should be skipped and the rest analyzed, got %d nodes", len(result.Nodes))
+		if result.Stats.Resources != 1 {
+			t.Errorf("the oversized file should be skipped and the rest analyzed, got %d resources", result.Stats.Resources)
 		}
 		if !hasCode(result, "file-too-large") {
 			t.Error("skipping a file silently would present a partial analysis as a complete one")
