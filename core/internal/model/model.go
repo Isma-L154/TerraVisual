@@ -42,6 +42,11 @@ type Node struct {
 	// nor look complete when it is not.
 	Catalogued bool `json:"catalogued"`
 
+	// ModulePath is the module this node was declared in, empty at the root.
+	// Recorded so the interface can say where a resource came from, and so
+	// containment can keep a module's contents together.
+	ModulePath string `json:"modulePath,omitempty"`
+
 	Attributes map[string]Attribute `json:"attributes"`
 	Expansion  *Expansion           `json:"expansion,omitempty"`
 	Source     Range                `json:"source"`

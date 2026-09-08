@@ -44,6 +44,7 @@ type parsed struct {
 	data      []*hcl.Block
 	modules   []*hcl.Block
 	providers []*hcl.Block
+	outputs   []*hcl.Block
 }
 
 // parseWorkspace parses every file and collects the blocks it recognises.
@@ -90,6 +91,8 @@ func parseWorkspace(files map[string]string, diags *diagnostics) parsed {
 				out.modules = append(out.modules, block)
 			case "provider":
 				out.providers = append(out.providers, block)
+			case "output":
+				out.outputs = append(out.outputs, block)
 			}
 		}
 	}

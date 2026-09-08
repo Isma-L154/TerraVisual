@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/zclconf/go-cty/cty"
 
 	"github.com/Isma-L154/TerraVisual/core/internal/model"
 )
@@ -53,25 +54,27 @@ func analyze(files map[string]string) model.Result {
 	}
 	result.Stats.Files = len(files)
 
-	p := parseWorkspace(files, diags)
+	tree := buildModuleTree(files, diags)
 
-	e := newEvaluator(diags)
-	e.resolveVariables(p.variables)
-	e.resolveLocals(p.locals)
-	e.seedReferences(p)
-
-	reportUnsupportedBlocks(p, diags)
-
-	nodes, edges, references := evaluateResources(e, p, diags)
+	nodes, edges, references, containers := analyzeModule(tree, nil, diags)
 
 	// Counted before the synthetic frame is added: a workspace with three
 	// resources has three resources, however many boxes are drawn around them.
 	declared := len(nodes)
 
+	nodes = append(containers, nodes...)
 	nodes = applyCatalog(nodes, placement{
 		references: references,
-		regions:    detectRegions(e, p, diags),
+		regions:    tree.regions,
+		modules:    moduleMembership(nodes),
 	}, diags)
+
+	if nodes == nil {
+		nodes = []model.Node{}
+	}
+	if edges == nil {
+		edges = []model.Edge{}
+	}
 
 	result.Nodes = nodes
 	result.Edges = edges
@@ -84,6 +87,161 @@ func analyze(files map[string]string) model.Result {
 	result.Stats.DurationMs = int(time.Since(started).Milliseconds())
 
 	return result
+}
+
+// analyzeModule evaluates one module and everything it calls.
+//
+// Children are evaluated first, because a caller can only resolve
+// `module.x.something` once x has produced its outputs. That ordering is the
+// whole reason this is a tree walk rather than a flat pass.
+func analyzeModule(m *moduleTree, callerCtx *hcl.EvalContext, diags *diagnostics) (
+	[]model.Node, []model.Edge, map[string]map[string][]string, []model.Node,
+) {
+	// Inputs are evaluated in the *caller's* scope: `subnet_ids = local.ids`
+	// in a module block means the caller's locals, not the module's.
+	if m.inputBlock != nil && callerCtx != nil {
+		m.inputs = evaluateModuleInputs(m.inputBlock, callerCtx, diags)
+	}
+
+	e := newEvaluator(diags)
+	e.resolveVariables(m.parsed.variables, m.inputs)
+	e.resolveLocals(m.parsed.locals)
+
+	var nodes []model.Node
+	var edges []model.Edge
+	var containers []model.Node
+	references := map[string]map[string][]string{}
+
+	outputs := map[string]cty.Value{}
+	for _, child := range m.children {
+		childNodes, childEdges, childRefs, childContainers := analyzeModule(child, e.ctx, diags)
+		nodes = append(nodes, childNodes...)
+		edges = append(edges, childEdges...)
+		containers = append(containers, childContainers...)
+		for address, refs := range childRefs {
+			references[address] = refs
+		}
+		outputs[lastModuleSegment(child.path)] = child.outputs
+	}
+	if len(outputs) > 0 {
+		e.ctx.Variables["module"] = objectOrPlaceholder(outputs)
+	}
+
+	e.seedReferences(m.parsed)
+	reportUnsupportedBlocks(m.parsed, diags)
+
+	// Only the root module's provider configuration decides the region layer.
+	// A nested module inherits its caller's providers, so reading its own
+	// provider blocks would describe a configuration Terraform does not use.
+	if m.path == "" {
+		m.regions = detectRegions(e, m.parsed, diags)
+	}
+
+	moduleNodes, moduleEdges, moduleRefs := evaluateResources(e, m.parsed, diags)
+
+	// Addresses carry the module path, so two modules declaring the same
+	// resource name stay distinguishable -- which is the entire point of
+	// modules being reusable.
+	for i := range moduleNodes {
+		moduleNodes[i].Address = qualify(m.path, moduleNodes[i].Address)
+		moduleNodes[i].ID = moduleNodes[i].Address
+		moduleNodes[i].ModulePath = m.path
+	}
+	for i := range moduleEdges {
+		moduleEdges[i].From = qualify(m.path, moduleEdges[i].From)
+		moduleEdges[i].To = qualify(m.path, moduleEdges[i].To)
+		moduleEdges[i].ID = moduleEdges[i].From + "->" + moduleEdges[i].To + "#" + moduleEdges[i].Label
+	}
+	for address, refs := range moduleRefs {
+		qualified := map[string][]string{}
+		for attribute, targets := range refs {
+			for _, target := range targets {
+				qualified[attribute] = append(qualified[attribute], qualify(m.path, target))
+			}
+		}
+		references[qualify(m.path, address)] = qualified
+	}
+
+	nodes = append(nodes, moduleNodes...)
+	edges = append(edges, moduleEdges...)
+
+	// Outputs are read after the module's own resources exist, so an output
+	// referring to one of them resolves.
+	e.refreshResourceValues(moduleNodes)
+	m.outputs = moduleOutputs(e, m.parsed.outputs, diags)
+
+	if m.path != "" {
+		containers = append(containers, model.Node{
+			ID:          "module." + m.path,
+			Address:     "module." + m.path,
+			Type:        "module",
+			Provider:    "",
+			Category:    "module",
+			Label:       lastModuleSegment(m.path),
+			IsContainer: true,
+			Catalogued:  true,
+			ModulePath:  parentModulePath(m.path),
+			Attributes:  map[string]model.Attribute{},
+			Source:      m.call,
+		})
+	}
+
+	return nodes, edges, references, containers
+}
+
+// evaluateModuleInputs reads the values a module block passes in.
+func evaluateModuleInputs(block *hcl.Block, ctx *hcl.EvalContext, diags *diagnostics) map[string]cty.Value {
+	inputs := map[string]cty.Value{}
+
+	attrs, attrDiags := block.Body.JustAttributes()
+	diags.addHCL(attrDiags)
+
+	names := make([]string, 0, len(attrs))
+	for name := range attrs {
+		switch name {
+		case "source", "version", "providers", "count", "for_each", "depends_on":
+			continue
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		value, valueDiags := attrs[name].Expr.Value(ctx)
+		if valueDiags.HasErrors() {
+			// An input the caller cannot determine is unknown inside the
+			// module too, which is truthful rather than an error.
+			inputs[name] = cty.DynamicVal
+			continue
+		}
+		inputs[name] = value
+	}
+
+	return inputs
+}
+
+// moduleMembership maps each node to the module it was declared in, so
+// containment can keep a module's contents together.
+func moduleMembership(nodes []model.Node) map[string]string {
+	membership := make(map[string]string, len(nodes))
+	for _, node := range nodes {
+		membership[node.ID] = node.ModulePath
+	}
+	return membership
+}
+
+func lastModuleSegment(modulePath string) string {
+	if index := strings.LastIndexByte(modulePath, '.'); index >= 0 {
+		return modulePath[index+1:]
+	}
+	return modulePath
+}
+
+func parentModulePath(modulePath string) string {
+	if index := strings.LastIndexByte(modulePath, '.'); index >= 0 {
+		return modulePath[:index]
+	}
+	return ""
 }
 
 // evaluateResources runs the fixpoint over resource bodies.
@@ -228,20 +386,14 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 
 // reportUnsupportedBlocks says plainly what the analyzer skipped.
 //
-// Silence here would be the worst outcome: a user whose whole infrastructure
-// lives in modules would see an empty diagram and no explanation.
+// Silence here would be the worst outcome: a user whose infrastructure depends
+// on something we cannot resolve would see an incomplete diagram and no
+// explanation for it.
+//
+// Modules are not listed here any more. They are resolved now, and the reasons
+// a particular one cannot be are reported where that is decided, naming the
+// actual obstacle rather than the category.
 func reportUnsupportedBlocks(p parsed, diags *diagnostics) {
-	for _, block := range p.modules {
-		diags.add(model.Diagnostic{
-			Severity: "info",
-			Code:     "modules-not-supported",
-			Message: fmt.Sprintf(
-				"module %q is not analyzed yet, so the resources it declares are not shown.",
-				block.Labels[0]),
-			Source: toRange(block.DefRange),
-		})
-	}
-
 	for _, block := range p.data {
 		diags.add(model.Diagnostic{
 			Severity: "info",
