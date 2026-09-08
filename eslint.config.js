@@ -5,7 +5,15 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', 'web/public/**', 'spike/**', 'core/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'web/public/**',
+      'spike/**',
+      'core/**',
+      // Generated from the JSON Schema. Not ours to lint.
+      '**/generated/**',
+    ],
   },
 
   js.configs.recommended,

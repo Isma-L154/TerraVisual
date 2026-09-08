@@ -20,17 +20,20 @@
     "test:web": "npm run test --workspace web",
     "fuzz": "node scripts/go.mjs test ./internal/analyzer -run XXX -fuzz FuzzAnalyze -fuzztime 30s",
     "typecheck": "npm run typecheck --workspace web",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:core": "node scripts/go.mjs vet ./...",
-    "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
-    "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
-    "verify": "npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build"
+    "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
+    "verify": "npm run generate:check && npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build",
+    "generate": "node scripts/generate-types.mjs",
+    "generate:check": "node scripts/generate-types.mjs --check"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.10.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.12.0",
+    "json-schema-to-typescript": "16.0.0",
     "prettier": "3.9.6",
     "typescript-eslint": "8.70.0"
   },

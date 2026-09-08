@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "aws_vpc.main",
+      "address": "aws_vpc.main",
+      "type": "aws_vpc",
+      "provider": "aws",
+      "category": "network",
+      "label": "main",
+      "isContainer": true,
+      "unplaced": false,
+      "catalogued": true,
+      "attributes": {
+        "cidr_block": { "known": true, "value": "10.0.0.0/16" }
+      },
+      "source": { "file": "main.tf", "startLine": 1, "startCol": 1, "endLine": 4, "endCol": 2 }
+    },
+    {
+      "id": "aws_subnet.public",
+      "address": "aws_subnet.public",
+      "type": "aws_subnet",
+      "provider": "aws",
+      "category": "network",
+      "label": "public",
+      "isContainer": true,
+      "parentId": "aws_vpc.main",
+      "unplaced": false,
+      "catalogued": true,
+      "attributes": {
+        "cidr_block": { "known": true, "value": "10.0.1.0/24" }
+      },
+      "source": { "file": "main.tf", "startLine": 6, "startCol": 1, "endLine": 10, "endCol": 2 }
+    },
+    {
+      "id": "aws_instance.web[0]",
+      "address": "aws_instance.web[0]",
+      "type": "aws_instance",
+      "provider": "aws",
+      "category": "compute",
+      "label": "web",
+      "isContainer": false,
+      "parentId": "aws_subnet.public",
+      "unplaced": false,
+      "catalogued": true,
+      "attributes": {
+        "instance_type": { "known": true, "value": "t3.micro" },
+        "ami": {
+          "known": false,
+          "reason": "depends on a data source, which needs cloud credentials"
+        }
+      },
+      "expansion": { "kind": "count", "index": 0, "total": 2 },
+      "source": { "file": "main.tf", "startLine": 12, "startCol": 1, "endLine": 18, "endCol": 2 }
+    },
+    {
+      "id": "some_exotic_thing.x",
+      "address": "some_exotic_thing.x",
+      "type": "some_exotic_thing",
+      "provider": "unknown",
+      "category": "other",
+      "label": "x",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": false,
+      "attributes": {},
+      "source": { "file": "extra.tf", "startLine": 1, "startCol": 1, "endLine": 3, "endCol": 2 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "aws_instance.web[0]",
+      "to": "aws_db_instance.primary",
+      "kind": "data",
+      "source": { "file": "main.tf", "startLine": 16, "startCol": 3, "endLine": 16, "endCol": 44 }
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "unresolved-value",
+      "message": "The value of 'ami' depends on a data source and cannot be determined without cloud credentials.",
+      "source": { "file": "main.tf", "startLine": 14, "startCol": 3, "endLine": 14, "endCol": 26 }
+    }
+  ],
+  "stats": { "files": 2, "resources": 4, "durationMs": 37, "truncated": false }
+}

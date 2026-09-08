@@ -41,10 +41,12 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` / `lint:core` | ESLint / `go vet` |
 | `npm run format` | Prettier, writing changes |
+| `npm run generate` | Regenerates the TypeScript types from `schemas/`. CI fails on any drift |
 
 ## How the pieces fit
 
 ```
+schemas/  JSON Schema: the single source of truth for the InfraModel and the catalog
 core/     Go, compiled to WebAssembly. The only producer of the InfraModel
 web/      React + Vite. Consumes the model; never parses Terraform itself
 catalog/  Per-provider data: containment rules, icons, categories
@@ -72,6 +74,10 @@ Some conventions worth stating, because they are easy to break by accident:
 - **`dangerouslySetInnerHTML` is banned** and ESLint enforces it. Resource names
   come from user input and reach the DOM.
 - **Do not commit build artifacts.** The WebAssembly binary is produced by CI.
+- **Do not hand-edit anything under `generated/`.** Change the schema and run
+  `npm run generate`. The schema is the source of truth for both languages: Go
+  validates itself against it in a test, TypeScript is generated from it, and
+  the examples in `schemas/examples/` are checked by both sides.
 - **Size budgets are enforced by the build**, not by good intentions. If a
   change pushes the analyzer over, either bring it back under or revise the
   budget deliberately and write down why.

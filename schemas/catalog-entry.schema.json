@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://terravisual.dev/schemas/catalog-entry.schema.json",
+  "title": "Catalog",
+  "description": "Per-provider domain knowledge. This is not an icon table: it is where we decide, resource type by resource type, which reference means 'lives inside'. Terraform has no concept of containment, so the nesting the product draws is a decision recorded here. One file, two consumers -- the Go analyzer applies the rules, the interface reads the presentation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "entries"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "provider", "category", "displayName", "icon"],
+      "properties": {
+        "type": {
+          "description": "The Terraform resource type this entry describes.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 128
+        },
+        "provider": { "enum": ["aws", "azure", "gcp"] },
+        "category": {
+          "description": "Comparable across providers on purpose, so a learner can see that a VPC and a VNet play the same role.",
+          "enum": [
+            "network",
+            "compute",
+            "storage",
+            "database",
+            "loadbalancer",
+            "serverless",
+            "identity",
+            "container",
+            "observability",
+            "security",
+            "other"
+          ]
+        },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "icon": {
+          "description": "Path within the icon set, without extension.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+/[a-z0-9-]+$",
+          "maxLength": 128
+        },
+        "isContainer": {
+          "description": "Whether other resources are drawn inside this one.",
+          "type": "boolean",
+          "default": false
+        },
+        "parentRules": {
+          "description": "Which attribute makes this resource a child of another, in priority order. For an aws_instance, subnet_id beats vpc_id: the more specific placement wins.",
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/parentRule" }
+        },
+        "edgeRules": {
+          "description": "Which references earn a drawn connection. Deliberately few: drawing every dependency produces the unreadable tangle this product exists to avoid.",
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/edgeRule" }
+        },
+        "labelTemplate": {
+          "description": "How the node is labelled. Supports {{name}} and attribute references.",
+          "type": "string",
+          "maxLength": 128,
+          "default": "{{name}}"
+        },
+        "documentationUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 512
+        }
+      }
+    },
+
+    "parentRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attribute", "priority"],
+      "properties": {
+        "attribute": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 128
+        },
+        "priority": {
+          "description": "Lower wins. Ties are a catalog bug and the tests reject them.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+
+    "edgeRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attribute", "kind"],
+      "properties": {
+        "attribute": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 128
+        },
+        "kind": {
+          "description": "traffic: something sends requests to something else. data: something reads or writes something else. control: something governs something else.",
+          "enum": ["traffic", "data", "control", "security"]
+        },
+        "show": {
+          "description": "False records the relationship in the model without drawing it. Security group wiring is real and useful to query, and ruinous to draw.",
+          "type": "boolean",
+          "default": true
+        },
+        "label": { "type": "string", "maxLength": 64 }
+      }
+    }
+  }
+}

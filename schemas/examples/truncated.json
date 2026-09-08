@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "aws_instance.swarm[0]",
+      "address": "aws_instance.swarm[0]",
+      "type": "aws_instance",
+      "provider": "aws",
+      "category": "compute",
+      "label": "swarm",
+      "isContainer": false,
+      "unplaced": true,
+      "catalogued": true,
+      "attributes": {},
+      "expansion": { "kind": "count", "index": 0, "total": 100000, "truncated": true },
+      "source": { "file": "main.tf", "startLine": 1, "startCol": 1, "endLine": 5, "endCol": 2 }
+    }
+  ],
+  "edges": [],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "code": "expansion-truncated",
+      "message": "This resource declares 100000 instances. Only the first 1000 are shown.",
+      "source": { "file": "main.tf", "startLine": 2, "startCol": 3, "endLine": 2, "endCol": 18 }
+    }
+  ],
+  "stats": { "files": 1, "resources": 1000, "durationMs": 212, "truncated": true }
+}
