@@ -1,0 +1,30 @@
+# --- Dependencies ---
+node_modules/
+.pnpm-store/
+
+# --- Build output ---
+dist/
+build/
+*.wasm
+web/public/*.wasm
+.vite/
+.wrangler/
+
+# --- Tests and coverage ---
+coverage/
+playwright-report/
+test-results/
+*.out
+core/**/testdata/fuzz/
+
+# --- Environment ---
+.env
+.env.*
+!.env.example
+
+# --- Editors and OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
