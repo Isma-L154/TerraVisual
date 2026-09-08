@@ -3,7 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { InfraModel } from '../model';
 import { CategoryIcon } from '../diagram/CategoryIcon';
 import { displayType } from '../diagram/catalog';
-import { buildTree, describe, visibleItems, type OutlineItem } from './tree';
+import { buildTree, connectionsByNode, describe, visibleItems, type OutlineItem } from './tree';
 
 export type OutlineProps = {
   model: InfraModel | null;
@@ -26,6 +26,10 @@ export type OutlineProps = {
  */
 export function Outline({ model, selectedId, onSelect }: OutlineProps) {
   const tree = useMemo(() => (model ? buildTree(model) : []), [model]);
+  const connections = useMemo(
+    () => (model ? connectionsByNode(model) : new Map<string, string[]>()),
+    [model],
+  );
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
@@ -145,7 +149,7 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
         {...(hasChildren ? { 'aria-expanded': expanded } : {})}
         aria-setsize={siblings.length}
         aria-posinset={siblings.indexOf(item) + 1}
-        aria-label={describe(item, parent)}
+        aria-label={describe(item, parent, connections.get(node.id))}
         tabIndex={node.id === focusable ? 0 : -1}
         className={`outline-item${node.id === selectedId ? ' is-selected' : ''}`}
         style={{ paddingInlineStart: `${(level - 1) * 16 + 8}px` }}

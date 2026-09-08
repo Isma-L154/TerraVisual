@@ -37,6 +37,58 @@ type placement struct {
 	modules map[string]string
 }
 
+// applyEdgeRules gives each reference the kind the catalog assigns it, and
+// decides which are worth drawing.
+//
+// Everything the code expresses stays in the model. Only a curated few reach
+// the picture, because drawing every dependency produces the tangle this
+// product exists to avoid -- security group wiring being the classic example:
+// real, useful to record, ruinous to draw.
+func applyEdgeRules(nodes []model.Node, edges []model.Edge, diags *diagnostics) []model.Edge {
+	cat, err := catalog.Load()
+	if err != nil {
+		return edges
+	}
+
+	typeOf := make(map[string]string, len(nodes))
+	parentOf := make(map[string]string, len(nodes))
+	for _, node := range nodes {
+		typeOf[node.ID] = node.Type
+		parentOf[node.ID] = node.ParentID
+	}
+
+	out := edges[:0]
+	for _, edge := range edges {
+		entry, known := cat.Lookup(typeOf[edge.From])
+		if known {
+			for _, rule := range entry.EdgeRules {
+				if rule.Attribute != edge.Label {
+					continue
+				}
+				edge.Kind = rule.Kind
+				edge.Drawn = rule.Drawn()
+				// The catalog's label is the editorial one. "to internet"
+				// answers the question somebody has about an arrow;
+				// "route.gateway_id" answers a different, less useful one.
+				if rule.Label != "" {
+					edge.Label = rule.Label
+				}
+				break
+			}
+		}
+
+		// An edge to the box you are already inside says nothing, so a
+		// reference that produced the containment is never also drawn.
+		if parentOf[edge.From] == edge.To {
+			edge.Drawn = false
+		}
+
+		out = append(out, edge)
+	}
+
+	return out
+}
+
 // applyCatalog turns evaluated resources into placed, categorised nodes.
 //
 // Terraform has no concept of containment (ADR-0004), so every parent here is

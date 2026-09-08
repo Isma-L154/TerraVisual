@@ -119,6 +119,7 @@
       "to": "aws_vpc.main",
       "kind": "reference",
       "label": "vpc_id",
+      "drawn": false,
       "source": {
         "file": "main.tf",
         "startLine": 22,
@@ -133,6 +134,7 @@
       "to": "aws_subnet.public",
       "kind": "reference",
       "label": "subnet_id",
+      "drawn": false,
       "source": {
         "file": "main.tf",
         "startLine": 27,

@@ -75,12 +75,21 @@ type Expansion struct {
 }
 
 type Edge struct {
-	ID     string `json:"id"`
-	From   string `json:"from"`
-	To     string `json:"to"`
-	Kind   string `json:"kind"`
-	Label  string `json:"label,omitempty"`
-	Source Range  `json:"source"`
+	ID    string `json:"id"`
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Kind  string `json:"kind"`
+	Label string `json:"label,omitempty"`
+
+	// Drawn says whether this relationship belongs in the picture.
+	//
+	// The model carries every reference the code expresses; the catalog
+	// decides which few teach something. Drawing them all produces the
+	// unreadable tangle this product exists to avoid (ADR-0003), and dropping
+	// the rest would lose information that is useful to search and announce.
+	Drawn bool `json:"drawn"`
+
+	Source Range `json:"source"`
 }
 
 type Diagnostic struct {

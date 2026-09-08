@@ -665,3 +665,42 @@ code {
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* --- connections --------------------------------------------------------- */
+
+.dg-handle {
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+}
+
+.react-flow__edge-path {
+  stroke-width: 1.6;
+}
+
+.dg-edge-traffic .react-flow__edge-path,
+.dg-edge-traffic .react-flow__arrowhead polyline {
+  stroke: var(--cat-loadbalancer);
+}
+
+.dg-edge-data .react-flow__edge-path {
+  stroke: var(--cat-storage);
+}
+
+.dg-edge-control .react-flow__edge-path {
+  stroke: var(--cat-identity);
+  stroke-dasharray: 4 3;
+}
+
+.react-flow__edge-text {
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.react-flow__edge-textbg {
+  fill: var(--surface);
+}

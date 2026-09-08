@@ -1,6 +1,6 @@
-import type { Node as FlowNode } from '@xyflow/react';
+import { MarkerType, type Edge as FlowEdge, type Node as FlowNode } from '@xyflow/react';
 
-import type { InfraModel, InfraNode } from '../model';
+import type { Edge, InfraModel, InfraNode } from '../model';
 import { layout, type Layout } from '../layout/layout';
 
 export type DiagramNodeData = {
@@ -19,6 +19,36 @@ export type DiagramNode = FlowNode<DiagramNodeData>;
  * (ADR-0003). This function is the seam between the two, and it stays pure so
  * it can be tested without a canvas.
  */
+/**
+ * The connections worth drawing.
+ *
+ * The model carries every reference the code expresses; only the ones the
+ * catalog marked as worth showing reach the picture. An edge pointing at a
+ * node that is not on screen is dropped rather than left dangling.
+ */
+export function toFlowEdges(model: InfraModel): FlowEdge[] {
+  const present = new Set(model.nodes.map((node) => node.id));
+
+  return model.edges
+    .filter((edge) => edge.drawn && present.has(edge.from) && present.has(edge.to))
+    .map((edge: Edge) => ({
+      id: edge.id,
+      source: edge.from,
+      target: edge.to,
+      // Labelled as well as coloured: an arrow whose meaning is carried only
+      // by its colour says nothing to somebody who cannot see the difference.
+      label: edge.label ?? edge.kind,
+      className: `dg-edge dg-edge-${edge.kind}`,
+      markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
+      // Straight through nested containers rather than around them: our
+      // layout has no routing channels, and a curve that cuts a corner reads
+      // better than one that pretends to follow a path.
+      type: 'default',
+      selectable: false,
+      focusable: false,
+    }));
+}
+
 export function toFlowNodes(model: InfraModel): { nodes: DiagramNode[]; layout: Layout } {
   const computed = layout(model);
   const byId = new Map(model.nodes.map((node) => [node.id, node]));

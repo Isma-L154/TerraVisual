@@ -120,6 +120,10 @@ export interface Edge {
   kind: string;
   label?: string;
   source: Range;
+  /**
+   * Whether this relationship should appear in the diagram. The model carries every reference; the catalog decides which few teach something. A relationship recorded but not drawn is still available to search, explain and announce.
+   */
+  drawn: boolean;
 }
 export interface Diagnostic {
   severity: 'error' | 'warning' | 'info';

@@ -193,6 +193,7 @@
         "from",
         "to",
         "kind",
+        "drawn",
         "source"
       ],
       "properties": {
@@ -216,6 +217,10 @@
         },
         "source": {
           "$ref": "#/$defs/range"
+        },
+        "drawn": {
+          "description": "Whether this relationship should appear in the diagram. The model carries every reference; the catalog decides which few teach something. A relationship recorded but not drawn is still available to search, explain and announce.",
+          "type": "boolean"
         }
       }
     },

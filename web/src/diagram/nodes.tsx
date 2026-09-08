@@ -1,9 +1,25 @@
 import { memo } from 'react';
-import type { NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 import { CategoryIcon } from './CategoryIcon';
 import { displayType } from './catalog';
 import type { DiagramNode } from './toFlow';
+
+/**
+ * Where a connection attaches.
+ *
+ * Hidden, because nothing here is connectable by hand: the diagram reports
+ * what the Terraform says rather than inviting somebody to rewire it. React
+ * Flow still needs the anchors to route an edge at all.
+ */
+function ConnectionPoints() {
+  return (
+    <>
+      <Handle type="target" position={Position.Left} className="dg-handle" isConnectable={false} />
+      <Handle type="source" position={Position.Right} className="dg-handle" isConnectable={false} />
+    </>
+  );
+}
 
 /**
  * A container: a VPC, a subnet, a cloud, a region.
@@ -24,6 +40,7 @@ export const ContainerNode = memo(function ContainerNode({
       data-category={node.category}
       data-testid={`node-${node.id}`}
     >
+      <ConnectionPoints />
       <div className="dg-container-header">
         <CategoryIcon category={node.category} size={14} />
         <span className="dg-label">{node.label}</span>
@@ -44,6 +61,7 @@ export const ResourceNode = memo(function ResourceNode({ data, selected }: NodeP
       data-category={node.category}
       data-testid={`node-${node.id}`}
     >
+      <ConnectionPoints />
       <div className="dg-resource-top">
         <CategoryIcon category={node.category} size={15} />
         <span className="dg-label" title={node.address}>

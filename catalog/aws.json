@@ -52,7 +52,14 @@
           "priority": 1
         }
       ],
-      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway"
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway",
+      "edgeRules": [
+        {
+          "attribute": "allocation_id",
+          "kind": "control",
+          "show": false
+        }
+      ]
     },
     {
       "type": "aws_route_table",
@@ -66,7 +73,19 @@
           "priority": 1
         }
       ],
-      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table"
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table",
+      "edgeRules": [
+        {
+          "attribute": "route.gateway_id",
+          "kind": "traffic",
+          "label": "to internet"
+        },
+        {
+          "attribute": "route.nat_gateway_id",
+          "kind": "traffic",
+          "label": "via NAT"
+        }
+      ]
     },
     {
       "type": "aws_security_group",
@@ -141,7 +160,8 @@
           "priority": 1
         }
       ],
-      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group"
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group",
+      "edgeRules": []
     },
     {
       "type": "aws_db_subnet_group",
@@ -239,7 +259,14 @@
           "priority": 1
         }
       ],
-      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service"
+      "documentationUrl": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service",
+      "edgeRules": [
+        {
+          "attribute": "load_balancer.target_group_arn",
+          "kind": "traffic",
+          "label": "receives traffic"
+        }
+      ]
     }
   ]
 }
