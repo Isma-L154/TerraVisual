@@ -1,0 +1,133 @@
+/*
+ * Tokens are defined on bare :root and only redefined for dark, so a colour
+ * always has a definition regardless of the viewer's setting.
+ */
+:root {
+  color-scheme: light dark;
+
+  --bg: #f7f7fa;
+  --surface: #ffffff;
+  --border: #d7d7e0;
+  --text: #1a1a22;
+  --muted: #5a5a68;
+  --accent: #3b5bdb;
+
+  --radius: 10px;
+  --gap: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12121a;
+    --surface: #1a1a24;
+    --border: #2e2e3c;
+    --text: #e8e8f0;
+    --muted: #a0a0b4;
+    --accent: #8da2fb;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    15px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+/* Visible focus is not optional: it is how keyboard users know where they are. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 10px 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) 0;
+  z-index: 10;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+.app-header {
+  padding: 20px 24px 12px;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+.tagline {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  padding: 12px 24px 24px;
+  align-items: stretch;
+  min-height: 60vh;
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.pane h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.app-footer {
+  padding: 0 24px 28px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.app-footer p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

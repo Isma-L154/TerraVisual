@@ -8,6 +8,7 @@ build/
 *.wasm
 *.exe
 web/public/*.wasm
+web/public/wasm_exec.js
 .vite/
 .wrangler/
 

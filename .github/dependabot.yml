@@ -1,0 +1,25 @@
+version: 2
+
+# The dependency surface here is deliberately small, which only helps if it
+# stays current. Weekly is frequent enough to keep updates reviewable and rare
+# enough that they do not become noise people learn to ignore.
+updates:
+  - package-ecosystem: gomod
+    directory: /core
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      dev-tooling:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
