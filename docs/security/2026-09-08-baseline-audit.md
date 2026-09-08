@@ -85,6 +85,12 @@ rather than the value (`deploy.yml:45-56`).
 secret only so the workflow file need not name the production hostname; nothing
 breaks if it becomes public.
 
+**Corroborated independently.** GitGuardian runs as a check on this repository
+and reports `pass` on the pull request carrying this audit. Its agreement is
+worth recording, but it is corroboration rather than the finding: a scanner
+passing is evidence that two different pattern sets found nothing, not proof
+that nothing is there.
+
 **Not verified:** the scope of the Cloudflare API token actually installed.
 `docs/deployment/README.md` asks for one scoped to *Workers Scripts: Edit*, but
 whether that is what exists can only be seen in the Cloudflare dashboard. See

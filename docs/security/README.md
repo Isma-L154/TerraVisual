@@ -33,6 +33,7 @@ These are continuous, so an audit measures what changed rather than what was
 always true:
 
 - `npm audit` on both workspaces, and `govulncheck` on every Go module;
+- GitGuardian secret scanning on every push and pull request;
 - Dependency Review on pull requests, which blocks a new vulnerable dependency
   before it is merged;
 - `scripts/check-headers.mjs` against a **real deployed response** after every
