@@ -25,8 +25,8 @@
     "format:check": "prettier --check \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
     "format": "prettier --write \"web/src/**/*.{ts,tsx,css}\" \"!web/src/model/generated/**\" \"web/*.{ts,json,html}\" \"scripts/**/*.mjs\" \"eslint.config.js\" \"package.json\"",
     "verify": "npm run generate:check && npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build",
-    "generate": "node scripts/generate-types.mjs",
-    "generate:check": "node scripts/generate-types.mjs --check",
+    "generate": "node scripts/generate-types.mjs && node scripts/build-catalog.mjs",
+    "generate:check": "node scripts/generate-types.mjs --check && node scripts/build-catalog.mjs --check",
     "format:core:check": "node scripts/gofmt-check.mjs"
   },
   "devDependencies": {

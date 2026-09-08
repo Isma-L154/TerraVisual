@@ -2,15 +2,35 @@
   "schemaVersion": 1,
   "nodes": [
     {
+      "id": "provider.aws",
+      "address": "provider.aws",
+      "type": "provider",
+      "provider": "aws",
+      "category": "provider",
+      "label": "AWS",
+      "isContainer": true,
+      "unplaced": false,
+      "catalogued": true,
+      "attributes": {},
+      "source": {
+        "file": "",
+        "startLine": 0,
+        "startCol": 0,
+        "endLine": 0,
+        "endCol": 0
+      }
+    },
+    {
       "id": "aws_vpc.main",
       "address": "aws_vpc.main",
       "type": "aws_vpc",
       "provider": "aws",
-      "category": "other",
+      "category": "network",
       "label": "main",
-      "isContainer": false,
-      "unplaced": true,
-      "catalogued": false,
+      "isContainer": true,
+      "parentId": "provider.aws",
+      "unplaced": false,
+      "catalogued": true,
       "attributes": {
         "cidr_block": {
           "known": true,
@@ -34,11 +54,12 @@
       "address": "aws_subnet.public",
       "type": "aws_subnet",
       "provider": "aws",
-      "category": "other",
+      "category": "network",
       "label": "public",
-      "isContainer": false,
-      "unplaced": true,
-      "catalogued": false,
+      "isContainer": true,
+      "parentId": "aws_vpc.main",
+      "unplaced": false,
+      "catalogued": true,
       "attributes": {
         "cidr_block": {
           "known": true,
@@ -62,11 +83,12 @@
       "address": "aws_instance.web",
       "type": "aws_instance",
       "provider": "aws",
-      "category": "other",
+      "category": "compute",
       "label": "web",
       "isContainer": false,
-      "unplaced": true,
-      "catalogued": false,
+      "parentId": "aws_subnet.public",
+      "unplaced": false,
+      "catalogued": true,
       "attributes": {
         "instance_type": {
           "known": true,

@@ -2,15 +2,35 @@
   "schemaVersion": 1,
   "nodes": [
     {
+      "id": "provider.aws",
+      "address": "provider.aws",
+      "type": "provider",
+      "provider": "aws",
+      "category": "provider",
+      "label": "AWS",
+      "isContainer": true,
+      "unplaced": false,
+      "catalogued": true,
+      "attributes": {},
+      "source": {
+        "file": "",
+        "startLine": 0,
+        "startCol": 0,
+        "endLine": 0,
+        "endCol": 0
+      }
+    },
+    {
       "id": "aws_instance.web",
       "address": "aws_instance.web",
       "type": "aws_instance",
       "provider": "aws",
-      "category": "other",
+      "category": "compute",
       "label": "web",
       "isContainer": false,
-      "unplaced": true,
-      "catalogued": false,
+      "parentId": "provider.aws",
+      "unplaced": false,
+      "catalogued": true,
       "attributes": {
         "alert_to": {
           "known": false,

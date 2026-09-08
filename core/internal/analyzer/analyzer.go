@@ -63,12 +63,21 @@ func analyze(files map[string]string) model.Result {
 
 	reportUnsupportedBlocks(p, diags)
 
-	nodes, edges := evaluateResources(e, p, diags)
+	nodes, edges, references := evaluateResources(e, p, diags)
+
+	// Counted before the synthetic frame is added: a workspace with three
+	// resources has three resources, however many boxes are drawn around them.
+	declared := len(nodes)
+
+	nodes = applyCatalog(nodes, placement{
+		references: references,
+		regions:    detectRegions(e, p, diags),
+	}, diags)
 
 	result.Nodes = nodes
 	result.Edges = edges
 	result.Diagnostics = diags.list()
-	result.Stats.Resources = len(nodes)
+	result.Stats.Resources = declared
 	result.Stats.Truncated = result.Stats.Truncated || len(nodes) >= MaxNodes || len(edges) >= MaxEdges
 	result.Stats.DurationMs = int(time.Since(started).Milliseconds())
 
@@ -80,19 +89,22 @@ func analyze(files map[string]string) model.Result {
 // Later passes can resolve references to values another resource set
 // literally. The number of passes is fixed rather than run to convergence,
 // because "until nothing changes" on attacker-controlled input has no bound.
-func evaluateResources(e *evaluator, p parsed, diags *diagnostics) ([]model.Node, []model.Edge) {
+func evaluateResources(e *evaluator, p parsed, diags *diagnostics) ([]model.Node, []model.Edge, map[string]map[string][]string) {
 	var nodes []model.Node
 	var edges []model.Edge
+	references := map[string]map[string][]string{}
 
 	for pass := 0; pass < resourceEvaluationPasses; pass++ {
 		last := pass == resourceEvaluationPasses-1
 
 		nodes = nil
 		edges = nil
+		references = map[string]map[string][]string{}
 		for _, block := range p.resources {
-			node, blockEdges := evaluateResource(e, block, last, diags)
+			node, blockEdges, blockRefs := evaluateResource(e, block, last, diags)
 			nodes = append(nodes, node)
 			edges = append(edges, blockEdges...)
+			references[node.Address] = blockRefs
 
 			if len(nodes) >= MaxNodes {
 				diags.add(model.Diagnostic{
@@ -120,10 +132,10 @@ func evaluateResources(e *evaluator, p parsed, diags *diagnostics) ([]model.Node
 	if len(edges) > MaxEdges {
 		edges = edges[:MaxEdges]
 	}
-	return nodes, edges
+	return nodes, edges, references
 }
 
-func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagnostics) (model.Node, []model.Edge) {
+func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagnostics) (model.Node, []model.Edge, map[string][]string) {
 	rType, rName := block.Labels[0], block.Labels[1]
 	address := rType + "." + rName
 
@@ -155,6 +167,7 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 	sort.Strings(names)
 
 	var edges []model.Edge
+	references := map[string][]string{}
 	for _, name := range names {
 		attr := attrs[name]
 
@@ -178,6 +191,7 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 			if target == address {
 				continue
 			}
+			references[name] = append(references[name], target)
 			edges = append(edges, model.Edge{
 				ID:   address + "->" + target + "#" + name,
 				From: address,
@@ -192,7 +206,7 @@ func evaluateResource(e *evaluator, block *hcl.Block, report bool, diags *diagno
 		}
 	}
 
-	return node, edges
+	return node, edges, references
 }
 
 // reportUnsupportedBlocks says plainly what the analyzer skipped.
