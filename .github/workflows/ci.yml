@@ -114,7 +114,17 @@ jobs:
           status=0
           for dir in $(find . -name go.mod -not -path './node_modules/*' -exec dirname {} \;); do
             echo "::group::govulncheck $dir"
-            (cd "$dir" && govulncheck ./...) || status=1
+            if output=$(cd "$dir" && govulncheck ./... 2>&1); then
+              echo "$output"
+            elif echo "$output" | grep -q 'no packages matched'; then
+              # A module whose sources are all behind js/wasm build tags has
+              # nothing to scan on this runner. Skipped deliberately and
+              # reported, rather than swallowed with the real failures.
+              echo "no buildable packages on linux/amd64; nothing to scan"
+            else
+              echo "$output"
+              status=1
+            fi
             echo "::endgroup::"
           done
           exit $status
