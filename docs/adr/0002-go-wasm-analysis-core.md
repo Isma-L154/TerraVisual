@@ -73,15 +73,27 @@ running inside a Web Worker and exposing `analyze(files, catalog) → InfraModel
   disposable thread that can be killed and recreated.
 
 **Negative**
-- **~2 MB of WASM.** It must be lazily loaded, and the editor must be usable
-  before it arrives.
+- **1.85 MB of WASM, compressed** (measured, issue #1). It must be lazily loaded,
+  and the editor must be interactive before it arrives.
 - **A bilingual repository.** Two toolchains in CI and a heavier developer setup.
 - **Function coverage will be incomplete**, because Terraform's own wrappers are
   unreachable. Uncovered functions must be reported as unknown, never
   approximated.
-- Neither the size nor the latency is proven yet, which is why the roadmap opens
-  with a spike that measures both against NFR-4 and NFR-5. If those numbers fail,
-  this ADR is revisited.
+## Validation
+
+The spike in issue #1 measured this decision rather than assuming it. In a real
+browser Web Worker, p95 evaluation latency was 36.6 ms at 200 resources and
+180.7 ms at 1000, against budgets of 300 ms and 1 s — margins of 8× and 5.5×.
+Cold instantiation was 62 ms.
+
+Size came in at 1.85 MB compressed against an original 1.5 MB budget. The
+component breakdown showed the budget was unreachable rather than missed: the
+Go runtime plus `hcl` and `cty`, with **zero** functions, already costs 1.50 MB.
+It also showed that `cty` stdlib functions add nothing measurable, so broad
+function coverage is affordable. NFR-5 was revised to 2.0 MB on that evidence;
+this ADR stands unchanged.
+
+Full findings: [spike-wasm-core.md](../architecture/spike-wasm-core.md).
 
 ## Rejected alternatives
 

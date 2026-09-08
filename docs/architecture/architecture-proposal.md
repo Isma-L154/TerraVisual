@@ -71,7 +71,7 @@ Stated deliberately, not forgotten:
 | NFR-2 | Analysis never blocks typing | Main thread never blocked > 50 ms by our own code |
 | NFR-3 | Loop latency | p95 keystroke → diagram < 500 ms (includes 250 ms debounce) |
 | NFR-4 | Analysis performance | p95 < 300 ms at 200 resources; < 1 s at 1000 |
-| NFR-5 | Payload weight | The editor is usable without waiting for the WASM module; WASM ≤ 1.5 MB compressed |
+| NFR-5 | Payload weight | The editor is interactive **before** the analyzer arrives; the analyzer artifact ≤ **2.0 MB compressed**, lazily loaded and immutably cached. Time to an interactive editor, not artifact size, is the user-facing budget |
 | NFR-6 | Accessibility | WCAG 2.2 AA; complete keyboard-only journey; no information conveyed visually only |
 | NFR-7 | Analyzer robustness | No input causes an uncontrolled failure; always a diagnostic |
 | NFR-8 | Operating cost | No application server; static hosting |
@@ -79,6 +79,13 @@ Stated deliberately, not forgotten:
 
 NFR-9 is not decoration. In an educational tool, a fabricated value teaches
 something false, which is worse than teaching nothing.
+
+NFR-5 was revised after the spike in issue #1 measured the real artifact. The
+original 1.5 MB was set before evidence existed and turned out to be unreachable
+rather than merely missed: Go's runtime plus `hcl` and `cty`, with zero
+functions, already costs 1.50 MB compressed. The measurements, the component
+breakdown and the reasoning are in
+[spike-wasm-core.md](spike-wasm-core.md).
 
 ---
 
@@ -461,7 +468,7 @@ repository.
 
 | # | Risk | Impact | Mitigation |
 |---|---|---|---|
-| R1 | The WASM module is heavier or slower than acceptable | High | **A mandatory spike first** (§17) measuring weight and latency before anything is built on top |
+| R1 | The WASM module is heavier or slower than acceptable | High | **Resolved by the spike in issue #1.** Latency passed with 8× and 5.5× margin; size came in at 1.85 MB compressed, which drove the revision of NFR-5 rather than a change of architecture |
 | R2 | Behavioral differences from real Terraform | High | Terraform's functions live under `internal/` and are not importable, so the table is assembled from public packages. Coverage is documented, and anything unsupported is marked unknown — never approximated |
 | R3 | A three-provider catalog is a lot of editorial work | Medium | Pure data validated by schema, splittable into independent tasks; the generic fallback means missing coverage breaks nothing |
 | R4 | A bilingual Go + TypeScript repository | Medium | CI with both toolchains; single documented build commands |
