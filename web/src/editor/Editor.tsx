@@ -6,8 +6,8 @@ import { bracketMatching, indentOnInput, syntaxHighlighting } from '@codemirror/
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
 import { hcl } from 'codemirror-lang-hcl';
 
-import type { Diagnostic } from '../model';
-import { toLintDiagnostics } from './diagnostics';
+import type { Diagnostic, Range } from '../model';
+import { toLintDiagnostics, toOffsets } from './diagnostics';
 import { editorTheme, highlightStyle } from './theme';
 
 export type EditorProps = {
@@ -15,6 +15,12 @@ export type EditorProps = {
   path: string;
   content: string;
   diagnostics: Diagnostic[];
+  /**
+   * A range to scroll to and select. Changing it moves the cursor; setting it
+   * to the same value again does nothing, which is why callers pass a fresh
+   * object when they want to jump to somewhere the cursor already is.
+   */
+  reveal?: Range | null;
   onChange: (content: string) => void;
   onCursorLine?: (line: number) => void;
 };
@@ -30,7 +36,14 @@ export type EditorProps = {
  * every render would throw away the cursor, the selection and the undo history
  * — the things somebody is relying on while they type.
  */
-export function Editor({ path, content, diagnostics, onChange, onCursorLine }: EditorProps) {
+export function Editor({
+  path,
+  content,
+  diagnostics,
+  reveal,
+  onChange,
+  onCursorLine,
+}: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
 
@@ -119,6 +132,25 @@ export function Editor({ path, content, diagnostics, onChange, onCursorLine }: E
       setDiagnostics(instance.state, toLintDiagnostics(instance.state.doc, diagnostics, path)),
     );
   }, [diagnostics, path]);
+
+  // Reveal a range: select it and scroll it into view.
+  //
+  // The selection is what makes the jump legible. Scrolling alone leaves the
+  // user looking at a screen of code with no indication of which part they
+  // were sent to.
+  useEffect(() => {
+    const instance = view.current;
+    if (!instance || !reveal || reveal.file !== path) return;
+
+    const range = toOffsets(instance.state.doc, reveal);
+    if (!range) return;
+
+    instance.dispatch({
+      selection: { anchor: range.from, head: range.to },
+      effects: EditorView.scrollIntoView(range.from, { y: 'center' }),
+    });
+    instance.focus();
+  }, [reveal, path]);
 
   return <div className="editor" ref={host} data-testid="editor" />;
 }
