@@ -1,0 +1,128 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+
+    # Skips cleanly when the credentials are not configured, rather than
+    # failing every pull request with a red X nobody can fix. The repository
+    # settings say whether this project can deploy; the workflow should not
+    # pretend otherwise.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: core/go.mod
+          cache-dependency-path: '**/go.sum'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check for credentials
+        id: credentials
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLOUDFLARE_API_TOKEN is not set, so nothing was deployed. See docs/deployment/README.md."
+          fi
+
+      - name: Build
+        if: steps.credentials.outputs.available == 'true'
+        run: npm run build
+
+      # A pull request gets a versioned preview URL rather than taking over the
+      # live site, which is what makes reviewing a change on a real deployment
+      # possible without publishing it.
+      - name: Upload preview version
+        id: preview
+        if: steps.credentials.outputs.available == 'true' && github.event_name == 'pull_request'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          output=$(npx wrangler versions upload --message "PR #${{ github.event.number }}" 2>&1 | tee /dev/stderr)
+          url=$(echo "$output" | grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to production
+        if: steps.credentials.outputs.available == 'true' && github.event_name == 'push'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+
+      # The audit baseline forbids inferring a control from configuration. This
+      # reads the headers off the deployment that was just made, so a policy
+      # that stopped being served would fail the build rather than the user.
+      - name: Verify security headers on the deployment
+        if: steps.credentials.outputs.available == 'true'
+        env:
+          TARGET: ${{ github.event_name == 'pull_request' && steps.preview.outputs.url || secrets.PRODUCTION_URL }}
+        run: |
+          if [ -z "$TARGET" ]; then
+            echo "::warning::No URL to verify headers against."
+            exit 0
+          fi
+          node scripts/check-headers.mjs "$TARGET" --strict-tls
+
+      - name: Comment the preview URL
+        if: steps.credentials.outputs.available == 'true' && github.event_name == 'pull_request' && steps.preview.outputs.url != ''
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const url = '${{ steps.preview.outputs.url }}';
+            const marker = '<!-- terravisual-preview -->';
+            const body = `${marker}\n**Preview:** ${url}\n\nSecurity headers were verified against this deployment.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((comment) => comment.body.includes(marker));
+
+            // Updated rather than appended, so a long-lived branch does not
+            // accumulate a column of near-identical comments.
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

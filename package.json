@@ -27,7 +27,11 @@
     "verify": "npm run generate:check && npm run lint:core && npm run test:core && npm run typecheck && npm run lint && npm run format:check && npm run test:web && npm run build",
     "generate": "node scripts/generate-types.mjs && node scripts/build-catalog.mjs",
     "generate:check": "node scripts/generate-types.mjs --check && node scripts/build-catalog.mjs --check",
-    "format:core:check": "node scripts/gofmt-check.mjs"
+    "format:core:check": "node scripts/gofmt-check.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:dry": "npm run build && wrangler deploy --dry-run",
+    "preview:worker": "npm run build && wrangler dev",
+    "check:headers": "node scripts/check-headers.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -36,7 +40,8 @@
     "globals": "17.12.0",
     "json-schema-to-typescript": "16.0.0",
     "prettier": "3.9.6",
-    "typescript-eslint": "8.70.0"
+    "typescript-eslint": "8.70.0",
+    "wrangler": "4.129.1"
   },
   "prettier": {
     "singleQuote": true,

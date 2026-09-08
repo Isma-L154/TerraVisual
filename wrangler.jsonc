@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "terravisual",
+  "main": "deploy/worker.ts",
+  "compatibility_date": "2026-09-01",
+
+  // The Worker exists to set security headers on a static build (ADR-0006).
+  // It has no bindings, no storage and no secrets, because the application has
+  // no backend (ADR-0001) and this file must not quietly become one.
+  "assets": {
+    "directory": "./web/dist",
+    "binding": "ASSETS",
+    // Every request reaches the Worker first, which is the only way headers can
+    // be applied to every response rather than to the ones we remembered.
+    "run_worker_first": true,
+    // A single-page application: unknown paths serve index.html rather than a
+    // 404, so a shared link with a fragment resolves.
+    "not_found_handling": "single-page-application"
+  },
+
+  "observability": {
+    "enabled": true,
+    // Request-level metrics only. These exist whatever we do and never see the
+    // contents of a workspace; anything finer would mean watching how people
+    // use a tool we promised runs entirely on their machine.
+    "head_sampling_rate": 1
+  }
+}
