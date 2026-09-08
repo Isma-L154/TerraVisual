@@ -646,3 +646,22 @@ code {
   border: 1px dashed var(--muted);
   color: var(--muted);
 }
+
+.pane-notice {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--severity-warning);
+  border-radius: 6px;
+  color: var(--severity-warning);
+  font-size: 12px;
+}
+
+.details-jump {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}

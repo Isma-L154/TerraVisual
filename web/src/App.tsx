@@ -6,6 +6,7 @@ import { Diagram } from './diagram/Diagram';
 import { NodeDetails } from './diagram/NodeDetails';
 import { Outline } from './outline/Outline';
 import { STARTER_FILE, STARTER_WORKSPACE } from './app/examples';
+import type { Diagnostic, Range } from './model';
 import { useAnalysis } from './app/useAnalysis';
 import { createWorkspace } from './workspace/workspace';
 
@@ -21,6 +22,7 @@ export function App() {
   const [content, setContent] = useState(() => workspace.read(STARTER_FILE) ?? '');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
+  const [reveal, setReveal] = useState<Range | null>(null);
 
   const analysis = useAnalysis(workspace);
 
@@ -38,6 +40,28 @@ export function App() {
       setContent(workspace.read(path) ?? '');
     },
     [workspace],
+  );
+
+  /**
+   * Jump to a place in the code.
+   *
+   * A fresh object is stored every time, even for the same range, so clicking
+   * the same diagnostic twice scrolls back to it rather than doing nothing.
+   */
+  const revealSource = useCallback(
+    (source: Range) => {
+      if (!source.file || source.startLine < 1) return;
+      if (source.file !== activePath && workspace.has(source.file)) {
+        openFile(source.file);
+      }
+      setReveal({ ...source });
+    },
+    [activePath, openFile, workspace],
+  );
+
+  const revealDiagnostic = useCallback(
+    (diagnostic: Diagnostic) => revealSource(diagnostic.source),
+    [revealSource],
   );
 
   const diagnostics = analysis.model?.diagnostics ?? [];
@@ -80,6 +104,7 @@ export function App() {
             path={activePath}
             content={content}
             diagnostics={diagnostics}
+            reveal={reveal}
             onChange={handleChange}
           />
         </section>
@@ -113,6 +138,15 @@ export function App() {
             </div>
           </div>
 
+          {analysis.model?.stats.truncated ? (
+            /* Saying so is not optional: a partial picture presented as a
+               complete one is the failure mode this project cares most about. */
+            <p className="pane-notice" role="status">
+              This workspace is larger than the analyzer will fully expand, so the diagram is
+              incomplete. Check the problems below for what was left out.
+            </p>
+          ) : null}
+
           {view === 'diagram' ? (
             <Diagram model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
           ) : (
@@ -124,7 +158,7 @@ export function App() {
           <div className="pane-header">
             <h2 id="details-heading">Details</h2>
           </div>
-          <NodeDetails node={selected} />
+          <NodeDetails node={selected} onReveal={(node) => revealSource(node.source)} />
         </section>
 
         <section className="pane pane-diagnostics" aria-labelledby="diagnostics-heading">
@@ -142,7 +176,7 @@ export function App() {
               {analysis.error}
             </p>
           ) : (
-            <DiagnosticsList diagnostics={diagnostics} />
+            <DiagnosticsList diagnostics={diagnostics} onSelect={revealDiagnostic} />
           )}
         </section>
       </main>

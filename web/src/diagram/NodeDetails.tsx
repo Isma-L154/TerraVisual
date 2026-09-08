@@ -4,6 +4,8 @@ import { displayValue, type InfraNode } from '../model';
 
 export type NodeDetailsProps = {
   node: InfraNode | null;
+  /** Jump to where this node is written. Absent when nothing can navigate. */
+  onReveal?: (node: InfraNode) => void;
 };
 
 /**
@@ -15,7 +17,7 @@ export type NodeDetailsProps = {
  * source, which needs cloud credentials" tells a learner something about
  * Terraform.
  */
-export function NodeDetails({ node }: NodeDetailsProps) {
+export function NodeDetails({ node, onReveal }: NodeDetailsProps) {
   if (!node) {
     return (
       <p className="placeholder" data-testid="details-empty">
@@ -45,12 +47,28 @@ export function NodeDetails({ node }: NodeDetailsProps) {
         </dd>
         <dt>Provider</dt>
         <dd>{node.provider}</dd>
+        {node.modulePath ? (
+          <>
+            <dt>Module</dt>
+            <dd>
+              <code>module.{node.modulePath}</code>
+            </dd>
+          </>
+        ) : null}
         <dt>Defined in</dt>
         <dd>
-          <code>
-            {node.source.file}
-            {node.source.startLine > 0 ? `:${node.source.startLine}` : ''}
-          </code>
+          {onReveal && node.source.file && node.source.startLine > 0 ? (
+            <button type="button" className="details-jump" onClick={() => onReveal(node)}>
+              <code>
+                {node.source.file}:{node.source.startLine}
+              </code>
+            </button>
+          ) : (
+            <code>
+              {node.source.file || 'not written in this workspace'}
+              {node.source.startLine > 0 ? `:${node.source.startLine}` : ''}
+            </code>
+          )}
         </dd>
       </dl>
 
