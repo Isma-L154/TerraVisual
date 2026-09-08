@@ -10,6 +10,8 @@ import type { Diagnostic, Range } from './model';
 import { useAnalysis } from './app/useAnalysis';
 import { hasSource, nodeAtLine } from './app/locate';
 import { createWorkspace } from './workspace/workspace';
+import { ImportDropZone } from './workspace/ImportDropZone';
+import type { ImportResult } from './workspace/import';
 
 /**
  * The application shell.
@@ -24,6 +26,7 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
   const [reveal, setReveal] = useState<Range | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const analysis = useAnalysis(workspace);
 
@@ -104,6 +107,35 @@ export function App() {
     [analysis.model, activePath],
   );
 
+  /**
+   * Replace the workspace with an imported project.
+   *
+   * The example is cleared rather than merged: mixing somebody's real
+   * infrastructure with a demo would produce a diagram that is neither.
+   */
+  const handleImported = useCallback(
+    (result: ImportResult) => {
+      const paths = Object.keys(result.files);
+      if (paths.length === 0) return;
+
+      workspace.clear();
+      for (const [path, content] of Object.entries(result.files)) {
+        try {
+          workspace.write(path, content);
+        } catch {
+          // Already reported by the importer, which knows why.
+        }
+      }
+
+      const first = workspace.list()[0] ?? '';
+      setActivePath(first);
+      setContent(workspace.read(first) ?? '');
+      setSelectedId(null);
+      setImporting(false);
+    },
+    [workspace],
+  );
+
   const diagnostics = analysis.model?.diagnostics ?? [];
   const paths = workspace.list();
   const selected = analysis.model?.nodes.find((node) => node.id === selectedId) ?? null;
@@ -123,6 +155,14 @@ export function App() {
         <section className="pane pane-editor" aria-labelledby="editor-heading">
           <div className="pane-header">
             <h2 id="editor-heading">Code</h2>
+            <button
+              type="button"
+              className="file-tab"
+              aria-expanded={importing}
+              onClick={() => setImporting((open) => !open)}
+            >
+              {importing ? 'Close import' : 'Import project'}
+            </button>
             {paths.length > 1 ? (
               <nav aria-label="Workspace files" className="file-tabs">
                 {paths.map((path) => (
@@ -139,6 +179,8 @@ export function App() {
               </nav>
             ) : null}
           </div>
+
+          {importing ? <ImportDropZone onImported={handleImported} /> : null}
 
           <Editor
             path={activePath}
