@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Editor } from './editor/Editor';
 import { DiagnosticsList } from './editor/DiagnosticsList';
+import { Diagram } from './diagram/Diagram';
+import { NodeDetails } from './diagram/NodeDetails';
 import { STARTER_FILE, STARTER_WORKSPACE } from './app/examples';
 import { useAnalysis } from './app/useAnalysis';
 import { createWorkspace } from './workspace/workspace';
@@ -16,6 +18,7 @@ export function App() {
   const workspace = useMemo(() => createWorkspace(STARTER_WORKSPACE).workspace, []);
   const [activePath, setActivePath] = useState(STARTER_FILE);
   const [content, setContent] = useState(() => workspace.read(STARTER_FILE) ?? '');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const analysis = useAnalysis(workspace);
 
@@ -37,6 +40,7 @@ export function App() {
 
   const diagnostics = analysis.model?.diagnostics ?? [];
   const paths = workspace.list();
+  const selected = analysis.model?.nodes.find((node) => node.id === selectedId) ?? null;
 
   return (
     <>
@@ -84,17 +88,25 @@ export function App() {
             <AnalysisStatus analyzing={analysis.analyzing} error={analysis.error} />
           </div>
 
-          <p className="placeholder">
-            The diagram is not built yet.
-            {analysis.model
-              ? ` The analyzer found ${plural(analysis.model.stats.resources, 'resource')}.`
-              : ''}
-          </p>
+          <Diagram model={analysis.model} selectedId={selectedId} onSelect={setSelectedId} />
+        </section>
+
+        <section className="pane pane-details" aria-labelledby="details-heading">
+          <div className="pane-header">
+            <h2 id="details-heading">Details</h2>
+          </div>
+          <NodeDetails node={selected} />
         </section>
 
         <section className="pane pane-diagnostics" aria-labelledby="diagnostics-heading">
           <div className="pane-header">
             <h2 id="diagnostics-heading">Problems</h2>
+            {analysis.model ? (
+              <span className="analysis-status">
+                {plural(analysis.model.stats.resources, 'resource')}
+                {analysis.model.stats.truncated ? ', partial' : ''}
+              </span>
+            ) : null}
           </div>
           {analysis.error ? (
             <p className="diagnostic-error" role="alert">
