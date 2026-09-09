@@ -282,8 +282,53 @@ export function App() {
           Your code never leaves your browser. Parsing, evaluation and rendering all happen on this
           page.
         </p>
+
+        <PrivacyDetail />
       </footer>
     </>
+  );
+}
+
+/**
+ * What the privacy claim covers, and what it cannot.
+ *
+ * The claim above is true and was verified by watching the network: the
+ * application sends nothing anywhere. But "never leaves your browser" can be
+ * read as a stronger guarantee than any website is able to offer, and the
+ * people this tool is for may be about to paste infrastructure code that names
+ * things they would not post publicly. They should be able to find out exactly
+ * what the promise covers, in one step, without leaving the page.
+ *
+ * A `<details>` rather than a modal or a link elsewhere: it is closed by
+ * default so it interrupts nobody, it is keyboard-operable and announced as a
+ * disclosure without any ARIA of ours, and the answer stays next to the claim
+ * it qualifies.
+ */
+function PrivacyDetail() {
+  return (
+    <details className="privacy-detail">
+      <summary>What that covers, and what it cannot</summary>
+
+      <p>
+        <strong>The application sends nothing.</strong> There is no server to send it to: your
+        Terraform is parsed and drawn here, and the page is only allowed to talk to its own origin,
+        which the browser enforces rather than us promising it.
+      </p>
+      <p>
+        <strong>A share link contains your code.</strong> That is how sharing works without a server
+        — the workspace travels compressed inside the link, which is never sent in the request, but
+        anyone holding the link has the code.
+      </p>
+      <p>
+        <strong>Browser extensions are outside this.</strong> An extension you have installed can
+        read any page you open, including this one, and no website can prevent that. If you are
+        working with something sensitive, that is worth knowing here as much as anywhere else.
+      </p>
+      <p>
+        Importing a project skips <code>.tfstate</code> files and generated directories, because
+        state files routinely contain secrets.
+      </p>
+    </details>
   );
 }
 
