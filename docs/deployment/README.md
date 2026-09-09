@@ -49,7 +49,17 @@ Add them under **Settings → Secrets and variables → Actions**.
 Until they exist, the deploy workflow skips with a notice instead of failing.
 A red X nobody can fix teaches people to ignore red X's.
 
-### Two things the dashboard has to do
+### Three things the dashboard has to do
+
+**Enable a workers.dev subdomain.** *Workers & Pages → Subdomain.* The site does
+not use it — `workers_dev` is off, and one address is enough — but preview URLs
+are built on it: with a subdomain, every uploaded version gets
+`<version>-terravisual.<subdomain>.workers.dev`, and without one
+`wrangler versions upload` produces a version with no address. That is what the
+deploy workflow tries to post on each pull request, and it is how a change to
+the way the edge serves things gets tested on the real edge before it becomes
+the site. Its absence has already cost one improvement: see #69.
+
 
 **Turn off Web Analytics for this zone.** The first production deployment came
 back with Cloudflare's beacon injected into the page — `beacon.min.js` from

@@ -18,6 +18,22 @@
    */
   "routes": [{ "pattern": "terravisual.cloudils.com", "custom_domain": true }],
 
+  /*
+   * Preview URLs, so a version can be looked at before it becomes the site.
+   *
+   * `<version>-terravisual.<subdomain>.workers.dev`. The deploy workflow uploads
+   * a version per pull request and expects a URL to check headers against and
+   * to post on the PR; without this it uploads into the dark. It also means a
+   * change to how the edge serves things can be tested on the real edge rather
+   * than only against the local runtime, which is not the same thing — the
+   * local one re-compresses responses that the edge leaves alone.
+   *
+   * `workers_dev` stays off: the site has one address, and a second permanent
+   * one would only be a second thing to keep secure.
+   */
+  "preview_urls": true,
+  "workers_dev": false,
+
   "assets": {
     "directory": "./web/dist",
     "binding": "ASSETS",
