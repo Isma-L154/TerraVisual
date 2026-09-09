@@ -383,6 +383,14 @@ endpoint is a server that receives data about what visitors' browsers are doing,
 which is precisely the thing this product promised not to build. A fix has to
 reckon with that trade-off rather than just adding a directive.
 
+**Decided on 2026-09-09** (#57): no reporting endpoint in production, and
+violations detected in CI instead — the browser suite loads the application
+under the policy that is actually served and fails the build if anything is
+refused. The reasoning, including why a stripped-down endpoint was rejected and
+what this leaves invisible, is in
+[ADR-0007](../adr/0007-no-csp-violation-reporting.md). The blindness is accepted
+rather than closed, which is why it stays in this report.
+
 ---
 
 ## What could not be verified
@@ -432,9 +440,12 @@ assumption.
    because nothing can inject markup into the page. A missing layer of defence
    rather than a hole, and worth closing while the application is still small
    enough that closing it is cheap.
-3. **No CSP violation reporting** (control 7). Costs visibility, not safety, and
-   the obvious fix conflicts with the product's central promise. Needs a
-   decision, not a patch.
+3. **No CSP violation reporting** (control 7) — **decided, 2026-09-09,
+   [ADR-0007](../adr/0007-no-csp-violation-reporting.md)**. It cost visibility
+   rather than safety, and the obvious fix conflicted with the product's central
+   promise, so it needed a decision rather than a patch. Violations are now
+   caught in CI, before a deployment; what happens in a real user's browser
+   remains invisible, deliberately.
 4. **Unverified production surface** (blind spot 1). Resolves itself the moment
    credentials are added, because the check is already in the pipeline.
 5. **Browser extensions can read the editor** (blind spot 4). Not fixable by
