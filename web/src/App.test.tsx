@@ -38,6 +38,28 @@ describe('App shell', () => {
     expect(await screen.findByText(/never leaves your browser/i)).toBeInTheDocument();
   });
 
+  // The claim above is true; the qualification keeps it from being read as a
+  // stronger guarantee than any website can make. Somebody about to paste real
+  // infrastructure should be able to find both in one place.
+  it('qualifies the privacy guarantee where the guarantee is made', async () => {
+    render(<App />);
+
+    const disclosure = await screen.findByText(/what that covers, and what it cannot/i);
+    expect(disclosure).toBeInTheDocument();
+
+    // Closed by default: it informs somebody who looks, and interrupts nobody
+    // who does not.
+    expect(disclosure.closest('details')).not.toHaveAttribute('open');
+  });
+
+  it('names the two limits that are real', async () => {
+    render(<App />);
+
+    await screen.findByText(/what that covers, and what it cannot/i);
+    expect(screen.getByText(/a share link contains your code/i)).toBeInTheDocument();
+    expect(screen.getByText(/browser extensions are outside this/i)).toBeInTheDocument();
+  });
+
   // Without a Worker there is never a model, so the diagram says what it is
   // waiting for rather than showing an empty frame that reads as a bug.
   it('says what the diagram is waiting for when there is no model yet', async () => {
