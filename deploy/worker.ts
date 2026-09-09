@@ -12,6 +12,7 @@
  */
 
 import { createNonce, withSecurityHeaders } from './headers';
+import { clientKey, isAllowed, tooManyRequests, type RateLimiter } from './rate-limit';
 
 /**
  * Puts the response's nonce where the application can read it.
@@ -46,6 +47,12 @@ class NonceInjector {
  */
 export interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
+  /**
+   * Optional on purpose. Local development does not always provide it, and the
+   * site must serve without it rather than refuse to start — see rate-limit.ts
+   * on failing open.
+   */
+  RATE_LIMITER?: RateLimiter;
 }
 
 /**
@@ -78,6 +85,12 @@ export default {
         }),
         nonce
       );
+    }
+
+    // Before doing any work: a request that will be refused should cost as
+    // little as possible, which is the whole point of refusing it.
+    if (!(await isAllowed(env.RATE_LIMITER, clientKey(request)))) {
+      return withSecurityHeaders(tooManyRequests(), nonce);
     }
 
     const url = new URL(request.url);

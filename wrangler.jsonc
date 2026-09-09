@@ -18,6 +18,27 @@
     "not_found_handling": "single-page-application"
   },
 
+  /*
+   * A rate limit on the deployment.
+   *
+   * Nothing here is private, so flooding this site discloses nothing — what it
+   * costs is Workers requests, which are billed, and at volume the site's
+   * availability for everybody else. The realistic bad day is an invoice.
+   *
+   * The limit is deliberately far above any person: a page load is about seven
+   * requests, so 1000 a minute is roughly 140 loads a minute from a single
+   * address. A classroom behind one NAT address is nowhere near it, which is
+   * the point — a limit that catches real users is worse than no limit at all,
+   * because it makes the tool look broken to exactly the audience it is for.
+   */
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 1000, "period": 60 }
+    }
+  ],
+
   "observability": {
     "enabled": true,
     // Request-level metrics only. These exist whatever we do and never see the
