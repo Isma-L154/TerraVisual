@@ -8,6 +8,7 @@ import { hcl } from 'codemirror-lang-hcl';
 
 import type { Diagnostic, Range } from '../model';
 import { toLintDiagnostics, toOffsets } from './diagnostics';
+import { cspNonce } from './nonce';
 import { editorTheme, highlightStyle } from './theme';
 
 export type EditorProps = {
@@ -72,6 +73,10 @@ export function Editor({
       bracketMatching(),
       indentOnInput(),
       syntaxHighlighting(highlightStyle),
+      // Without this the editor's own stylesheet is refused by the Content
+      // Security Policy and the editor renders unstyled. Empty in development,
+      // where there is no Worker in front and no policy to satisfy.
+      EditorView.cspNonce.of(cspNonce()),
       hcl(),
       editorTheme,
       EditorView.lineWrapping,

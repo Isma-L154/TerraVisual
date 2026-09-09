@@ -8,7 +8,7 @@ to keep it true rather than merely stated.
 
 | Date | Report | Outcome |
 |------|--------|---------|
-| 2026-09-08 | [Baseline audit](2026-09-08-baseline-audit.md) | 3 OK, 2 N/A (structural), 2 PARTIAL |
+| 2026-09-08 | [Baseline audit](2026-09-08-baseline-audit.md) | 3 OK, 2 N/A (structural), 2 PARTIAL. The `style-src` finding was fixed on 2026-09-09 (#56); the report records the fix rather than erasing the finding |
 
 Audits are run against seven baseline controls: secrets handling, CORS, backend
 validation, input sanitization and storage, rate limiting, row-level security,
@@ -38,7 +38,10 @@ always true:
   before it is merged;
 - `scripts/check-headers.mjs` against a **real deployed response** after every
   deployment, so a security header that stopped being served fails the build
-  rather than the user.
+  rather than the user;
+- a browser suite that loads the application under the policy actually served,
+  because the way a stricter policy fails is silently: the header is perfect and
+  the page is broken.
 
 ## The promise, precisely
 

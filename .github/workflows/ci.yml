@@ -115,8 +115,13 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Accessibility and keyboard journey
-        run: npx playwright test web/e2e/accessibility.spec.ts web/e2e/keyboard.spec.ts
+      # Everything that does not time anything, in parallel.
+      - name: Accessibility, keyboard journey and security policy
+        run: >-
+          npx playwright test
+          web/e2e/accessibility.spec.ts
+          web/e2e/keyboard.spec.ts
+          web/e2e/security.spec.ts
 
       # Alone on the machine. Timing anything while a second browser competes
       # for the same two cores measures the runner, not the application.

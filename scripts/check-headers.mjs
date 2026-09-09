@@ -25,11 +25,16 @@ const required = [
       value.includes("script-src 'self' 'wasm-unsafe-eval'") &&
       !/script-src[^;]*'unsafe-eval'(?!-)/.test(value) &&
       !/script-src[^;]*'unsafe-inline'/.test(value) &&
+      // Styles are allowed by a per-response nonce. A deployment that fell back
+      // to a blanket allowance would still look fine in a browser, which is
+      // exactly why it is checked here against the real response.
+      /style-src 'self' 'nonce-[A-Za-z0-9+/=]+'/.test(value) &&
+      !/style-src [^;]*'unsafe-inline'/.test(value) &&
       value.includes("frame-ancestors 'none'") &&
       value.includes("object-src 'none'") &&
       value.includes("base-uri 'self'"),
     describe:
-      'must deny by default, allow wasm-unsafe-eval but not unsafe-eval or unsafe-inline, and close framing, object and base-uri',
+      'must deny by default, allow wasm-unsafe-eval but not unsafe-eval or unsafe-inline, allow styles by nonce rather than by blanket permission, and close framing, object and base-uri',
   },
   {
     header: 'x-content-type-options',
