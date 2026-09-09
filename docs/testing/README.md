@@ -35,7 +35,7 @@ editor fails here instead of after a deploy.
 | Date | Report | Outcome |
 |------|--------|---------|
 | 2026-09-08 | [Accessibility, WCAG 2.2 AA](2026-09-08-accessibility-audit.md) | 7 defects found and fixed; no real screen reader pass yet |
-| 2026-09-08 | [Performance budgets](2026-09-08-performance.md) | 3 budgets met with margin; 2 revised deliberately, with the measurements |
+| 2026-09-08 | [Performance budgets](2026-09-08-performance.md) | 3 budgets met with margin; 2 revised deliberately, with the measurements. The loop at 1200 resources went from 860 ms to ~500 ms once the diagram learned to summarise (#61) |
 
 ## Performance fixtures
 

@@ -69,6 +69,7 @@ export function announce(
   parent?: InfraNode,
   connections?: string[],
   childCount = 0,
+  hiddenCount = 0,
 ): string {
   const parts: string[] = [`${node.label}, ${displayType(node.type)}`];
 
@@ -85,6 +86,9 @@ export function announce(
   }
 
   if (childCount > 0) parts.push(`contains ${childCount}`);
+  // Said out loud as well as drawn. Somebody reading by ear must not be left
+  // believing an empty-looking container is empty.
+  if (hiddenCount > 0) parts.push(`holding ${hiddenCount} not shown, press to open`);
 
   // An arrow nobody can hear is information available only to people who can
   // see it, which is the thing the outline exists to prevent — and the diagram

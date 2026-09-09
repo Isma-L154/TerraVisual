@@ -77,22 +77,35 @@ editor accepts typing while the diagram still says it is waiting, and the
 analyzer draws what was typed when it finally lands. Nothing typed early is
 lost.
 
-### NFR-3 — loop latency: **met at 250 resources, missed at 1200**
+### NFR-3 — loop latency: **met at 250 resources; at the budget at 1200**
 
 One keystroke, not a typed line: the debounce restarts on every keystroke, so
 timing a line of text would measure how fast the test types.
 
 | Workspace | p50 | p95 | Budget |
 |-----------|-----|-----|--------|
-| 239 resources | 328 ms | **356 ms** | 500 ms |
-| 1193 resources | 850 ms | **860 ms** | 500 ms |
+| 239 resources | 329 ms | **340 ms** | 500 ms |
+| 1193 resources, before summarising | 850 ms | **860 ms** | 500 ms |
+| 1193 resources, after summarising (#61) | 493 ms | **502 ms** | 500 ms |
 
-At 1193 resources the 860 ms breaks down as roughly 250 ms of debounce, 190 ms
-of analysis, and about 420 ms of rendering twelve hundred DOM nodes.
+The 860 ms broke down as roughly 250 ms of debounce, 190 ms of analysis, and
+about 420 ms of rendering twelve hundred DOM nodes. Our own layout was never the
+problem, and that was checked rather than assumed: `layout()` plus
+`toFlowNodes()` on the 1195-node model takes **2.1 ms** at p50. The time was
+React and React Flow committing the nodes.
 
-Our own layout is not the problem, and that was checked rather than assumed:
-`layout()` plus `toFlowNodes()` on the 1195-node model takes **2.1 ms** at p50.
-The time is React and React Flow committing the nodes.
+So the diagram now summarises above 400 drawn nodes, folding detail into
+containers that say how much they hold. That removed nearly all of the rendering
+term.
+
+**What is left is analysis, and it is worth being clear that this is at the
+budget rather than inside it.** At 1193 resources analysis is about 220 ms and
+the debounce is 250 ms: 470 ms before a single node is drawn. The measurement
+sits at 493–511 ms across runs. Calling that "met" would be rounding in our own
+favour; calling it "missed" would ignore that it improved by 360 ms and that the
+remaining cost is a deliberate 250 ms wait plus the work itself. The suite
+asserts 600 ms at this size and says why, so it catches a regression without
+claiming a pass.
 
 ### NFR-2 — analysis never blocks typing: **met, emphatically**
 

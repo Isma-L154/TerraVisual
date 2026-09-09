@@ -32,7 +32,7 @@ export const ContainerNode = memo(function ContainerNode({
   data,
   selected,
 }: NodeProps<DiagramNode>) {
-  const { node, depth } = data;
+  const { node, depth, hiddenCount } = data;
 
   return (
     <div
@@ -47,9 +47,46 @@ export const ContainerNode = memo(function ContainerNode({
         <span className="dg-type">{displayType(node.type)}</span>
         {!node.catalogued ? <UncataloguedBadge /> : null}
       </div>
+
+      {hiddenCount > 0 ? <FoldedContents id={node.id} count={hiddenCount} /> : null}
     </div>
   );
 });
+
+/**
+ * What a container is holding out of sight, and the way to see it.
+ *
+ * A real button rather than a clickable div: it has to be reachable by
+ * keyboard, announced as something that can be pressed, and hittable by
+ * somebody with a tremor. The click is stopped from propagating because
+ * selecting the container and opening it are different intentions.
+ *
+ * The event is dispatched on the element rather than routed through a prop
+ * because React Flow owns the tree between here and the diagram; a custom
+ * event crosses that boundary without every node needing a callback it would
+ * only use when folded.
+ */
+function FoldedContents({ id, count }: { id: string; count: number }) {
+  return (
+    <button
+      type="button"
+      className="dg-folded"
+      onClick={(event) => {
+        event.stopPropagation();
+        event.currentTarget.dispatchEvent(
+          new CustomEvent('tv:expand', { detail: id, bubbles: true }),
+        );
+      }}
+      onKeyDown={(event) => {
+        // React Flow treats Enter and space on a node as "select". Inside this
+        // button they mean "open", so they stop here.
+        if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
+      }}
+    >
+      + {count} not shown
+    </button>
+  );
+}
 
 /** A leaf: an instance, a bucket, a function. */
 export const ResourceNode = memo(function ResourceNode({ data, selected }: NodeProps<DiagramNode>) {

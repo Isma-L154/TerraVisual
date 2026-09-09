@@ -32,7 +32,7 @@
     "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "preview:worker": "npm run build && wrangler dev",
     "check:headers": "node scripts/check-headers.mjs",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && playwright test web/e2e/accessibility.spec.ts web/e2e/keyboard.spec.ts web/e2e/security.spec.ts web/e2e/summarising.spec.ts && playwright test web/e2e/performance.spec.ts --workers=1",
     "test:e2e:ui": "playwright test --ui",
     "perf:fixtures": "node scripts/make-perf-fixtures.mjs"
   },

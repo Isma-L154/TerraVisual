@@ -398,6 +398,30 @@ p.diagnostic-error {
 }
 
 /*
+ * What a folded container is holding, and how to open it.
+ *
+ * A real button, sized so it can be hit: this is the only way to see what is
+ * inside, and a target somebody misses is a door that is locked.
+ */
+.dg-folded {
+  margin-top: 6px;
+  align-self: flex-start;
+  font: inherit;
+  font-size: 11px;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--node-color, var(--cat-other));
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.dg-folded:hover {
+  border-style: solid;
+}
+
+/*
  * Focus on a diagram node.
  *
  * React Flow's own stylesheet sets `outline: none` on a focused selectable
