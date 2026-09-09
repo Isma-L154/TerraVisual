@@ -47,10 +47,13 @@
     "json-schema-to-typescript": "16.0.0",
     "prettier": "3.9.6",
     "typescript-eslint": "8.70.0",
-    "wrangler": "4.129.1"
+    "wrangler": "4.130.0"
   },
   "prettier": {
     "singleQuote": true,
     "printWidth": 100
+  },
+  "overrides": {
+    "sharp": "0.35.4"
   }
 }
