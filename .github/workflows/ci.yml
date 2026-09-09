@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: core/go.mod
           cache-dependency-path: '**/go.sum'
@@ -97,7 +97,7 @@ jobs:
       # The suite runs against the deployment Worker serving the real build, so
       # it needs the analyzer as well as the application: an accessibility pass
       # over a page whose diagram never arrives would prove nothing.
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: core/go.mod
           cache-dependency-path: '**/go.sum'
@@ -145,7 +145,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version-file: core/go.mod
           cache-dependency-path: '**/go.sum'
