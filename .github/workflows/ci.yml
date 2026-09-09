@@ -89,7 +89,7 @@ jobs:
         run: npm run build:web
 
   e2e:
-    name: Accessibility and keyboard journey
+    name: Browser suite (accessibility, keyboard, performance)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -116,7 +116,12 @@ jobs:
         run: npm run build
 
       - name: Accessibility and keyboard journey
-        run: npx playwright test
+        run: npx playwright test web/e2e/accessibility.spec.ts web/e2e/keyboard.spec.ts
+
+      # Alone on the machine. Timing anything while a second browser competes
+      # for the same two cores measures the runner, not the application.
+      - name: Performance budgets
+        run: npx playwright test web/e2e/performance.spec.ts --workers=1
 
       # Only on failure, and only for a week: a trace is a recording of a
       # browser session and there is no reason to keep one that passed.

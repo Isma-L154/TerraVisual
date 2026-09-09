@@ -39,6 +39,7 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run test:core` / `test:web` | One side only |
 | `npm run test:e2e` | Accessibility and the keyboard journey, in a real browser. Builds first, then serves the build through the deployment Worker so the tests run under the production CSP |
 | `npm run fuzz` | 30 seconds of fuzzing against the analyzer |
+| `npm run perf:fixtures` | Regenerates the reference workspaces the performance budgets are measured against. Changing them changes the baseline |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` / `lint:core` | ESLint / `go vet` |
 | `npm run format` | Prettier, writing changes |
@@ -82,6 +83,23 @@ Some conventions worth stating, because they are easy to break by accident:
 - **Size budgets are enforced by the build**, not by good intentions. If a
   change pushes the analyzer over, either bring it back under or revise the
   budget deliberately and write down why.
+
+## Dependency overrides
+
+`package.json` carries one `overrides` entry, and JSON has nowhere to explain
+itself, so it is explained here:
+
+- **`sharp` pinned to 0.35.4.** It arrives through `wrangler` → `miniflare`, and
+  the version they resolve to carries a high-severity advisory in libheif
+  (GHSA-g89c-p67h-r497, GHSA-2jg2-4ch7-h545). Nothing in this project decodes
+  images, so the vulnerable path is not reachable from our code — but a
+  development dependency with a known high-severity advisory is not something to
+  keep merely because it is inconvenient to fix, and the patched version is a
+  patch release. Remove the override once wrangler ships a miniflare that
+  resolves 0.35.4 or later on its own.
+
+Overrides are a way of taking responsibility for somebody else's dependency
+tree. Each one should be temporary and should say when it can go.
 
 ## Continuous integration
 
