@@ -11,6 +11,7 @@ weighed, and what each one costs us.
 | [0004](0004-data-driven-resource-catalog.md) | Data-driven resource catalog | Accepted |
 | [0005](0005-frontend-stack.md) | Frontend stack: React, TypeScript, Vite, CodeMirror 6 | Accepted |
 | [0006](0006-hosting-cloudflare-workers.md) | Hosting on Cloudflare Workers | Accepted |
+| [0007](0007-no-csp-violation-reporting.md) | No CSP violation reporting in production | Proposed |
 
 Each record states context, problem, options considered, decision, rationale,
 consequences and rejected alternatives. Superseded records are kept and marked,
