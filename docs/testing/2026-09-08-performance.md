@@ -84,7 +84,7 @@ timing a line of text would measure how fast the test types.
 
 | Workspace | p50 | p95 | Budget |
 |-----------|-----|-----|--------|
-| 239 resources | 331 ms | **346 ms** | 500 ms |
+| 239 resources | 328 ms | **356 ms** | 500 ms |
 | 1193 resources | 850 ms | **860 ms** | 500 ms |
 
 At 1193 resources the 860 ms breaks down as roughly 250 ms of debounce, 190 ms
@@ -98,11 +98,12 @@ The time is React and React Flow committing the nodes.
 
 | Workspace | Keystroke handling p50 | p95 | Max |
 |-----------|------------------------|-----|-----|
-| 1193 resources | 0 ms | **1–5 ms** | 5 ms |
+| 1193 resources | 6 ms | **12 ms** | 12 ms |
 
-The editor stays responsive on the largest reference workspace because analysis
-is in a worker. This is the requirement's whole purpose and it is met with three
-orders of magnitude to spare.
+Measured from the real `keydown` to the frame after the editor updates, while
+the analyzer is busy with the previous keystroke. The editor stays responsive on
+the largest reference workspace because analysis is in a worker. This is the
+requirement's whole purpose and it is met with a factor of four to spare.
 
 The old *wording*, however, also covered something it was never about — see
 below.
@@ -121,7 +122,7 @@ It now says: *p95 keystroke handling < 50 ms, at any workspace size the analyzer
 accepts.*
 
 Why: the purpose was that analysis must never make the editor stutter, and that
-is met at p95 1–5 ms. But the old wording also covered React committing the
+is met at p95 12 ms. But the old wording also covered React committing the
 diagram — 67 to 162 ms for twelve hundred nodes, once per debounced update. No
 amount of worker isolation changes the cost of putting twelve hundred elements
 in a document, and calling that "analysis blocking typing" describes the wrong
@@ -137,7 +138,7 @@ It said: *p95 keystroke → diagram < 500 ms.*
 It now says: *< 500 ms up to 250 resources; beyond that it grows with the number
 of nodes drawn.*
 
-Why: at 239 resources the loop is 346 ms and the budget holds. At 1193 it is
+Why: at 239 resources the loop is 356 ms and the budget holds. At 1193 it is
 860 ms. Fitting 500 ms at that size means drawing fewer nodes — virtualising the
 diagram, or capping it deliberately with the outline staying complete — which is
 a feature with a user-visible decision in it, not a tuning exercise. It has its
@@ -149,21 +150,30 @@ and it would have been a lie by omission.
 
 ---
 
-## An instrument that was wrong
+## Two instruments that were wrong
 
-Worth recording, because it looked exactly like a catastrophic defect.
+Both are recorded because both produced confident numbers that were not about
+the application at all, and the second one flattered it.
 
-Loading the 121 kB workspace with Playwright's `locator.fill()` took **24.8
-seconds** and produced a single **25.3-second** long task. Read straight, that
-says the editor freezes for half a minute on a large file.
+**`fill()` said the editor freezes for half a minute.** Loading the 121 kB
+workspace with Playwright's `locator.fill()` took **24.8 seconds** and produced a
+single **25.3-second** long task. Pasting the same text the way a person does —
+clipboard, Ctrl+V — takes **624 ms** end to end, from keypress to a complete
+twelve-hundred-node diagram, with the longest main-thread task at 162 ms. The 25
+seconds was Playwright's synthetic insertion into a `contenteditable`. The suite
+pastes for this reason, and says so.
 
-It does not. Pasting the same text the way a person does — clipboard, Ctrl+V —
-takes **624 ms** end to end, from keypress to a complete twelve-hundred-node
-diagram, with the longest main-thread task at 162 ms.
+**A synthetic `beforeinput` event said typing was instant.** The first version of
+the NFR-2 measurement dispatched `new InputEvent('beforeinput', …)` and reported
+p95 1 ms. It was measuring nothing: the browser fires `beforeinput` to announce
+an edit it is about to perform, it does not perform one, so CodeMirror's document
+never changed and the timer measured an event dispatch and a frame. Pressing real
+keys gives **p50 6 ms, p95 12 ms** — still comfortably inside the 50 ms budget,
+but now a fact rather than an artefact.
 
-The 25 seconds was Playwright's synthetic insertion into a `contenteditable`,
-not the application. The performance suite pastes for this reason, and the
-helper says so, so nobody re-derives the same false alarm.
+The lesson is not symmetrical, which is why both are here. A measurement that
+makes the product look broken gets investigated immediately. One that makes it
+look perfect can sit there for years.
 
 ---
 
@@ -178,9 +188,22 @@ The browser suite runs on every pull request and fails it on a regression:
   throttled connection.
 
 Where a number depends on the machine, what is asserted is the part the
-application controls. The loop test subtracts the fixed 250 ms debounce rather
-than pretending a shared CI runner is a laptop, so it fails for a regression and
-not for a slow morning on GitHub's infrastructure.
+application controls: the loop test subtracts the fixed 250 ms debounce, which
+costs the same everywhere.
+
+The loop test also carries a larger allowance on CI, and that is worth stating
+rather than hiding in a constant. A two-core shared runner measures analysis at
+94 ms where a development machine measures 61 ms, and the loop at 803 ms where
+the same code measures 356 ms. Asserting the strict budget there would fail for
+the runner's hardware rather than for a regression. So on CI the test is a
+regression detector — it catches a change that makes the loop several times
+slower — and the budget itself is certified by measurement on real hardware. The
+gap in that certification is the first item in the next section, and it is the
+honest cost of this arrangement.
+
+The performance tests also run with the machine to themselves (`--workers=1`).
+Timing anything while a second browser competes for the same two cores measures
+the runner, not the application.
 
 The size budget is enforced separately, in the Go job, by the build itself.
 

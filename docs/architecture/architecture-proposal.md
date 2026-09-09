@@ -92,14 +92,14 @@ change is narrower than it looks.
 
 NFR-2 previously said "main thread never blocked > 50 ms by our own code". Its
 purpose — analysis must never make the editor stutter — is met with a very large
-margin: keystroke handling is p95 **1–5 ms** on a workspace of 1193 resources,
+margin: keystroke handling is p95 **12 ms** on a workspace of 1193 resources,
 because analysis happens in a worker. But the old wording also covered something
 it was never about: React committing the diagram. Drawing 1193 nodes is a single
 render of 67–162 ms, once per debounced update, and no amount of worker
 isolation changes that. The requirement now says what it actually protects and
 is measured directly.
 
-NFR-3 gained a size. At 239 resources the loop is p95 **346 ms** against a
+NFR-3 gained a size. At 239 resources the loop is p95 **356 ms** against a
 500 ms budget; at 1193 it is **860 ms**, of which 250 ms is the debounce, about
 190 ms is analysis, and the rest is rendering twelve hundred DOM nodes. Making
 that fit would mean drawing fewer nodes — virtualisation, or a deliberate cap
