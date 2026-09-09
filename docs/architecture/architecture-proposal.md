@@ -68,8 +68,8 @@ Stated deliberately, not forgotten:
 | ID | Requirement | Measure |
 |----|-------------|---------|
 | NFR-1 | User code **never** leaves the browser | Zero network requests carrying user content; verifiable in the network panel |
-| NFR-2 | Analysis never blocks typing | Main thread never blocked > 50 ms by our own code |
-| NFR-3 | Loop latency | p95 keystroke → diagram < 500 ms (includes 250 ms debounce) |
+| NFR-2 | Analysis never blocks typing | p95 keystroke handling < 50 ms, at any workspace size the analyzer accepts |
+| NFR-3 | Loop latency | p95 keystroke → diagram < 500 ms up to 250 resources (includes 250 ms debounce); beyond that it grows with the number of nodes drawn |
 | NFR-4 | Analysis performance | p95 < 300 ms at 200 resources; < 1 s at 1000 |
 | NFR-5 | Payload weight | The editor is interactive **before** the analyzer arrives; the analyzer artifact ≤ **2.0 MB compressed**, lazily loaded and immutably cached. Time to an interactive editor, not artifact size, is the user-facing budget |
 | NFR-6 | Accessibility | WCAG 2.2 AA; complete keyboard-only journey; no information conveyed visually only |
@@ -86,6 +86,30 @@ rather than merely missed: Go's runtime plus `hcl` and `cty`, with zero
 functions, already costs 1.50 MB compressed. The measurements, the component
 breakdown and the reasoning are in
 [spike-wasm-core.md](spike-wasm-core.md).
+
+**NFR-2 and NFR-3 were revised after the measurements in issue #23**, and the
+change is narrower than it looks.
+
+NFR-2 previously said "main thread never blocked > 50 ms by our own code". Its
+purpose — analysis must never make the editor stutter — is met with a very large
+margin: keystroke handling is p95 **1–5 ms** on a workspace of 1193 resources,
+because analysis happens in a worker. But the old wording also covered something
+it was never about: React committing the diagram. Drawing 1193 nodes is a single
+render of 67–162 ms, once per debounced update, and no amount of worker
+isolation changes that. The requirement now says what it actually protects and
+is measured directly.
+
+NFR-3 gained a size. At 239 resources the loop is p95 **346 ms** against a
+500 ms budget; at 1193 it is **860 ms**, of which 250 ms is the debounce, about
+190 ms is analysis, and the rest is rendering twelve hundred DOM nodes. Making
+that fit would mean drawing fewer nodes — virtualisation, or a deliberate cap
+with the outline staying complete — which is a feature rather than a tuning
+exercise, and has its own issue. Stating the size at which the budget holds is
+honest; quietly leaving the number at 500 ms and not measuring above 200
+resources would not be.
+
+The measurements are in
+[the performance report](../testing/2026-09-08-performance.md).
 
 ---
 

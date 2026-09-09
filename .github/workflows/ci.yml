@@ -89,7 +89,7 @@ jobs:
         run: npm run build:web
 
   e2e:
-    name: Accessibility and keyboard journey
+    name: Browser suite (accessibility, keyboard, performance)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -115,7 +115,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Accessibility and keyboard journey
+      # Accessibility, the keyboard journey, and the performance budgets. The
+      # budgets that depend on the machine are asserted on the part the
+      # application controls rather than on wall-clock time, so a shared runner
+      # fails them only for a real regression.
+      - name: Accessibility, keyboard journey and performance budgets
         run: npx playwright test
 
       # Only on failure, and only for a week: a trace is a recording of a
