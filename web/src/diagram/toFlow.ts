@@ -8,6 +8,15 @@ export type DiagramNodeData = {
   node: InfraNode;
   depth: number;
   unknownCount: number;
+  /**
+   * How many resources this container is holding out of sight.
+   *
+   * Zero for everything the diagram is drawing in full. Non-zero means the
+   * diagram summarised, and the node has to say so — a container that quietly
+   * showed nothing would read as an empty subnet, which is a different and
+   * much worse claim.
+   */
+  hiddenCount: number;
   [key: string]: unknown;
 };
 
@@ -50,7 +59,10 @@ export function toFlowEdges(model: InfraModel): FlowEdge[] {
     }));
 }
 
-export function toFlowNodes(model: InfraModel): { nodes: DiagramNode[]; layout: Layout } {
+export function toFlowNodes(
+  model: InfraModel,
+  hidden: ReadonlyMap<string, number> = new Map(),
+): { nodes: DiagramNode[]; layout: Layout } {
   const computed = layout(model);
   const byId = new Map(model.nodes.map((node) => [node.id, node]));
 
@@ -97,11 +109,13 @@ export function toFlowNodes(model: InfraModel): { nodes: DiagramNode[]; layout: 
         parentId ? byId.get(parentId) : undefined,
         connections.get(id),
         childCount.get(id) ?? 0,
+        hidden.get(id) ?? 0,
       ),
       data: {
         node,
         depth: box.depth,
         unknownCount: countUnknown(node),
+        hiddenCount: hidden.get(id) ?? 0,
       },
       style: { width: box.width, height: box.height },
     });

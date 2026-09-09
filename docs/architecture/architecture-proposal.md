@@ -69,7 +69,7 @@ Stated deliberately, not forgotten:
 |----|-------------|---------|
 | NFR-1 | User code **never** leaves the browser | Zero network requests carrying user content; verifiable in the network panel |
 | NFR-2 | Analysis never blocks typing | p95 keystroke handling < 50 ms, at any workspace size the analyzer accepts |
-| NFR-3 | Loop latency | p95 keystroke → diagram < 500 ms up to 250 resources (includes 250 ms debounce); beyond that it grows with the number of nodes drawn |
+| NFR-3 | Loop latency | p95 keystroke → diagram < 500 ms (includes 250 ms debounce). Above ~400 drawn nodes the diagram summarises to keep this true, and says so |
 | NFR-4 | Analysis performance | p95 < 300 ms at 200 resources; < 1 s at 1000 |
 | NFR-5 | Payload weight | The editor is interactive **before** the analyzer arrives; the analyzer artifact ≤ **2.0 MB compressed**, lazily loaded and immutably cached. Time to an interactive editor, not artifact size, is the user-facing budget |
 | NFR-6 | Accessibility | WCAG 2.2 AA; complete keyboard-only journey; no information conveyed visually only |
@@ -99,14 +99,18 @@ render of 67–162 ms, once per debounced update, and no amount of worker
 isolation changes that. The requirement now says what it actually protects and
 is measured directly.
 
-NFR-3 gained a size. At 239 resources the loop is p95 **356 ms** against a
-500 ms budget; at 1193 it is **860 ms**, of which 250 ms is the debounce, about
-190 ms is analysis, and the rest is rendering twelve hundred DOM nodes. Making
-that fit would mean drawing fewer nodes — virtualisation, or a deliberate cap
-with the outline staying complete — which is a feature rather than a tuning
-exercise, and has its own issue. Stating the size at which the budget holds is
-honest; quietly leaving the number at 500 ms and not measuring above 200
-resources would not be.
+NFR-3 gained a size, and then largely lost it again. At 239 resources the loop
+is p95 **340 ms**. At 1193 it was **860 ms** — of which 250 ms was the debounce,
+about 190 ms analysis, and the rest rendering twelve hundred DOM nodes — so the
+diagram was taught to summarise above 400 drawn nodes (#61), folding detail into
+containers that say what they hold. That took the same case to **~500 ms**.
+
+What is left is not rendering. At that size analysis is about 220 ms and the
+debounce is 250 ms, so the budget is nearly spent before a node is drawn. The
+requirement is stated without a size because the mechanism that keeps it true is
+now in the product rather than in a caveat — but the honest number at 1193
+resources is *at* the budget rather than comfortably inside it, and the
+performance report says so.
 
 The measurements are in
 [the performance report](../testing/2026-09-08-performance.md).

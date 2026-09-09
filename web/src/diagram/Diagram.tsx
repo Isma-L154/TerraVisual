@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
 import { nodeTypes } from './nodes';
 import { toFlowEdges, toFlowNodes, type DiagramNode } from './toFlow';
+import { summarise } from './summarise';
 
 /**
  * What a screen reader is told about the diagram's controls.
@@ -30,6 +31,11 @@ export type DiagramProps = {
   model: InfraModel | null;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /**
+   * Told how much the diagram folded away, so the interface can say it once
+   * rather than leaving it to be inferred from the nodes.
+   */
+  onSummarised?: (hiddenTotal: number) => void;
 };
 
 /**
@@ -43,13 +49,54 @@ export type DiagramProps = {
  * a peer view rather than a fallback: a spatial canvas is not a good way to
  * read a hierarchy, however accessible its nodes are.
  */
-export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
-  const { nodes } = useMemo(
-    () => (model ? toFlowNodes(model) : { nodes: [], layout: null }),
-    [model],
+export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramProps) {
+  // Containers the reader has opened. Kept here rather than in the model:
+  // it is a fact about this person's view, not about their infrastructure, and
+  // it must survive the model being replaced on every keystroke.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+
+  const summary = useMemo(() => (model ? summarise(model, { expanded }) : null), [model, expanded]);
+
+  const drawn = useMemo(
+    () => (model && summary ? { ...model, nodes: summary.nodes } : null),
+    [model, summary],
   );
 
-  const edges = useMemo(() => (model ? toFlowEdges(model) : []), [model]);
+  const { nodes } = useMemo(
+    () => (drawn && summary ? toFlowNodes(drawn, summary.hidden) : { nodes: [], layout: null }),
+    [drawn, summary],
+  );
+
+  const edges = useMemo(() => (drawn ? toFlowEdges(drawn) : []), [drawn]);
+
+  const hiddenTotal = summary?.hiddenTotal ?? 0;
+  useEffect(() => {
+    onSummarised?.(hiddenTotal);
+  }, [hiddenTotal, onSummarised]);
+
+  /**
+   * Opening a folded container.
+   *
+   * The request comes from a button inside a node, and React Flow owns every
+   * component between that button and this one — so it arrives as an event
+   * that bubbles, rather than as a callback threaded through a node type that
+   * would ignore it in every other case.
+   *
+   * A callback ref rather than an effect: it attaches when the element exists
+   * and detaches when it goes, with no dependency array to get wrong.
+   */
+  const listenForExpand = useCallback((element: HTMLDivElement | null) => {
+    if (!element) return;
+
+    const onExpand = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      if (!id) return;
+      setExpanded((previous) => new Set(previous).add(id));
+    };
+
+    element.addEventListener('tv:expand', onExpand);
+    return () => element.removeEventListener('tv:expand', onExpand);
+  }, []);
 
   const withSelection = useMemo(
     () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
@@ -73,7 +120,7 @@ export function Diagram({ model, selectedId, onSelect }: DiagramProps) {
   }
 
   return (
-    <div className="diagram" data-testid="diagram">
+    <div className="diagram" data-testid="diagram" ref={listenForExpand}>
       <ReactFlow
         nodes={withSelection}
         edges={edges}

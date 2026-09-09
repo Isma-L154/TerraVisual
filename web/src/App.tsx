@@ -35,6 +35,9 @@ export function App() {
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
   const [reveal, setReveal] = useState<Range | null>(null);
   const [importing, setImporting] = useState(false);
+  // How much the diagram folded away to stay quick. Reported by the diagram
+  // rather than computed here, because the diagram is what decides.
+  const [hiddenInDiagram, setHiddenInDiagram] = useState(0);
 
   const analysis = useAnalysis(workspace);
 
@@ -217,6 +220,17 @@ export function App() {
             </div>
           </div>
 
+          {hiddenInDiagram > 0 && view === 'diagram' ? (
+            /* A summary presented as a complete picture is the failure this
+               project cares most about, so the diagram says when it is one —
+               and points at the view that is still complete. */
+            <p className="pane-notice" role="status">
+              This workspace is large, so the diagram summarises: {hiddenInDiagram} resources are
+              folded into their containers. Open one with the button on it, or use the outline,
+              which lists everything.
+            </p>
+          ) : null}
+
           {analysis.model?.stats.truncated ? (
             /* Saying so is not optional: a partial picture presented as a
                complete one is the failure mode this project cares most about. */
@@ -227,7 +241,12 @@ export function App() {
           ) : null}
 
           {view === 'diagram' ? (
-            <Diagram model={analysis.model} selectedId={selectedId} onSelect={selectNode} />
+            <Diagram
+              model={analysis.model}
+              selectedId={selectedId}
+              onSelect={selectNode}
+              onSummarised={setHiddenInDiagram}
+            />
           ) : (
             <Outline model={analysis.model} selectedId={selectedId} onSelect={selectNode} />
           )}
