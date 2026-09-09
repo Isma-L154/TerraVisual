@@ -16,7 +16,7 @@ and become their own issues.
 | 2 | CORS | **OK** (N/A by design, enforced anyway) | No API exists to be called cross-origin, and the Worker actively deletes any `Access-Control-Allow-Origin` an upstream might add — `deploy/headers.ts:73` |
 | 3 | Backend validation | **N/A — structural** | There is no backend. The only server-side surface is static asset delivery, whose entire input is a method and a path — `deploy/worker.ts:33-46`. The client-side equivalents are real and are audited under control 4 |
 | 4 | Input sanitization and storage | **OK** | No SQL, no shell, no template engine, no deserializer of untrusted data beyond a shape-checked JSON payload; no `innerHTML`, no `dangerouslySetInnerHTML`, no `eval` in shipped code |
-| 5 | Rate limiting | **PARTIAL** | Compute limits exist and are proven by tests that trip them; there is **no request-rate limit** on the deployment at any layer this repository controls, and the platform's defaults are UNVERIFIED |
+| 5 | Rate limiting | **PARTIAL** at the time of audit; a request-rate limit was added on 2026-09-09 (#55) | Compute limits exist and are proven by tests that trip them; there was no request-rate limit on the deployment, and the platform's defaults remain UNVERIFIED |
 | 6 | Row level security | **N/A — structural** | No database, no server-side storage, no accounts. The only storage is IndexedDB, isolated by the browser per origin and per profile |
 | 7 | Content Security Policy | **PARTIAL** at the time of audit; the `style-src` finding was fixed on 2026-09-09 (#56) | A CSP is served and was read off a real response; `script-src` carries no `unsafe-inline` and uses `wasm-unsafe-eval` rather than `unsafe-eval`. `style-src` carried `'unsafe-inline'` and now uses a per-response nonce |
 
@@ -256,6 +256,14 @@ or the Workers `ratelimit` binding applied per client IP in `deploy/worker.ts`,
 together with a spend alert so the failure mode is a notification rather than a
 bill.
 
+**Fixed on 2026-09-09** (#55). The Worker now rate-limits at 1000 requests per
+minute per address, keyed on `CF-Connecting-IP`, failing open if the limiter is
+unavailable. Proven by tripping it with the limit temporarily lowered to five:
+five requests answered 200, the rest 429 with `Retry-After: 60` and the full set
+of security headers. The spend alert remains an account-level action that cannot
+be created from this repository, and is documented in
+[the deployment guide](../deployment/README.md).
+
 **UNVERIFIED:** Cloudflare applies platform-level DDoS protection by default,
 which probably absorbs the crude version of this. Whether it is active on this
 account, and at what threshold, cannot be read from this repository. It is
@@ -432,10 +440,12 @@ assumption.
 
 ## Findings ordered by real risk in this project
 
-1. **No request-rate limit on the deployment** (control 5). The only finding
-   with a plausible unhappy ending: an inflated bill, or a day of downtime. It
-   ranks first because it can actually cost something here, not because rate
-   limiting is severe in the abstract.
+1. **No request-rate limit on the deployment** (control 5) — **fixed,
+   2026-09-09, #55**. The only finding with a plausible unhappy ending: an
+   inflated bill, or a day of downtime. It ranked first because it could
+   actually cost something here, not because rate limiting is severe in the
+   abstract. The spend alert that completes it is an account action the project
+   owner has to take.
 2. **`style-src 'unsafe-inline'`** (control 7). No exploit path exists today,
    because nothing can inject markup into the page. A missing layer of defence
    rather than a hole, and worth closing while the application is still small

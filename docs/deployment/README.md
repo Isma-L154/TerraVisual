@@ -39,6 +39,18 @@ Add them under **Settings → Secrets and variables → Actions**.
 Until they exist, the deploy workflow skips with a notice instead of failing.
 A red X nobody can fix teaches people to ignore red X's.
 
+### One thing the dashboard has to do: a spend alert
+
+The Worker rate-limits requests per address, generously, which stops the
+cheapest kind of abuse (see below). It cannot stop every kind, and a rate limit
+is a guard rather than a guarantee.
+
+The other half of that guard is a **notification budget** on the Cloudflare
+account — *Manage Account → Billing → Notifications* — so an unexpected month
+arrives as an email rather than as an invoice. Nothing in this repository can
+create it, and it is the difference between noticing in a day and noticing in a
+month.
+
 ## How deployment happens
 
 ```
@@ -66,6 +78,39 @@ own domain, add a route:
 The zone has to be on the same Cloudflare account. After changing this, run the
 header check against the custom hostname: a route that resolves elsewhere would
 serve the site without the Worker, and therefore without any of its headers.
+
+## The rate limit
+
+Configured in `wrangler.jsonc` and applied in `deploy/worker.ts`:
+**1000 requests per minute per address**.
+
+That is deliberately far above any person — a page load is about seven requests,
+so it allows roughly 140 loads a minute from a single address, and a classroom
+sharing one NAT address is nowhere near it. A limit that catches real users
+would be worse than no limit here, because nothing served is private: what
+flooding this site costs is billed requests and, at volume, availability for
+everybody else.
+
+It **fails open**. If the binding is missing or the limiter errors, requests are
+served. A static site that goes down because its rate limiter had a bad day has
+turned a billing safeguard into an outage.
+
+Proven by being tripped rather than by being configured — with the limit
+temporarily lowered to five:
+
+```
+$ for i in $(seq 1 12); do curl -s -o /dev/null -w "%{http_code} " http://localhost:8792/; done
+200 200 200 200 200 429 429 429 429 429 429 429
+
+$ curl -si http://localhost:8792/ | head -3
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+Content-Type: text/plain; charset=utf-8
+```
+
+The refusal carries the full set of security headers, because the one response
+on the site without a Content Security Policy would be a strange thing to leave
+lying around.
 
 ## What is deliberately absent
 
