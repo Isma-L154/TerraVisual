@@ -7,6 +7,16 @@ security headers. There is no application backend
 chosen over flat static hosting: **the security headers are code, so they can
 be asserted against a real response.** Configuration cannot be.
 
+## Where it lives
+
+**https://terravisual.cloudils.com**
+
+A subdomain rather than the apex: `cloudils.com` already serves something else,
+and a Worker on the apex would have taken it over. The route is in
+`wrangler.jsonc` with `custom_domain: true`, so Cloudflare creates and manages
+the DNS record and the certificate — one place rather than half here and half in
+a dashboard nobody remembers editing.
+
 ## Running it locally
 
 ```bash
@@ -39,17 +49,31 @@ Add them under **Settings → Secrets and variables → Actions**.
 Until they exist, the deploy workflow skips with a notice instead of failing.
 A red X nobody can fix teaches people to ignore red X's.
 
-### One thing the dashboard has to do: a spend alert
+### Two things the dashboard has to do
+
+**Turn off Web Analytics for this zone.** The first production deployment came
+back with Cloudflare's beacon injected into the page — `beacon.min.js` from
+`static.cloudflareinsights.com`, added at the edge after the Worker, by a zone
+setting no file in this repository can see. The Content Security Policy refused
+to run it, so nothing was ever collected, and `scripts/check-headers.mjs` now
+fails a deployment that serves it. But a promise of zero telemetry should not
+depend on a policy catching an injection every time: *Analytics → Web Analytics*
+on the zone, off.
+
+It is worth knowing that Cloudflare only injects it for browser-shaped requests.
+A plain `curl` sees a clean page; a browser sees the beacon. That is why the
+header check now sends a browser's `User-Agent` and `Accept` — a checker that
+looks like a bot verifies nothing about what people receive.
+
+**A spend alert.**
 
 The Worker rate-limits requests per address, generously, which stops the
 cheapest kind of abuse (see below). It cannot stop every kind, and a rate limit
-is a guard rather than a guarantee.
-
-The other half of that guard is a **notification budget** on the Cloudflare
-account — *Manage Account → Billing → Notifications* — so an unexpected month
-arrives as an email rather than as an invoice. Nothing in this repository can
-create it, and it is the difference between noticing in a day and noticing in a
-month.
+is a guard rather than a guarantee. The other half of that guard is a
+notification budget — *Manage Account → Billing → Notifications* — so an
+unexpected month arrives as an email rather than as an invoice. Nothing in this
+repository can create it, and it is the difference between noticing in a day and
+noticing in a month.
 
 ## How deployment happens
 

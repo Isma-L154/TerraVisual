@@ -55,7 +55,9 @@ $ go test ./internal/analyzer -run TestAnalysisLatency -v -timing
 1000 blocks -> 1193 resources: p50 39.52 ms  p95 61.86 ms
 ```
 
-### NFR-5 — payload weight: **met, with little room left**
+### NFR-5 — payload weight: **the build says met; production says missed**
+
+The build-time check:
 
 ```
 $ node scripts/build-core.mjs
@@ -63,13 +65,32 @@ analyzer.wasm  raw 9.68 MB  brotli 1.93 MB
 budget (NFR-5) 2.00 MB  ->  within budget
 ```
 
-Also on the wire: the application bundle is 204 kB brotli and the stylesheet
-5 kB, both cached immutably by content hash.
+What production actually sends, measured against the deployed site on
+2026-09-09:
 
-**1.93 MB against a 2.00 MB budget is 3.5% of headroom.** The build fails if it
-is exceeded, so this cannot regress silently — but a single new dependency in
-the analyzer could consume the margin, and the next person to add one should
-know that before they start rather than when CI stops them.
+```
+$ curl --compressed https://terravisual.cloudils.com/analyzer.wasm
+Content-Encoding: br
+downloaded: 2,660,266 bytes   (2.54 MB)
+```
+
+**The budget is 2.00 MB and the wire is 2.54 MB.** The gap is not the artifact
+— it is the compressor. Our check runs `brotliCompressSync` at its default
+quality of 11, which is what a build can afford; Cloudflare compresses on the
+fly at a much lower quality, which is what an edge can afford. Both numbers are
+correct measurements of different things, and the one that matters is the one a
+visitor downloads.
+
+This is exactly the failure this exercise was for: a budget that had been
+verified for months against a number nobody was actually served. The fix is to
+ship a precompressed artifact and serve it with `Content-Encoding: br`, so the
+build's quality-11 output is what goes over the wire; that is #69, with the
+numbers in it.
+
+The rest of the payload on the wire, also measured in production: the
+application bundle 256 kB brotli, the HTML 393 bytes, both cached immutably by
+content hash. Those are unaffected — 256 kB against 204 kB matters far less than
+half a megabyte on the analyzer.
 
 The user-facing half of this budget — the editor being interactive before the
 analyzer arrives — is now a test. With the network throttled to 400 kbit/s, the
@@ -231,10 +252,11 @@ The size budget is enforced separately, in the Go job, by the build itself.
    (61 ms against 300 ms; 221 ms against 1000 ms) are wide enough to survive a
    4× slower machine; the loop at 239 resources, 346 ms against 500 ms, is not
    obviously safe on hardware three times slower, and should be measured on one.
-2. **Production.** Every number here comes from `wrangler dev` serving the
-   production build locally. Real edge latency, real compression negotiation and
-   real cold starts on Cloudflare are not measured, because nothing has been
-   deployed yet.
+2. **Production latency.** The timing numbers here come from `wrangler dev`
+   serving the production build locally. The site is now deployed and its
+   headers and transfer sizes were measured against it — which is how the
+   compression gap above was found — but edge latency, cold starts and
+   real-world loop timings on Cloudflare have not been measured.
 3. **A cold visit on a slow connection, end to end.** The throttled test proves
    the editor arrives first; it does not measure how long the whole first visit
    takes on a real 3G connection.

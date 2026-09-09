@@ -7,6 +7,17 @@
   // The Worker exists to set security headers on a static build (ADR-0006).
   // It has no bindings, no storage and no secrets, because the application has
   // no backend (ADR-0001) and this file must not quietly become one.
+  /*
+   * Where the site lives.
+   *
+   * A subdomain rather than the apex, deliberately: cloudils.com already serves
+   * something else, and a Worker on the apex would take it over. `custom_domain`
+   * asks Cloudflare to create and manage the DNS record, so the certificate and
+   * the route stay in one place instead of being half here and half in a
+   * dashboard nobody remembers editing.
+   */
+  "routes": [{ "pattern": "terravisual.cloudils.com", "custom_domain": true }],
+
   "assets": {
     "directory": "./web/dist",
     "binding": "ASSETS",
