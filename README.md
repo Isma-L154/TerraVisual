@@ -7,10 +7,15 @@ You write or drop in Terraform, and it draws the infrastructure that code
 describes — updating as the code changes, so the link between a line of HCL and a
 piece of infrastructure stays visible.
 
-> **Status: pre-implementation.** The architecture has been designed and
-> approved; the code is being built in the open, issue by issue. Start with the
-> [architecture proposal](docs/architecture/architecture-proposal.md) if you want
-> to know how it is meant to work and why.
+**It is live at [terravisual.cloudils.com](https://terravisual.cloudils.com).**
+
+> **Status: the first version is deployed.** It parses and evaluates HCL —
+> variables, locals, functions, expressions, `count`, `for_each` and local
+> modules — and draws AWS, Azure and GCP resources from a catalog that is data
+> rather than code. Start with the
+> [architecture proposal](docs/architecture/architecture-proposal.md) for how it
+> works and why, or the [audits](docs/security/) for what has been checked and
+> what has not.
 
 ---
 

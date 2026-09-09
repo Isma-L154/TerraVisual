@@ -71,6 +71,22 @@ const forbidden = [
   { header: 'server', describe: 'same' },
 ];
 
+/*
+ * Asking the way a browser asks.
+ *
+ * This is not decoration. Cloudflare injects its Web Analytics beacon into the
+ * HTML based on the request: a plain `fetch` gets a clean page, and a browser
+ * gets a page with a third-party script in it. A checker that looks like a bot
+ * therefore verifies nothing about what people actually receive — it was
+ * checked both ways against the first production deployment, and only the
+ * browser-shaped request saw the beacon.
+ */
+const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+};
+
 const paths = ['/', '/analyzer.wasm'];
 let failures = 0;
 
@@ -78,7 +94,7 @@ for (const path of paths) {
   const url = new URL(path, target);
   let response;
   try {
-    response = await fetch(url, { redirect: 'manual' });
+    response = await fetch(url, { redirect: 'manual', headers: BROWSER_HEADERS });
   } catch (error) {
     console.error(`FAIL ${url} — could not be fetched: ${error.message}`);
     failures++;
@@ -104,6 +120,36 @@ for (const path of paths) {
     if (response.headers.has(rule.header)) {
       console.error(`  PRESENT  ${rule.header} — should not be sent: ${rule.describe}`);
       failures++;
+    }
+  }
+
+  /*
+   * Nothing third-party in the page, checked against what is actually served.
+   *
+   * Not hypothetical. The first production deployment came back with
+   * Cloudflare's Web Analytics beacon injected into the HTML — added at the
+   * edge, after the Worker, by a zone setting nobody in this repository can
+   * see. The Content Security Policy refused to run it, which is the system
+   * working, but relying on the policy to catch it every time means the page
+   * ships a script we did not write and did not want.
+   *
+   * NFR-1 says user code never leaves the browser and the project ships no
+   * telemetry. This is that promise checked rather than asserted.
+   */
+  if (path === '/') {
+    const body = await response.text();
+    const injected = [...body.matchAll(/<script[^>]+src=["']([^"']+)["']/g)]
+      .map((match) => match[1])
+      .filter((src) => /^https?:\/\//.test(src) && !src.includes(new URL(target).host));
+
+    if (injected.length > 0) {
+      console.error(
+        '  PRESENT  third-party script in the page — nothing here loads code from elsewhere',
+      );
+      for (const src of injected) console.error(`           ${src}`);
+      failures++;
+    } else {
+      console.log('  ok       no third-party script in the page');
     }
   }
 

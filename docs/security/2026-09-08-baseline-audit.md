@@ -406,13 +406,21 @@ rather than closed, which is why it stays in this report.
 Much of an audit's value is in this list. Everything below is currently an
 assumption.
 
-1. **The production deployment.** Headers were verified against `wrangler dev`,
-   which runs the same `deploy/worker.ts` but is not the production edge. No
-   Cloudflare credentials exist in this environment, so nothing has been
-   deployed. *Access needed:* the `CLOUDFLARE_API_TOKEN` and
-   `CLOUDFLARE_ACCOUNT_ID` repository secrets — after which the deploy workflow
-   runs `check-headers.mjs --strict-tls` against the real URL on every
-   deployment and this becomes verified continuously rather than once.
+1. **The production deployment** — **resolved on 2026-09-09.** The site is live
+   at https://terravisual.cloudils.com and every header was read off the real
+   response: the full CSP with a per-response nonce, HSTS, `nosniff`,
+   `no-referrer`, `DENY`, `application/wasm` on the module, valid TLS, and none
+   of the headers that must be absent.
+
+   Deploying immediately found something no local check could have: Cloudflare
+   was injecting its Web Analytics beacon into the page from
+   `static.cloudflareinsights.com`. The CSP refused to run it — the system
+   working — but a zero-telemetry promise should not rest on a policy catching
+   an injection every time, so the header check now fails on any third-party
+   script in the page and the zone setting needs turning off. Two details worth
+   keeping: the injection happens *after* the Worker, so nothing in this
+   repository could see it, and it only happens for browser-shaped requests, so
+   a checker that looks like a bot would have reported a clean page.
 2. **Cloudflare account configuration.** WAF rules, DDoS thresholds, bot
    management, spend alerts, and the real scope of the API token. None of it
    lives in this repository. *Access needed:* the Cloudflare dashboard.
