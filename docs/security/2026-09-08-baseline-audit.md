@@ -18,7 +18,7 @@ and become their own issues.
 | 4 | Input sanitization and storage | **OK** | No SQL, no shell, no template engine, no deserializer of untrusted data beyond a shape-checked JSON payload; no `innerHTML`, no `dangerouslySetInnerHTML`, no `eval` in shipped code |
 | 5 | Rate limiting | **PARTIAL** | Compute limits exist and are proven by tests that trip them; there is **no request-rate limit** on the deployment at any layer this repository controls, and the platform's defaults are UNVERIFIED |
 | 6 | Row level security | **N/A — structural** | No database, no server-side storage, no accounts. The only storage is IndexedDB, isolated by the browser per origin and per profile |
-| 7 | Content Security Policy | **PARTIAL** | A CSP is served and was read off a real response; `script-src` carries no `unsafe-inline` and uses `wasm-unsafe-eval` rather than `unsafe-eval`, but `style-src` does carry `'unsafe-inline'` |
+| 7 | Content Security Policy | **PARTIAL** at the time of audit; the `style-src` finding was fixed on 2026-09-09 (#56) | A CSP is served and was read off a real response; `script-src` carries no `unsafe-inline` and uses `wasm-unsafe-eval` rather than `unsafe-eval`. `style-src` carried `'unsafe-inline'` and now uses a per-response nonce |
 
 Two controls are N/A, and both for the same reason: the application has no
 backend ([ADR-0001](../adr/0001-client-only-architecture.md)). That decision is

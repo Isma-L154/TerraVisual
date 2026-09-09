@@ -10,7 +10,7 @@
 /**
  * The Content-Security-Policy.
  *
- * Two directives are load-bearing and worth explaining rather than copying:
+ * Three directives are load-bearing and worth explaining rather than copying:
  *
  * `'wasm-unsafe-eval'` is what allows WebAssembly to be compiled **without**
  * opening `unsafe-eval`. The analyzer cannot run without it, and the broader
@@ -20,25 +20,52 @@
  * application fetches its own WASM module and nothing else; if some future
  * dependency tried to phone home, the browser would refuse and we would find
  * out from a report rather than from a user.
+ *
+ * `style-src` takes a fresh nonce on every response instead of the
+ * `'unsafe-inline'` it used to carry. CodeMirror mounts its theme as a `<style>`
+ * element at runtime, which is why the blanket allowance was there; a nonce
+ * covers exactly that element and nothing else. `style-src-attr` still allows
+ * inline style *attributes*, because React Flow positions every node with one
+ * and a nonce cannot cover an attribute — but an attribute cannot declare a
+ * selector or an `@import`, so it is a far narrower door than the one it
+ * replaces.
  */
-export const CONTENT_SECURITY_POLICY = [
-  "default-src 'none'",
-  "script-src 'self' 'wasm-unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "manifest-src 'self'",
-  "base-uri 'self'",
-  "form-action 'none'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  'upgrade-insecure-requests',
-].join('; ');
+export function contentSecurityPolicy(nonce: string): string {
+  return [
+    "default-src 'none'",
+    "script-src 'self' 'wasm-unsafe-eval'",
+    `style-src 'self' 'nonce-${nonce}'`,
+    "style-src-attr 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+    "base-uri 'self'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    'upgrade-insecure-requests',
+  ].join('; ');
+}
+
+/**
+ * A nonce for one response.
+ *
+ * Must never be reused: a nonce an attacker can predict or replay is worth
+ * exactly as much as `'unsafe-inline'`. `crypto.getRandomValues` is available in
+ * the Workers runtime and is the right source.
+ */
+export function createNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
 
 export const SECURITY_HEADERS: Record<string, string> = {
-  'Content-Security-Policy': CONTENT_SECURITY_POLICY,
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
@@ -56,9 +83,16 @@ export const SECURITY_HEADERS: Record<string, string> = {
  *
  * The response from the asset server is immutable, so it is rebuilt rather
  * than mutated.
+ *
+ * The nonce is a parameter rather than generated here because the same value
+ * has to reach two places: this header, and the HTML the page is built from.
+ * Generating it in both would produce two different nonces and a page whose
+ * editor has no styles.
  */
-export function withSecurityHeaders(response: Response, url?: URL): Response {
+export function withSecurityHeaders(response: Response, nonce: string, url?: URL): Response {
   const headers = new Headers(response.headers);
+
+  headers.set('Content-Security-Policy', contentSecurityPolicy(nonce));
 
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
