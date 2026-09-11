@@ -49,6 +49,7 @@ export const METRICS = {
   maxColumns: 4,
   emptyContainerWidth: 190,
   emptyContainerHeight: 44,
+  foldedContainerHeight: 72,
   rootGap: 24,
 } as const;
 
@@ -59,7 +60,13 @@ export const METRICS = {
  * stable key rather than left in model order, so nothing depends on the order
  * the analyzer happened to emit.
  */
-export function layout(model: InfraModel): Layout {
+export type LayoutOptions = {
+  /** Containers drawn without their children, which render a button instead. */
+  folded?: ReadonlySet<string>;
+};
+
+export function layout(model: InfraModel, options: LayoutOptions = {}): Layout {
+  const folded = options.folded ?? new Set<string>();
   const boxes = new Map<string, Box>();
   const order: string[] = [];
 
@@ -98,9 +105,11 @@ export function layout(model: InfraModel): Layout {
     let size: { width: number; height: number };
 
     if (children.length === 0) {
-      size = node.isContainer
-        ? { width: METRICS.emptyContainerWidth, height: METRICS.emptyContainerHeight }
-        : { width: METRICS.leafWidth, height: METRICS.leafHeight };
+      size = folded.has(node.id)
+        ? { width: METRICS.emptyContainerWidth, height: METRICS.foldedContainerHeight }
+        : node.isContainer
+          ? { width: METRICS.emptyContainerWidth, height: METRICS.emptyContainerHeight }
+          : { width: METRICS.leafWidth, height: METRICS.leafHeight };
     } else {
       const rows = pack(children.map(measure));
       size = {
@@ -222,31 +231,18 @@ function maxRootRowWidth(): number {
   return METRICS.leafWidth * 8;
 }
 
-/** Absolute position of a box, for consumers that do not nest their rendering. */
-export function absolutePosition(
-  layoutResult: Layout,
-  model: InfraModel,
-  id: string,
-): { x: number; y: number } | null {
-  const byId = new Map(model.nodes.map((node) => [node.id, node]));
+/** Every box in canvas coordinates rather than relative to its parent. */
+export function absoluteBoxes(result: Layout, model: InfraModel): Map<string, Box> {
+  const parents = new Map(model.nodes.map((node) => [node.id, node.parentId]));
+  const absolute = new Map<string, Box>();
 
-  let x = 0;
-  let y = 0;
-  let current: string | undefined = id;
-  const seen = new Set<string>();
-
-  while (current) {
-    if (seen.has(current)) return null;
-    seen.add(current);
-
-    const box = layoutResult.boxes.get(current);
-    if (!box) return null;
-    x += box.x;
-    y += box.y;
-
-    const node = byId.get(current);
-    current = node?.parentId && byId.has(node.parentId) ? node.parentId : undefined;
+  // `order` lists parents before children, so each parent is already absolute.
+  for (const id of result.order) {
+    const box = result.boxes.get(id)!;
+    const parentId = parents.get(id);
+    const parent = parentId ? absolute.get(parentId) : undefined;
+    absolute.set(id, parent ? { ...box, x: parent.x + box.x, y: parent.y + box.y } : box);
   }
 
-  return { x, y };
+  return absolute;
 }

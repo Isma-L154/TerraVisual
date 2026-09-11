@@ -12,7 +12,7 @@ interface is tested in a real browser rather than only in a simulated DOM.
 | Go unit and fixture tests | `core/internal/**` | The analyzer: parsing, evaluation, expansion, modules, placement, limits |
 | Go fuzzing | `core/internal/analyzer` | Malformed input, run on every change and never yet crashing |
 | TypeScript unit tests | `web/src/**/*.test.ts(x)` | The workspace, the worker client, layout, the components, the deployment Worker's headers |
-| Browser tests | `web/e2e` | Accessibility, the keyboard journey and the performance budgets, against the real build behind the real CSP |
+| Browser tests | `web/e2e` | Accessibility, the keyboard journey, the performance budgets and the diagram's geometry — nothing drawn on top of anything else — against the real build behind the real CSP |
 
 Run everything locally with `npm run verify`, and the browser suite with
 `npm run test:e2e` — which builds first, because a browser test against a stale

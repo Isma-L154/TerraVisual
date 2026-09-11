@@ -4,7 +4,8 @@ import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
 import { nodeTypes } from './nodes';
-import { toFlowEdges, toFlowNodes, type DiagramNode } from './toFlow';
+import { edgeTypes } from './edges';
+import { toFlow, type DiagramNode } from './toFlow';
 import { summarise } from './summarise';
 
 /**
@@ -62,12 +63,10 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
     [model, summary],
   );
 
-  const { nodes } = useMemo(
-    () => (drawn && summary ? toFlowNodes(drawn, summary.hidden) : { nodes: [], layout: null }),
+  const { nodes, edges } = useMemo(
+    () => (drawn && summary ? toFlow(drawn, summary.hidden) : { nodes: [], edges: [] }),
     [drawn, summary],
   );
-
-  const edges = useMemo(() => (drawn ? toFlowEdges(drawn) : []), [drawn]);
 
   const hiddenTotal = summary?.hiddenTotal ?? 0;
   useEffect(() => {
@@ -125,6 +124,7 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
         nodes={withSelection}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         /*
          * Selection.
          *

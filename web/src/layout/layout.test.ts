@@ -1,7 +1,7 @@
 import awsVpc from '../../../schemas/examples/aws-vpc.json';
 
 import type { InfraModel, InfraNode } from '../model';
-import { absolutePosition, layout, METRICS } from './layout';
+import { absoluteBoxes, layout, METRICS } from './layout';
 
 function node(overrides: Partial<InfraNode> & { id: string }): InfraNode {
   return {
@@ -227,28 +227,30 @@ describe('robustness', () => {
   });
 });
 
-describe('absolute positions', () => {
-  it('accumulates offsets up the tree', () => {
-    const result = layout(
-      model([
-        node({ id: 'vpc', isContainer: true }),
-        node({ id: 'subnet', parentId: 'vpc', isContainer: true }),
-        node({ id: 'instance', parentId: 'subnet' }),
-      ]),
-    );
+describe('absolute boxes', () => {
+  it('accumulates offsets down the tree', () => {
     const input = model([
       node({ id: 'vpc', isContainer: true }),
       node({ id: 'subnet', parentId: 'vpc', isContainer: true }),
       node({ id: 'instance', parentId: 'subnet' }),
     ]);
+    const result = layout(input);
+    const absolute = absoluteBoxes(result, input);
 
-    const absolute = absolutePosition(result, input, 'instance')!;
-    const relative = result.boxes.get('instance')!;
-
-    expect(absolute.x).toBeGreaterThan(relative.x);
-    expect(absolute.x).toBe(
-      relative.x + result.boxes.get('subnet')!.x + result.boxes.get('vpc')!.x,
+    expect(absolute.get('vpc')).toEqual(result.boxes.get('vpc'));
+    expect(absolute.get('instance')!.x).toBe(
+      result.boxes.get('instance')!.x + result.boxes.get('subnet')!.x + result.boxes.get('vpc')!.x,
     );
+  });
+});
+
+describe('folded containers', () => {
+  it('are tall enough for the button they render', () => {
+    const input = model([node({ id: 'vpc', isContainer: true })]);
+    const result = layout(input, { folded: new Set(['vpc']) });
+
+    expect(result.boxes.get('vpc')!.height).toBe(METRICS.foldedContainerHeight);
+    expect(METRICS.foldedContainerHeight).toBeGreaterThan(METRICS.emptyContainerHeight);
   });
 });
 

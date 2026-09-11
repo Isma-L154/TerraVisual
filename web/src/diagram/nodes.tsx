@@ -43,7 +43,9 @@ export const ContainerNode = memo(function ContainerNode({
       <ConnectionPoints />
       <div className="dg-container-header">
         <CategoryIcon category={node.category} size={14} />
-        <span className="dg-label">{node.label}</span>
+        <span className="dg-label" title={node.label}>
+          {node.label}
+        </span>
         <span className="dg-type">{displayType(node.type)}</span>
         {!node.catalogued ? <UncataloguedBadge /> : null}
       </div>
