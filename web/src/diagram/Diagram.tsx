@@ -165,10 +165,6 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
         minZoom={0.1}
         maxZoom={2}
         aria-label="Infrastructure diagram"
-        // React Flow's default descriptions are read aloud on every node and
-        // offer to move and delete things. Neither is possible here — the
-        // layout is ours and the diagram reports what the code says — so the
-        // defaults would be instructions to do something that cannot be done.
         ariaLabelConfig={ARIA_LABELS}
       >
         <Background gap={20} size={1} />

@@ -14,7 +14,8 @@ and revise the budget, with the reasoning set out in §6.
 
 ## 1. What was built
 
-A throwaway Go module at `spike/wasm-core/` that:
+A throwaway Go module at `spike/wasm-core/` — removed once its findings were
+recorded here (#72), and still in the history at commit `f2dc6f5` — that:
 
 - parses a multi-file workspace with `hclparse` / `hclsyntax`;
 - resolves input variables from their defaults;
@@ -44,6 +45,7 @@ module support and no resource references.
 Reproduce with:
 
 ```bash
+git checkout f2dc6f5 -- spike
 cd spike/wasm-core
 GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o dist/analyzer.wasm .
 node harness/gen-fixture.mjs 50   fixtures/n50

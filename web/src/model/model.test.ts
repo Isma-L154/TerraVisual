@@ -2,13 +2,11 @@ import awsVpc from '../../../schemas/examples/aws-vpc.json';
 import empty from '../../../schemas/examples/empty.json';
 import truncated from '../../../schemas/examples/truncated.json';
 
-import { displayValue, isKnown, isSupportedModel, SCHEMA_VERSION } from './index';
+import { displayValue, isSupportedModel, SCHEMA_VERSION } from './index';
 import type { Attribute, InfraModel } from './index';
 
-// The examples are validated against the JSON Schema by a Go test and typed as
-// InfraModel here. If the schema, the Go types and the TypeScript types ever
-// disagree, one of the two sides stops compiling — which is the point of
-// keeping the examples in a shared directory rather than duplicating fixtures.
+// The same examples are validated against the schema by a Go test, so a drift
+// between the schema and either language breaks a build.
 const examples: InfraModel[] = [awsVpc as InfraModel, empty as InfraModel, truncated as InfraModel];
 
 describe('InfraModel contract', () => {
@@ -37,8 +35,6 @@ describe('attribute honesty', () => {
 
     expect(displayValue(emptyString)).toBe('');
     expect(displayValue(undeterminable)).toBeNull();
-    expect(isKnown(emptyString)).toBe(true);
-    expect(isKnown(undeterminable)).toBe(false);
   });
 
   it('renders null as a value rather than as unknown', () => {
@@ -52,8 +48,6 @@ describe('attribute honesty', () => {
       .filter((attribute) => !attribute.known);
 
     expect(unknowns.length).toBeGreaterThan(0);
-    for (const attribute of unknowns) {
-      expect(attribute.reason).toBeTruthy();
-    }
+    for (const attribute of unknowns) expect(attribute.reason).toBeTruthy();
   });
 });

@@ -11,31 +11,21 @@ import { toLintDiagnostics, toOffsets } from './diagnostics';
 import { cspNonce } from './nonce';
 import { editorTheme, highlightStyle } from './theme';
 
-export type EditorProps = {
+type EditorProps = {
   /** Which workspace file is open. Changing it starts a new document. */
   path: string;
   content: string;
   diagnostics: Diagnostic[];
-  /**
-   * A range to scroll to and select. Changing it moves the cursor; setting it
-   * to the same value again does nothing, which is why callers pass a fresh
-   * object when they want to jump to somewhere the cursor already is.
-   */
+  /** A range to select and scroll to; pass a fresh object to jump again. */
   reveal?: Range | null;
   onChange: (content: string) => void;
   onCursorLine?: (line: number) => void;
 };
 
 /**
- * The code editor.
- *
- * CodeMirror rather than Monaco (ADR-0005): on a payload budget already
- * committed to a 1.9 MB analyzer, the difference between ~300 kB and 2-5 MB is
- * the editor appearing immediately versus the user watching an empty pane.
- *
- * The view is created once and driven by effects afterwards. Rebuilding it on
- * every render would throw away the cursor, the selection and the undo history
- * — the things somebody is relying on while they type.
+ * The code editor (CodeMirror, ADR-0005). The view is created once and driven
+ * by effects: rebuilding it would throw away the cursor, the selection and the
+ * undo history.
  */
 export function Editor({
   path,
@@ -49,10 +39,8 @@ export function Editor({
   const view = useRef<EditorView | null>(null);
   const hintId = useId();
 
-  // Held in refs so the extensions can read current values without the view
-  // being rebuilt every time a callback identity changes. Synced in an effect
-  // rather than during render: a ref written while rendering is a side effect,
-  // and React is entitled to render twice.
+  // In refs so a new callback identity does not rebuild the view. Synced in an
+  // effect, because a ref written during render is a side effect.
   const changeHandler = useRef(onChange);
   const cursorHandler = useRef(onCursorLine);
 
@@ -73,23 +61,17 @@ export function Editor({
       bracketMatching(),
       indentOnInput(),
       syntaxHighlighting(highlightStyle),
-      // Without this the editor's own stylesheet is refused by the Content
-      // Security Policy and the editor renders unstyled. Empty in development,
-      // where there is no Worker in front and no policy to satisfy.
+      // Without the nonce the Content Security Policy refuses CodeMirror's own
+      // stylesheet and the editor renders unstyled.
       EditorView.cspNonce.of(cspNonce()),
       hcl(),
       editorTheme,
       EditorView.lineWrapping,
-      // Tab indents inside the editor. That is a real accessibility trade-off:
-      // it makes Tab stop moving focus, so WCAG 2.1.2 requires that the way out
-      // be advertised rather than merely to exist. Escape then Tab leaves, and
-      // the hint below the editor says so — in text, to everybody, because a
-      // sighted keyboard user is just as stuck as a screen reader user.
+      // Tab indents, so Tab no longer moves focus. WCAG 2.1.2 then requires the
+      // way out to be advertised: the hint below says Escape, then Tab.
       keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
       EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          changeHandler.current(update.state.doc.toString());
-        }
+        if (update.docChanged) changeHandler.current(update.state.doc.toString());
         if (update.selectionSet && cursorHandler.current) {
           const position = update.state.selection.main.head;
           cursorHandler.current(update.state.doc.lineAt(position).number);
@@ -111,13 +93,12 @@ export function Editor({
       instance.destroy();
       view.current = null;
     };
-    // Deliberately keyed on the file alone: a different file is a different
-    // document, and its undo history should not continue the previous one's.
+    // Keyed on the file alone: a different file is a different document, and
+    // its undo history should not continue the previous one's.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, hintId]);
 
-  // Content arriving from elsewhere — an import, a shared link, an example —
-  // is applied without disturbing what the user is doing locally.
+  // Content from elsewhere — an import, a shared link, a reset.
   useEffect(() => {
     const instance = view.current;
     if (!instance) return;
@@ -128,13 +109,8 @@ export function Editor({
     instance.dispatch({ changes: { from: 0, to: current.length, insert: content } });
   }, [content]);
 
-  // Markers are pushed in when analysis finishes, rather than pulled by
-  // CodeMirror's linter.
-  //
-  // `linter()` exists for checks the editor runs itself, and schedules them
-  // around document changes. Ours arrive from a worker some time after the
-  // last keystroke, so pushing them is both simpler and more honest: these are
-  // not lint results, they are analysis results.
+  // Pushed in when analysis finishes rather than pulled by CodeMirror's
+  // linter: these are analysis results, and they arrive from a worker.
   useEffect(() => {
     const instance = view.current;
     if (!instance) return;
@@ -144,11 +120,7 @@ export function Editor({
     );
   }, [diagnostics, path]);
 
-  // Reveal a range: select it and scroll it into view.
-  //
-  // The selection is what makes the jump legible. Scrolling alone leaves the
-  // user looking at a screen of code with no indication of which part they
-  // were sent to.
+  // Selecting the range, not just scrolling to it, is what makes a jump legible.
   useEffect(() => {
     const instance = view.current;
     if (!instance || !reveal || reveal.file !== path) return;

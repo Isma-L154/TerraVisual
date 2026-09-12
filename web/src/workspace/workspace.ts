@@ -1,43 +1,26 @@
 /**
- * The workspace: an in-memory virtual file system holding the Terraform under
- * analysis.
- *
- * Multi-file from the start, because the product supports both writing
- * Terraform and bringing an existing project. Everything downstream — the
- * editor, the analyzer, persistence, import — consumes this rather than a
- * single string of text.
- *
- * Nothing here touches disk or network. The files live in memory for the life
- * of the tab, which is what makes the privacy claim in NFR-1 structural rather
- * than a promise.
+ * The workspace: an in-memory file system holding the Terraform under
+ * analysis. Nothing here touches disk or network, which is what makes NFR-1
+ * structural rather than a promise.
  */
 
-import { InvalidPathError, extname, normalisePath, type PathRejection } from './paths';
+import { extname, normalisePath } from './paths';
 
-/** Limits on what a workspace will hold. */
 export const LIMITS = {
-  /** Matches the analyzer's own cap, so the two cannot disagree. */
+  /** Matches the analyzer's own caps, so the two cannot disagree. */
   maxFiles: 1000,
   maxFileBytes: 2 * 1024 * 1024,
   maxTotalBytes: 8 * 1024 * 1024,
 } as const;
 
-export type WorkspaceFile = {
-  readonly path: string;
-  readonly content: string;
-};
-
-export type WorkspaceChange =
-  { type: 'written'; path: string } | { type: 'removed'; path: string } | { type: 'cleared' };
-
-export type LimitRejection = 'too-many-files' | 'file-too-large' | 'workspace-too-large';
+type WorkspaceChange = { type: 'written'; path: string } | { type: 'cleared' };
+type LimitRejection = 'too-many-files' | 'file-too-large' | 'workspace-too-large';
+type Listener = (change: WorkspaceChange) => void;
 
 /**
- * A write refused because it would exceed a limit.
- *
- * Limits produce errors rather than silent truncation. A workspace that
- * quietly dropped half a project would present a partial analysis as a
- * complete one, which is the failure mode this project cares most about.
+ * A write refused by a limit. Limits throw rather than truncate: a workspace
+ * that quietly dropped half a project would present a partial analysis as a
+ * complete one.
  */
 export class WorkspaceLimitError extends Error {
   constructor(
@@ -50,9 +33,6 @@ export class WorkspaceLimitError extends Error {
   }
 }
 
-export type Listener = (change: WorkspaceChange) => void;
-
-/** Terraform files. Everything else is skipped on import and reported. */
 const ANALYSABLE_EXTENSIONS = new Set(['.tf', '.tfvars']);
 
 export function isAnalysable(path: string): boolean {
@@ -64,32 +44,16 @@ export class Workspace {
   #totalBytes = 0;
   #listeners = new Set<Listener>();
 
-  /** Number of files currently held. */
-  get size(): number {
-    return this.#files.size;
-  }
-
-  /** Total size in bytes, as measured for the limits. */
-  get totalBytes(): number {
-    return this.#totalBytes;
-  }
-
   /**
-   * Paths in sorted order.
-   *
-   * Sorted rather than insertion-ordered so the analyzer receives the same
-   * workspace however it was assembled — typed file by file, or dropped in all
-   * at once. Determinism here is what keeps the diagram from reshuffling.
+   * Sorted, so a workspace typed file by file and the same one dropped in at
+   * once give the analyzer identical input, and therefore the same diagram.
    */
   list(): string[] {
     return [...this.#files.keys()].sort();
   }
 
   /**
-   * Whether a file is present.
-   *
-   * A query, so an unusable path is an answer rather than an exception: asking
-   * about "" or about something that escapes the workspace means "no". Only
+   * A question, so an unusable path answers "no" instead of throwing. Only
    * `write` refuses, because writing somewhere impossible is a real mistake.
    */
   has(path: string): boolean {
@@ -105,14 +69,8 @@ export class Workspace {
   /** Every file, in the shape the analyzer expects. */
   snapshot(): Record<string, string> {
     const out: Record<string, string> = {};
-    for (const path of this.list()) {
-      out[path] = this.#files.get(path)!;
-    }
+    for (const path of this.list()) out[path] = this.#files.get(path)!;
     return out;
-  }
-
-  entries(): WorkspaceFile[] {
-    return this.list().map((path) => ({ path, content: this.#files.get(path)! }));
   }
 
   /**
@@ -122,7 +80,7 @@ export class Workspace {
    * @throws {WorkspaceLimitError} when the write would exceed a limit
    */
   write(path: string, content: string): void {
-    const normalised = this.#normalise(path);
+    const normalised = normalisePath(path);
     const size = byteLength(content);
     const previous = this.#files.get(normalised);
     const previousSize = previous === undefined ? 0 : byteLength(previous);
@@ -156,20 +114,6 @@ export class Workspace {
     this.#emit({ type: 'written', path: normalised });
   }
 
-  /** Removes a file. Returns whether there was one to remove. */
-  remove(path: string): boolean {
-    const normalised = this.#tryNormalise(path);
-    if (normalised === null) return false;
-
-    const existing = this.#files.get(normalised);
-    if (existing === undefined) return false;
-
-    this.#files.delete(normalised);
-    this.#totalBytes -= byteLength(existing);
-    this.#emit({ type: 'removed', path: normalised });
-    return true;
-  }
-
   clear(): void {
     if (this.#files.size === 0) return;
     this.#files.clear();
@@ -178,20 +122,14 @@ export class Workspace {
   }
 
   /**
-   * Subscribes to changes. Returns a function that unsubscribes.
-   *
-   * The editor and the analyzer both follow the workspace rather than each
-   * other, which is what keeps them from having to know about one another.
+   * Subscribes to changes; the returned function unsubscribes. The editor and
+   * the analyzer both follow the workspace rather than each other.
    */
   subscribe(listener: Listener): () => void {
     this.#listeners.add(listener);
     return () => {
       this.#listeners.delete(listener);
     };
-  }
-
-  #normalise(path: string): string {
-    return normalisePath(path);
   }
 
   #tryNormalise(path: string): string | null {
@@ -204,8 +142,7 @@ export class Workspace {
 
   #emit(change: WorkspaceChange): void {
     for (const listener of this.#listeners) {
-      // One broken subscriber must not stop the others from being told, nor
-      // leave the workspace in a half-notified state.
+      // One broken subscriber must not stop the others being told.
       try {
         listener(change);
       } catch (error) {
@@ -216,41 +153,9 @@ export class Workspace {
 }
 
 /**
- * Builds a workspace from a set of files, collecting failures instead of
- * stopping at the first one.
- *
- * Import (#17) needs to load what it can and report the rest: a project with
- * one oversized file should still produce a diagram for everything else.
- */
-export function createWorkspace(files: Record<string, string> = {}): {
-  workspace: Workspace;
-  rejected: { path: string; reason: PathRejection | LimitRejection; message: string }[];
-} {
-  const workspace = new Workspace();
-  const rejected: { path: string; reason: PathRejection | LimitRejection; message: string }[] = [];
-
-  for (const path of Object.keys(files).sort()) {
-    try {
-      workspace.write(path, files[path]!);
-    } catch (error) {
-      if (error instanceof InvalidPathError) {
-        rejected.push({ path, reason: error.rejection, message: error.message });
-      } else if (error instanceof WorkspaceLimitError) {
-        rejected.push({ path, reason: error.rejection, message: error.message });
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  return { workspace, rejected };
-}
-
-/**
- * Size in bytes rather than in UTF-16 code units.
- *
- * `string.length` would undercount every non-ASCII character, so a workspace
- * of CJK comments could sail past a limit it had already exceeded.
+ * Bytes rather than UTF-16 code units: `string.length` undercounts every
+ * non-ASCII character, so a workspace of CJK comments could sail past a limit
+ * it had already exceeded.
  */
 function byteLength(content: string): number {
   return new TextEncoder().encode(content).length;

@@ -2,10 +2,10 @@ package analyzer
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/zclconf/go-cty/cty"
 
 	"github.com/Isma-L154/TerraVisual/core/internal/model"
 )
@@ -75,9 +75,7 @@ func evaluateBody(
 
 		out[path] = e.evaluateAttributeIn(scope, attribute.Expr)
 
-		for _, target := range referencedResources(attribute.Expr, e.declaredResources) {
-			references[path] = append(references[path], target)
-		}
+		references[path] = append(references[path], referencedResources(attribute.Expr, e.declaredResources)...)
 		if onAttribute != nil {
 			onAttribute(path, attribute)
 		}
@@ -101,7 +99,7 @@ func evaluateBody(
 			path = prefix + "." + block.Type
 		}
 		if counts[block.Type] > 1 {
-			path = path + "[" + itoa(seen[block.Type]) + "]"
+			path = path + "[" + strconv.Itoa(seen[block.Type]) + "]"
 			seen[block.Type]++
 		}
 
@@ -109,21 +107,4 @@ func evaluateBody(
 	}
 
 	return diags
-}
-
-// blockValues rebuilds nested blocks as cty values, so a reference to a whole
-// block resolves rather than failing.
-func blockValues(out map[string]model.Attribute) map[string]cty.Value {
-	values := map[string]cty.Value{}
-	for path, attribute := range out {
-		if !attribute.Known {
-			continue
-		}
-		value, err := nativeToCty(attribute.Value)
-		if err != nil {
-			continue
-		}
-		values[path] = value
-	}
-	return values
 }

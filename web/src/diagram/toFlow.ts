@@ -2,10 +2,10 @@ import { MarkerType, type Edge as FlowEdge, type Node as FlowNode } from '@xyflo
 
 import type { InfraModel, InfraNode } from '../model';
 import { absoluteBoxes, layout, METRICS, type Box } from '../layout/layout';
-import { announce, connectionsByNode } from './catalog';
+import { announce, connectionsByNode } from './announce';
 import { routeConnections, type Point, type Rect } from './routing';
 
-export type DiagramNodeData = {
+type DiagramNodeData = {
   node: InfraNode;
   depth: number;
   unknownCount: number;
@@ -16,7 +16,7 @@ export type DiagramNodeData = {
 
 export type DiagramNode = FlowNode<DiagramNodeData>;
 
-export type DiagramEdgeData = {
+type DiagramEdgeData = {
   points: Point[];
   label: string;
   /** Where the label is drawn, or null when it fits nowhere without covering something. */

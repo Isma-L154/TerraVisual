@@ -1,13 +1,11 @@
 /**
- * Building the outline's data, separately from rendering it.
- *
- * Keeping this pure means the announcements — the part that actually decides
- * whether the outline is useful to somebody listening — can be tested as text,
- * without a screen reader in the loop.
+ * The outline's data, built separately from its rendering so the
+ * announcements — the part that decides whether it is useful to somebody
+ * listening — can be tested as text.
  */
 
 import type { InfraModel, InfraNode } from '../model';
-import { announce } from '../diagram/catalog';
+import { announce } from '../diagram/announce';
 
 export type OutlineItem = {
   node: InfraNode;
@@ -16,10 +14,8 @@ export type OutlineItem = {
 };
 
 /**
- * Builds the containment tree, in the same order the diagram draws it.
- *
- * The two views must agree: an outline that listed things in a different order
- * from the picture would make the two impossible to use together.
+ * The containment tree, in the order the diagram draws it. The two views must
+ * agree, or they cannot be used together.
  */
 export function buildTree(model: InfraModel): OutlineItem[] {
   const byId = new Map(model.nodes.map((node) => [node.id, node]));
@@ -75,18 +71,13 @@ export function visibleItems(items: OutlineItem[], collapsed: ReadonlySet<string
 }
 
 /**
- * What a screen reader says for one item.
- *
- * This is the outline's real content. "aws_instance.web" read aloud tells
- * somebody almost nothing; naming the kind of thing, where it sits, and what
- * about it is undetermined is the difference between a list of identifiers and
- * a description of an infrastructure.
+ * What a screen reader says for one item. "aws_instance.web" read aloud tells
+ * somebody almost nothing; this is the outline's real content.
  */
 export function describe(item: OutlineItem, parent?: InfraNode, connections?: string[]): string {
   return announce(item.node, parent, connections, item.children.length);
 }
 
-/** Total items in a tree, used for aria-setsize on the roots and by tests. */
 export function countItems(items: OutlineItem[]): number {
   return items.reduce((total, item) => total + 1 + countItems(item.children), 0);
 }

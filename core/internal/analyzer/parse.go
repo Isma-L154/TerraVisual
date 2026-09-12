@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -115,7 +116,7 @@ func newDiagnostics() *diagnostics {
 
 func (d *diagnostics) add(item model.Diagnostic) {
 	key := item.Code + "|" + item.Message + "|" + item.Source.File +
-		"|" + itoa(item.Source.StartLine) + ":" + itoa(item.Source.StartCol)
+		"|" + strconv.Itoa(item.Source.StartLine) + ":" + strconv.Itoa(item.Source.StartCol)
 	if d.seen[key] {
 		return
 	}
@@ -161,26 +162,4 @@ func toRange(r hcl.Range) model.Range {
 		EndLine:   r.End.Line,
 		EndCol:    r.End.Column,
 	}
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	negative := n < 0
-	if negative {
-		n = -n
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	if negative {
-		i--
-		buf[i] = '-'
-	}
-	return string(buf[i:])
 }

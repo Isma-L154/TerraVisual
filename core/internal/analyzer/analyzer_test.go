@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -371,7 +372,7 @@ func hasCode(result model.Result, code string) bool {
 }
 
 func padName(i int) string {
-	return "f" + itoa(i) + ".tf"
+	return "f" + strconv.Itoa(i) + ".tf"
 }
 
 // FuzzAnalyze pins the property that matters on the only component that

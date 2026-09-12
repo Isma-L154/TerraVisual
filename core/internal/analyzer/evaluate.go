@@ -402,13 +402,13 @@ func (e *evaluator) unsupportedFunction(expr hcl.Expression) (string, string, bo
 }
 
 func firstDiagnostic(diags hcl.Diagnostics) string {
-	for _, d := range diags {
-		if d.Detail != "" {
-			return strings.TrimSuffix(d.Detail, ".")
-		}
-		return strings.TrimSuffix(d.Summary, ".")
+	if len(diags) == 0 {
+		return "it could not be evaluated"
 	}
-	return "it could not be evaluated"
+	if diags[0].Detail != "" {
+		return strings.TrimSuffix(diags[0].Detail, ".")
+	}
+	return strings.TrimSuffix(diags[0].Summary, ".")
 }
 
 // objectOrPlaceholder keeps cty.ObjectVal from panicking on an empty map.

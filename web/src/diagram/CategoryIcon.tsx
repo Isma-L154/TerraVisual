@@ -1,17 +1,10 @@
 /**
- * A glyph per category.
- *
- * FR-10 requires providers and kinds to be distinguishable by more than
- * colour, because colour alone is invisible to a colourblind user and to
- * anyone listening rather than looking. Every node therefore carries a shape
- * *and* a word.
- *
- * These are drawn rather than loaded so the diagram has no image requests and
- * no dependency on an icon set we would then have to license, ship and keep in
- * step with the catalog.
+ * A glyph per category, so a kind is never carried by colour alone (FR-10).
+ * Drawn rather than loaded: no image requests, and no icon set to license,
+ * ship and keep in step with the catalog.
  */
 
-export type CategoryIconProps = {
+type CategoryIconProps = {
   category: string;
   size?: number;
 };
@@ -26,8 +19,8 @@ export function CategoryIcon({ category, size = 16 }: CategoryIconProps) {
     strokeWidth: 1.4,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
-    // Decorative: the category is already given as text beside it, and a
-    // screen reader announcing "network icon, network" helps nobody.
+    // Decorative: the category is written beside it, and "network icon,
+    // network" helps nobody.
     'aria-hidden': true,
     focusable: false,
   };

@@ -1,11 +1,7 @@
 /**
- * The workspace a first-time visitor lands in.
- *
- * A blank editor is a bad first screen for a teaching tool: it asks somebody
- * who came here to learn Terraform to already know some. This example is small
- * enough to read in one go and deliberately shows the three things the product
- * is for: containment, values that resolve, values that honestly cannot, and
- * one connection worth drawing.
+ * The workspace a first-time visitor lands in: small enough to read in one go,
+ * and showing containment, values that resolve, values that honestly cannot,
+ * and one connection worth drawing.
  */
 export const STARTER_WORKSPACE: Record<string, string> = {
   'main.tf': `# Everything here runs in your browser. Nothing is uploaded.
@@ -67,6 +63,3 @@ resource "aws_db_instance" "primary" {
 }
 `,
 };
-
-/** The file opened first. */
-export const STARTER_FILE = 'main.tf';

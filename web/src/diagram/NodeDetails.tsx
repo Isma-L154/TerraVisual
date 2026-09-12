@@ -2,20 +2,15 @@ import { displayType, documentationUrl } from './catalog';
 import { CategoryIcon } from './CategoryIcon';
 import { displayValue, type InfraNode } from '../model';
 
-export type NodeDetailsProps = {
+type NodeDetailsProps = {
   node: InfraNode | null;
   /** Jump to where this node is written. Absent when nothing can navigate. */
   onReveal?: (node: InfraNode) => void;
 };
 
 /**
- * What a selected node actually says.
- *
- * This is where the honesty rule becomes visible. An attribute that could not
- * be determined is shown as unknown *with its reason*, because "unknown" alone
- * is a dead end and the reason is the part that teaches: "depends on a data
- * source, which needs cloud credentials" tells a learner something about
- * Terraform.
+ * What a selected node says, including its unknowns *with their reasons* —
+ * "unknown" alone is a dead end, and the reason is the part that teaches.
  */
 export function NodeDetails({ node, onReveal }: NodeDetailsProps) {
   if (!node) {
@@ -100,9 +95,9 @@ export function NodeDetails({ node, onReveal }: NodeDetailsProps) {
                   {attribute.known ? (
                     <code className="value-known">{displayValue(attribute)}</code>
                   ) : (
+                    // The word, not only the styling: an unknown that read as
+                    // blank would undo NFR-9 at the last step.
                     <span className="value-unknown">
-                      {/* The word, not only the styling: an unknown that reads
-                          as blank would undo NFR-9 at the last step. */}
                       <strong>Unknown</strong>
                       {attribute.reason ? ` — ${attribute.reason}` : ''}
                     </span>

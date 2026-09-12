@@ -1,19 +1,13 @@
 import type { Diagnostic } from '../model';
 
-export type DiagnosticsListProps = {
+type DiagnosticsListProps = {
   diagnostics: Diagnostic[];
   onSelect?: (diagnostic: Diagnostic) => void;
 };
 
 /**
- * Diagnostics as a list, alongside the markers in the editor.
- *
- * This is not a convenience. Squiggles in a gutter are invisible to somebody
- * using a screen reader, so the list is how NFR-6 is actually met: the same
- * information, in a form that can be read aloud and reached with a keyboard.
- *
- * It is also better for everyone else. A learner needs to know that three
- * things are wrong without hunting for underlines across four files.
+ * Diagnostics as a list beside the markers in the editor. Squiggles in a
+ * gutter are invisible to a screen reader, so this is how NFR-6 is met.
  */
 export function DiagnosticsList({ diagnostics, onSelect }: DiagnosticsListProps) {
   if (diagnostics.length === 0) {
@@ -24,14 +18,12 @@ export function DiagnosticsList({ diagnostics, onSelect }: DiagnosticsListProps)
     );
   }
 
-  const counts = summarise(diagnostics);
-
   return (
     <div className="diagnostics">
-      {/* Announced when the count changes, so a screen reader user learns that
-          something broke without having to go looking for it. */}
+      {/* Announced on change, so a broken workspace is not something to go
+          looking for. */}
       <p className="diagnostics-summary" role="status" aria-live="polite">
-        {counts}
+        {summarise(diagnostics)}
       </p>
 
       <ul className="diagnostics-list">
@@ -58,12 +50,7 @@ export function DiagnosticsList({ diagnostics, onSelect }: DiagnosticsListProps)
   );
 }
 
-/**
- * Severity as a word, not a colour.
- *
- * Colour alone would leave the distinction invisible to a colourblind user and
- * to anyone listening rather than looking (FR-10 applied to diagnostics).
- */
+/** A word rather than only a colour, which some readers cannot see (FR-10). */
 function severityLabel(severity: Diagnostic['severity']): string {
   switch (severity) {
     case 'error':

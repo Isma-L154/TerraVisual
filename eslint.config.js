@@ -9,7 +9,6 @@ export default tseslint.config(
       '**/dist/**',
       '**/node_modules/**',
       'web/public/**',
-      'spike/**',
       'core/**',
       // Generated from the JSON Schema. Not ours to lint.
       '**/generated/**',

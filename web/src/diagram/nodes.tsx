@@ -28,10 +28,7 @@ function ConnectionPoints() {
  * the top rather than in the middle so nesting stays readable when boxes get
  * small.
  */
-export const ContainerNode = memo(function ContainerNode({
-  data,
-  selected,
-}: NodeProps<DiagramNode>) {
+const ContainerNode = memo(function ContainerNode({ data, selected }: NodeProps<DiagramNode>) {
   const { node, depth, hiddenCount } = data;
 
   return (
@@ -91,7 +88,7 @@ function FoldedContents({ id, count }: { id: string; count: number }) {
 }
 
 /** A leaf: an instance, a bucket, a function. */
-export const ResourceNode = memo(function ResourceNode({ data, selected }: NodeProps<DiagramNode>) {
+const ResourceNode = memo(function ResourceNode({ data, selected }: NodeProps<DiagramNode>) {
   const { node, unknownCount } = data;
 
   return (

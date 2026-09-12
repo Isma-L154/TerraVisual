@@ -157,10 +157,8 @@ jobs:
           node-version: 24
           cache: npm
 
-      # Every Go module, not just core. A core-only scan would have missed a
-      # reachable denial-of-service in golang.org/x/text that the spike module
-      # pulled in through hcl — and reachability is the whole point of
-      # govulncheck over an advisory feed.
+      # Every Go module, so one added later is scanned without anyone
+      # remembering to add it here.
       - name: Known vulnerabilities in Go dependencies
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest

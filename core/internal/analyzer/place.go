@@ -44,7 +44,7 @@ type placement struct {
 // the picture, because drawing every dependency produces the tangle this
 // product exists to avoid -- security group wiring being the classic example:
 // real, useful to record, ruinous to draw.
-func applyEdgeRules(nodes []model.Node, edges []model.Edge, diags *diagnostics) []model.Edge {
+func applyEdgeRules(nodes []model.Node, edges []model.Edge) []model.Edge {
 	cat, err := catalog.Load()
 	if err != nil {
 		return edges
