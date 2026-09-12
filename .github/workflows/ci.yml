@@ -123,6 +123,7 @@ jobs:
           web/e2e/keyboard.spec.ts
           web/e2e/security.spec.ts
           web/e2e/summarising.spec.ts
+          web/e2e/diagram-geometry.spec.ts
 
       # Alone on the machine. Timing anything while a second browser competes
       # for the same two cores measures the runner, not the application.

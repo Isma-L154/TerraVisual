@@ -78,8 +78,9 @@ navigation, under MIT.
 
 **Negative**
 - We own and maintain layout code.
-- Edge routing between nested containers is limited; the curated edge set is
-  chosen partly to stay within what a simple router handles well.
+- We also own arrow routing (`web/src/diagram/routing.ts`): an orthogonal
+  router that keeps arrows and their labels clear of every box. It handles the
+  curated edge set comfortably; drawing every dependency would need more.
 - If full dependency edges are ever added, this layout will likely need
   replacing.
 

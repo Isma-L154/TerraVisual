@@ -404,8 +404,7 @@ p.diagnostic-error {
  * inside, and a target somebody misses is a door that is locked.
  */
 .dg-folded {
-  margin-top: 6px;
-  align-self: flex-start;
+  margin: 6px 0 0 10px;
   font: inherit;
   font-size: 11px;
   min-height: 24px;
@@ -762,12 +761,23 @@ code {
   border: 0;
 }
 
+/* Arrows are routed around every box, so they can safely paint above them. */
+.diagram .react-flow__edges,
+.diagram .react-flow__edgelabel-renderer {
+  z-index: 1000;
+}
+
 .react-flow__edge-path {
+  stroke: var(--muted);
   stroke-width: 1.6;
 }
 
-.dg-edge-traffic .react-flow__edge-path,
-.dg-edge-traffic .react-flow__arrowhead polyline {
+.react-flow__arrowhead polyline {
+  stroke: var(--muted);
+  fill: var(--muted);
+}
+
+.dg-edge-traffic .react-flow__edge-path {
   stroke: var(--cat-loadbalancer);
 }
 
@@ -780,13 +790,22 @@ code {
   stroke-dasharray: 4 3;
 }
 
-.react-flow__edge-text {
+/* Sized by the router, which checked this exact box against everything else. */
+.dg-edge-label {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
   font-size: 10px;
-  fill: var(--muted);
-}
-
-.react-flow__edge-textbg {
-  fill: var(--surface);
+  line-height: 14px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 /* --- import -------------------------------------------------------------- */

@@ -1,78 +1,90 @@
 import awsVpc from '../../../schemas/examples/aws-vpc.json';
 
 import type { InfraModel, InfraNode } from '../model';
+import { layout } from '../layout/layout';
 import { catalogSize, displayType } from './catalog';
-import { countUnknown, toFlowNodes } from './toFlow';
+import { countUnknown, toFlow } from './toFlow';
 
 const example = awsVpc as InfraModel;
 
 describe('model to flow nodes', () => {
   it('renders every node in the model', () => {
-    const { nodes } = toFlowNodes(example);
-
-    expect(nodes).toHaveLength(example.nodes.length);
+    expect(toFlow(example).nodes).toHaveLength(example.nodes.length);
   });
 
   it('uses the container type for containers and the resource type for leaves', () => {
-    const { nodes } = toFlowNodes(example);
-    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const byId = new Map(toFlow(example).nodes.map((node) => [node.id, node]));
 
     expect(byId.get('aws_vpc.main')!.type).toBe('container');
     expect(byId.get('aws_instance.web[0]')!.type).toBe('resource');
   });
 
   it('carries the parent relationship across so React Flow nests them', () => {
-    const { nodes } = toFlowNodes(example);
-    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const byId = new Map(toFlow(example).nodes.map((node) => [node.id, node]));
 
     expect(byId.get('aws_subnet.public')!.parentId).toBe('aws_vpc.main');
     expect(byId.get('aws_instance.web[0]')!.parentId).toBe('aws_subnet.public');
     expect(byId.get('aws_vpc.main')!.parentId).toBeUndefined();
   });
 
-  // React Flow needs a parent before its children, and so does anything else
-  // building a tree in one pass. The layout already guarantees that order, so
-  // reusing it keeps one definition of what nests in what.
   it('emits parents before children', () => {
-    const { nodes } = toFlowNodes(example);
     const seen = new Set<string>();
 
-    for (const node of nodes) {
+    for (const node of toFlow(example).nodes) {
       if (node.parentId) expect(seen.has(node.parentId)).toBe(true);
       seen.add(node.id);
     }
   });
 
-  // A node the user can drag out of its subnet would show something the
-  // Terraform does not say. The diagram reports; it does not invite editing.
   it('does not let nodes be dragged out of their containers', () => {
-    const { nodes } = toFlowNodes(example);
-
-    for (const node of nodes) {
+    for (const node of toFlow(example).nodes) {
       expect(node.draggable).toBe(false);
       if (node.parentId) expect(node.extent).toBe('parent');
     }
   });
 
   it('sizes each node from the layout', () => {
-    const { nodes, layout } = toFlowNodes(example);
+    const computed = layout(example);
 
-    for (const node of nodes) {
-      const box = layout.boxes.get(node.id)!;
+    for (const node of toFlow(example).nodes) {
+      const box = computed.boxes.get(node.id)!;
       expect(node.style).toMatchObject({ width: box.width, height: box.height });
       expect(node.position).toEqual({ x: box.x, y: box.y });
     }
   });
 
   it('produces nothing for an empty model', () => {
-    const { nodes } = toFlowNodes({ ...example, nodes: [] });
-
-    expect(nodes).toHaveLength(0);
+    expect(toFlow({ ...example, nodes: [], edges: [] })).toEqual({ nodes: [], edges: [] });
   });
 });
 
-// "Unknown" is a first-class state in this model. A diagram that rendered
-// undeterminable values as blank would quietly undo that at the last step.
+describe('model to flow edges', () => {
+  // The example's own edge points at a node it does not contain, so it is
+  // retargeted at one it does.
+  const connected: InfraModel = {
+    ...example,
+    edges: example.edges.map((edge) => ({ ...edge, to: 'some_exotic_thing.x' })),
+  };
+
+  it('drops a connection to a node that is not drawn', () => {
+    expect(toFlow(example).edges).toHaveLength(0);
+  });
+
+  it('routes every drawn connection', () => {
+    const { edges } = toFlow(connected);
+
+    expect(edges).toHaveLength(1);
+    expect(edges[0]!.type).toBe('routed');
+    expect(edges[0]!.data!.points.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('names each arrow for assistive technology, label included', () => {
+    const [edge] = toFlow(connected).edges;
+
+    expect(edge!.ariaLabel).toBe(`web connects to x (${edge!.data!.label})`);
+  });
+});
+
 describe('unknown values', () => {
   it('counts the attributes that could not be determined', () => {
     const node = example.nodes.find((item) => item.id === 'aws_instance.web[0]')!;
@@ -87,8 +99,7 @@ describe('unknown values', () => {
   });
 
   it('surfaces the count on the node data', () => {
-    const { nodes } = toFlowNodes(example);
-    const instance = nodes.find((node) => node.id === 'aws_instance.web[0]')!;
+    const instance = toFlow(example).nodes.find((node) => node.id === 'aws_instance.web[0]')!;
 
     expect(instance.data.unknownCount).toBe(1);
   });
@@ -100,14 +111,11 @@ describe('catalog presentation', () => {
     expect(displayType('aws_instance')).toBe('EC2 Instance');
   });
 
-  // Falling back to the raw type is honest: we genuinely do not know a better
-  // name for something nobody has catalogued.
   it('falls back to the raw type for something uncatalogued', () => {
     expect(displayType('some_exotic_thing')).toBe('some_exotic_thing');
   });
 
   it('reads the same catalogs the analyzer does', () => {
-    // Three providers, discovered from the directory rather than listed.
     expect(catalogSize()).toBeGreaterThanOrEqual(40);
   });
 
@@ -119,8 +127,7 @@ describe('catalog presentation', () => {
 
 describe('uncatalogued nodes', () => {
   it('keeps them in the diagram', () => {
-    const { nodes } = toFlowNodes(example);
-    const exotic = nodes.find((node) => node.id === 'some_exotic_thing.x');
+    const exotic = toFlow(example).nodes.find((node) => node.id === 'some_exotic_thing.x');
 
     expect(exotic).toBeDefined();
     expect((exotic!.data.node as InfraNode).catalogued).toBe(false);
