@@ -1,55 +1,30 @@
 /// <reference lib="webworker" />
 
 /**
- * The analyzer, running where it belongs: off the main thread.
+ * Runs the WebAssembly analyzer off the main thread, where a slow input cannot
+ * freeze the editor and a stuck one can be killed with its worker.
  *
- * Two reasons, and the second is the one that matters. Analysis takes tens to
- * hundreds of milliseconds and happens while the user is typing, so on the main
- * thread it would feel like a broken editor (NFR-2). And confining the WASM
- * module to a disposable thread means a pathological input can be dealt with by
- * terminating the worker rather than the page.
- *
- * This is a *classic* worker on purpose. Go's wasm_exec.js shim is a classic
- * script that assigns to globalThis, and loading it needs importScripts, which
- * module workers do not have. So this file deliberately has no imports and no
- * exports at runtime: the message shapes live in messages.ts, and the only
- * import or export syntax at all: the message shapes are ambient types
- * declared in messages.d.ts, which keeps this file a script.
+ * A classic worker, not a module one: Go's wasm_exec.js has to be loaded with
+ * importScripts. That is also why this file has no imports or exports; its
+ * message types are ambient, in messages.d.ts.
  */
 
-// A cast rather than a redeclaration: this file is a global script, so
-// `declare const self` would collide with the DOM library's own `self`.
+// A cast, because `declare const self` would collide with the DOM library.
 const scope = globalThis as unknown as TvWorkerScope;
 
-// Both files are produced by `npm run build:core` and served from the same
-// origin. Nothing here reaches outside the page.
 const WASM_EXEC_URL = '/wasm_exec.js';
 const WASM_URL = '/analyzer.wasm';
 
 let ready: Promise<void> | null = null;
 
 function boot(): Promise<void> {
-  if (ready) return ready;
-
-  ready = (async () => {
-    // Go's shim is a classic script that assigns to globalThis, so it is
-    // loaded with importScripts. That is why this is a classic worker rather
-    // than a module one: a module worker has no importScripts, and importing
-    // the shim dynamically leaves the bundler rewriting a URL that has to stay
-    // exactly as the Go toolchain wrote it.
-    //
-    // Nothing here needs ES module syntax at runtime -- the only import in
-    // this file is a type, which disappears at compile time.
+  ready ??= (async () => {
     scope.importScripts(WASM_EXEC_URL);
 
     const go = new scope.Go();
-    // Streaming instantiation requires the server to send application/wasm.
-    // The deployment Worker asserts that header against a real response, since
-    // getting it wrong fails here in a way that is easy to misread.
     const { instance } = await WebAssembly.instantiateStreaming(fetch(WASM_URL), go.importObject);
 
-    // The module blocks forever to stay alive for repeated calls, so this is
-    // deliberately not awaited.
+    // The module blocks forever to serve repeated calls, so it is not awaited.
     go.run(instance);
 
     // Let the Go scheduler register its exports before anything calls them.
@@ -63,30 +38,24 @@ function boot(): Promise<void> {
   return ready;
 }
 
-// Start loading immediately: the editor is usable while this happens, and the
-// first analysis should not also pay for the download.
-void boot().catch(() => {
-  // Reported per request instead, where there is somewhere to show it.
-});
+// Download now, so the first analysis does not also pay for it. A failure here
+// is reported by the first request instead.
+void boot().catch(() => undefined);
 
 scope.onmessage = async (event: MessageEvent<TvAnalyzeRequest>) => {
   const { id, files } = event.data;
 
   try {
     await boot();
-    const raw = scope.tvAnalyze!(files);
-    const model = JSON.parse(raw) as import('../model').InfraModel;
-    const response: TvAnalyzeResponse = { id, ok: true, model };
-    scope.postMessage(response);
+    const model = JSON.parse(scope.tvAnalyze!(files)) as import('../model').InfraModel;
+    scope.postMessage({ id, ok: true, model } satisfies TvAnalyzeResponse);
   } catch (error) {
-    // A failed boot is retried rather than cached forever: a transient network
-    // failure must not leave the analyzer permanently dead.
+    // Boot again next time, so a transient network failure is not permanent.
     ready = null;
-    const response: TvAnalyzeResponse = {
+    scope.postMessage({
       id,
       ok: false,
       error: error instanceof Error ? error.message : String(error),
-    };
-    scope.postMessage(response);
+    } satisfies TvAnalyzeResponse);
   }
 };

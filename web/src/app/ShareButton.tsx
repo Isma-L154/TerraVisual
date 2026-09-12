@@ -2,17 +2,14 @@ import { useCallback, useState } from 'react';
 
 import { canShare, encodeWorkspace, MAX_SHARE_BYTES } from '../persistence/share';
 
-export type ShareButtonProps = {
+type ShareButtonProps = {
   files: () => Record<string, string>;
 };
 
 /**
- * Turning the workspace into a link.
- *
- * The warning is not boilerplate. A shared link *contains the code* — that is
- * how sharing works without a server — so somebody about to paste one into a
- * public channel is publishing their Terraform, and they should learn that
- * before they click rather than afterwards.
+ * Turns the workspace into a link. The message says the link contains the
+ * code, because somebody about to paste one into a public channel is
+ * publishing their Terraform and should know before they click.
  */
 export function ShareButton({ files }: ShareButtonProps) {
   const [status, setStatus] = useState<string | null>(null);
@@ -46,9 +43,8 @@ export function ShareButton({ files }: ShareButtonProps) {
       await navigator.clipboard.writeText(url);
       setStatus('Link copied. It contains your Terraform.');
     } catch {
-      // Clipboard access is refused often enough — permissions, an insecure
-      // context, a browser setting — that failing here must still leave the
-      // link somewhere the user can get at it.
+      // Clipboard access is refused often enough that the link has to stay
+      // somewhere the user can reach it.
       setStatus('Copying was blocked, so here is the link:');
     }
   }, [files]);

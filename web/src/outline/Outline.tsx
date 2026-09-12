@@ -5,23 +5,17 @@ import { CategoryIcon } from '../diagram/CategoryIcon';
 import { connectionsByNode, displayType } from '../diagram/catalog';
 import { buildTree, describe, visibleItems, type OutlineItem } from './tree';
 
-export type OutlineProps = {
+type OutlineProps = {
   model: InfraModel | null;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 };
 
 /**
- * The infrastructure as a tree.
+ * The infrastructure as a tree: a peer of the diagram, not a fallback for it.
  *
- * Not a fallback for the diagram — a peer view of the same model. The brief is
- * unambiguous that a visual diagram cannot be the only way important
- * information is communicated, and a spatial canvas is a poor way to read a
- * hierarchy however accessible its individual nodes are.
- *
- * It follows the ARIA tree pattern: one tab stop for the whole tree, arrows to
- * move within it. Making every item tabbable would be easier to write and far
- * worse to use — a hundred-resource project would become a hundred tab stops
+ * The ARIA tree pattern, so the whole tree is one tab stop and arrows move
+ * within it. A hundred resources would otherwise be a hundred tab stops
  * between the editor and whatever comes next.
  */
 export function Outline({ model, selectedId, onSelect }: OutlineProps) {
@@ -36,10 +30,8 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
   const visible = useMemo(() => visibleItems(tree, collapsed), [tree, collapsed]);
   const container = useRef<HTMLUListElement>(null);
 
-  // The roving tab stop is derived rather than stored, so it cannot point at
-  // something that no longer exists. Analysis runs on every keystroke, and the
-  // item that had focus may be gone a moment later; syncing that through state
-  // would mean a render pass whose only job is to correct the previous one.
+  // Derived rather than stored, so it cannot point at an item that analysis has
+  // since removed.
   const focusable =
     focusedId && visible.some((item) => item.node.id === focusedId)
       ? focusedId
@@ -87,8 +79,8 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
             toggle(node.id, false);
             break;
           }
-          // Collapsed or a leaf: move to the parent, which is the nearest
-          // preceding item at a shallower level.
+          // Collapsed or a leaf: move to the parent, the nearest preceding item
+          // at a shallower level.
           for (let i = index - 1; i >= 0; i--) {
             if (visible[i]!.level < item.level) {
               focusItem(visible[i]!.node.id);
@@ -137,10 +129,8 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
     const hasChildren = children.length > 0;
     const expanded = hasChildren && !collapsed.has(node.id);
     const parent = model.nodes.find((candidate) => candidate.id === node.parentId);
-    // Siblings are the items with the same parent, not every item at the same
-    // depth. Counting by depth made a screen reader announce "2 of 14" where
-    // 14 was every resource on that level of the whole diagram, which tells
-    // somebody navigating by ear nothing about where they are.
+    // Items sharing a parent, not every item at the same depth: "2 of 14" where
+    // 14 was the whole level tells somebody navigating by ear nothing.
     const siblings = visible.filter(
       (other) => other.level === level && other.node.parentId === node.parentId,
     );
@@ -166,9 +156,8 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
         }}
         onKeyDown={(event) => onKeyDown(event, item, index)}
       >
-        {/* Everything inside is hidden from assistive technology: the item's
-            own aria-label is the description, and reading the pieces again
-            afterwards would double every announcement. */}
+        {/* Hidden from assistive technology: the item's own label is the
+            description, and reading the pieces again would double it. */}
         <span className="outline-row" aria-hidden="true">
           <span className="outline-twisty">{hasChildren ? (expanded ? '▾' : '▸') : ''}</span>
           <CategoryIcon category={node.category} size={13} />
@@ -181,10 +170,9 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
   });
 
   return (
+    // Flat with aria-level rather than nested groups, so the keyboard model and
+    // the DOM say the same thing as branches collapse.
     <ul
-      // A flat list with aria-level, rather than nested groups: the visible
-      // items already change as branches collapse, and one flat structure keeps
-      // the keyboard model and the DOM saying the same thing.
       role="tree"
       aria-label="Infrastructure outline"
       className="outline"

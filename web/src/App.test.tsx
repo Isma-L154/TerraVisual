@@ -1,14 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
 
-// The session loads asynchronously now — a shared link is decoded, then
-// storage is consulted, then the example is used. So these tests wait, which
-// is what a real visitor does too.
-//
-// jsdom has no Worker, so analysis always fails here. That is useful rather
-// than awkward: these tests double as proof that the interface stays usable
-// when the analyzer is unavailable, which is what somebody on a slow
-// connection sees for the first second.
+// jsdom has no Worker, so analysis never succeeds here. That is useful: these
+// tests double as proof that the interface stays usable while the analyzer is
+// unavailable, which is what a slow connection looks like for a second.
 
 describe('App shell', () => {
   it('exposes landmark regions and headings', async () => {
@@ -29,26 +24,21 @@ describe('App shell', () => {
     expect(screen.getByRole('region', { name: /details/i })).toBeInTheDocument();
   });
 
-  // The privacy claim is the product's central promise (NFR-1). Removing it
-  // from the interface should be a deliberate act with a failing test behind
-  // it, not an accident during a redesign.
+  // The privacy claim is the product's central promise (NFR-1). Losing it
+  // should take a failing test, not a redesign nobody checked.
   it('states the privacy guarantee', async () => {
     render(<App />);
 
     expect(await screen.findByText(/never leaves your browser/i)).toBeInTheDocument();
   });
 
-  // The claim above is true; the qualification keeps it from being read as a
-  // stronger guarantee than any website can make. Somebody about to paste real
-  // infrastructure should be able to find both in one place.
   it('qualifies the privacy guarantee where the guarantee is made', async () => {
     render(<App />);
 
     const disclosure = await screen.findByText(/what that covers, and what it cannot/i);
-    expect(disclosure).toBeInTheDocument();
 
-    // Closed by default: it informs somebody who looks, and interrupts nobody
-    // who does not.
+    expect(disclosure).toBeInTheDocument();
+    // Closed by default: it informs whoever looks and interrupts nobody else.
     expect(disclosure.closest('details')).not.toHaveAttribute('open');
   });
 
@@ -60,8 +50,6 @@ describe('App shell', () => {
     expect(screen.getByText(/browser extensions are outside this/i)).toBeInTheDocument();
   });
 
-  // Without a Worker there is never a model, so the diagram says what it is
-  // waiting for rather than showing an empty frame that reads as a bug.
   it('says what the diagram is waiting for when there is no model yet', async () => {
     render(<App />);
 
@@ -74,8 +62,7 @@ describe('App shell', () => {
     expect(await screen.findByTestId('details-empty')).toBeInTheDocument();
   });
 
-  // A blank editor is a bad first screen for a teaching tool: it asks somebody
-  // who came here to learn Terraform to already know some.
+  // A blank editor asks somebody who came to learn Terraform to already know some.
   it('opens with an example workspace rather than an empty page', async () => {
     render(<App />);
 

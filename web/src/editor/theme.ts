@@ -3,12 +3,9 @@ import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 
 /**
- * Editor appearance.
- *
- * Colours come from the same CSS custom properties as the rest of the
- * interface, so the editor follows the viewer's light or dark preference
- * without a second theme to keep in sync. Contrast is checked once, on the
- * tokens, rather than per component.
+ * Editor appearance, drawn from the same CSS custom properties as the rest of
+ * the interface: one set of tokens to check for contrast, and light or dark
+ * follows the viewer without a second theme to keep in sync.
  */
 export const editorTheme = EditorView.theme({
   '&': {

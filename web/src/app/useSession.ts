@@ -2,33 +2,28 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { decodeFragment } from '../persistence/share';
 import { clear as clearStored, load, save } from '../persistence/storage';
-import { createWorkspace, Workspace } from '../workspace/workspace';
+import { Workspace } from '../workspace/workspace';
 import { STARTER_WORKSPACE } from './examples';
 
-/** How long after the last edit the workspace is written to storage. */
 const SAVE_DEBOUNCE_MS = 800;
 
-export type SessionOrigin = 'starter' | 'restored' | 'shared';
+export type SessionOrigin = 'starter' | 'restored' | 'shared' | 'imported';
 
-export type Session = {
+type Session = {
   workspace: Workspace;
-  /** Where the current workspace came from, so the interface can say. */
   origin: SessionOrigin;
   /** True until the first load has been attempted. */
   loading: boolean;
-  /** Set when persistence is unavailable, so the interface can be honest. */
   storageAvailable: boolean;
-  /** Replace everything with the example again. */
+  /** Back to the example. */
   reset: () => void;
+  /** Replaces everything, as an import does. */
+  replace: (files: Record<string, string>) => void;
 };
 
 /**
- * The workspace for this visit, and keeping it between visits.
- *
- * The order matters and is deliberate: a shared link wins over stored work,
- * because somebody who followed a link asked to see what is in it. Their own
- * work is not lost — it is still in storage, and resetting brings back the
- * example rather than overwriting anything silently.
+ * The workspace for this visit, kept between visits. A shared link wins over
+ * stored work, which stays in storage untouched.
  */
 export function useSession(): Session {
   const [workspace] = useState(() => new Workspace());
@@ -48,22 +43,14 @@ export function useSession(): Session {
       if (shared.ok) {
         fill(workspace, shared.files);
         setOrigin('shared');
-        setLoading(false);
-        return;
+      } else {
+        const stored = await load();
+        if (cancelled) return;
+
+        const restorable = stored && Object.keys(stored.files).length > 0;
+        fill(workspace, restorable ? stored.files : STARTER_WORKSPACE);
+        setOrigin(restorable ? 'restored' : 'starter');
       }
-
-      const stored = await load();
-      if (cancelled) return;
-
-      if (stored && Object.keys(stored.files).length > 0) {
-        fill(workspace, stored.files);
-        setOrigin('restored');
-        setLoading(false);
-        return;
-      }
-
-      fill(workspace, STARTER_WORKSPACE);
-      setOrigin('starter');
       setLoading(false);
     };
 
@@ -73,9 +60,7 @@ export function useSession(): Session {
     };
   }, [workspace]);
 
-  // Saving is debounced separately from analysis: writing on every keystroke
-  // would be pointless work, and writing only on unload would lose a session
-  // to a crashed tab.
+  // Debounced, so typing is not a write per keystroke and a crash loses little.
   useEffect(() => {
     const schedule = () => {
       if (timer.current) clearTimeout(timer.current);
@@ -98,24 +83,36 @@ export function useSession(): Session {
     fill(workspace, STARTER_WORKSPACE);
     setOrigin('starter');
     void clearStored();
-
-    // The fragment goes too. Leaving it would restore the shared workspace on
-    // the next reload, which is not what "reset" means to anybody.
-    if (window.location.hash) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
+    forgetSharedLink();
   }, [workspace]);
 
-  return { workspace, origin, loading, storageAvailable, reset };
+  const replace = useCallback(
+    (files: Record<string, string>) => {
+      workspace.clear();
+      fill(workspace, files);
+      setOrigin('imported');
+      forgetSharedLink();
+    },
+    [workspace],
+  );
+
+  return { workspace, origin, loading, storageAvailable, reset, replace };
 }
 
+/** Otherwise a reload would bring the shared workspace back. */
+function forgetSharedLink(): void {
+  if (window.location.hash) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+/** Sorted, so which files fit within the limits does not depend on key order. */
 function fill(workspace: Workspace, files: Record<string, string>): void {
-  const { workspace: staged } = createWorkspace(files);
-  for (const entry of staged.entries()) {
+  for (const path of Object.keys(files).sort()) {
     try {
-      workspace.write(entry.path, entry.content);
+      workspace.write(path, files[path]!);
     } catch {
-      // Rejected by a limit, which createWorkspace already accounted for.
+      // An invalid path or a file over the limits is left out.
     }
   }
 }

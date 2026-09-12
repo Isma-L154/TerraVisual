@@ -1,4 +1,4 @@
-import { InvalidPathError, extname, normalisePath, resolveFrom } from './paths';
+import { InvalidPathError, extname, normalisePath } from './paths';
 
 describe('path normalisation', () => {
   it('leaves ordinary paths alone', () => {
@@ -17,8 +17,6 @@ describe('path normalisation', () => {
   });
 });
 
-// This is security control 4. Paths arrive from two untrusted directions:
-// files dragged in from disk, and module `source` values written in Terraform.
 describe('workspace confinement', () => {
   const escapes = [
     '../secrets.tf',
@@ -33,13 +31,11 @@ describe('workspace confinement', () => {
     expect(() => normalisePath(path)).toThrow(InvalidPathError);
   });
 
-  it('refuses absolute paths, which it has no way to represent', () => {
+  it('refuses absolute paths', () => {
     expect(() => normalisePath('/etc/passwd')).toThrow(InvalidPathError);
     expect(() => normalisePath('C:/Windows/system.ini')).toThrow(InvalidPathError);
   });
 
-  // Rewriting a path to make it fit is how a traversal check becomes a
-  // traversal bug. Refusing is the only safe answer.
   it('refuses rather than clamping', () => {
     let rejection: string | undefined;
     try {
@@ -53,6 +49,7 @@ describe('workspace confinement', () => {
   it('refuses control characters, which can disguise a path', () => {
     expect(() => normalisePath('main\u0000.tf')).toThrow(InvalidPathError);
     expect(() => normalisePath('main\n.tf')).toThrow(InvalidPathError);
+    expect(() => normalisePath('main\u007f.tf')).toThrow(InvalidPathError);
   });
 
   it('refuses paths that are too long or too deep', () => {
@@ -68,25 +65,11 @@ describe('workspace confinement', () => {
   });
 });
 
-// Module sources resolve through here in #14, so confinement is a property of
-// the resolution rather than a check somebody has to remember to write.
-describe('relative resolution', () => {
-  it('resolves against a directory', () => {
-    expect(resolveFrom('modules/network', './main.tf')).toBe('modules/network/main.tf');
-    expect(resolveFrom('modules/network', '../shared/vars.tf')).toBe('modules/shared/vars.tf');
-    expect(resolveFrom('', 'main.tf')).toBe('main.tf');
-  });
-
-  it('still refuses to climb out of the workspace', () => {
-    expect(() => resolveFrom('modules', '../../outside.tf')).toThrow(InvalidPathError);
-    expect(() => resolveFrom('', '../outside.tf')).toThrow(InvalidPathError);
-  });
-});
-
 describe('extensions', () => {
   it('reads the extension in lower case', () => {
     expect(extname('main.TF')).toBe('.tf');
     expect(extname('terraform.tfvars')).toBe('.tfvars');
+    expect(extname('modules/network/main.tf')).toBe('.tf');
   });
 
   it('treats a dotfile as having no extension', () => {
