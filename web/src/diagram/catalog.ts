@@ -44,5 +44,3 @@ export function displayType(resourceType: string): string {
 export function documentationUrl(resourceType: string): string | undefined {
   return byType.get(resourceType)?.documentationUrl;
 }
-
-

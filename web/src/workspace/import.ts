@@ -37,7 +37,8 @@ export function shouldIgnore(path: string): SkipReason | null {
   }
 
   const name = segments[segments.length - 1] ?? '';
-  if (IGNORED_EXTENSIONS.some((extension) => name.endsWith(extension))) return 'generated-directory';
+  if (IGNORED_EXTENSIONS.some((extension) => name.endsWith(extension)))
+    return 'generated-directory';
   if (name.startsWith('.terraform.')) return 'generated-directory';
 
   return null;

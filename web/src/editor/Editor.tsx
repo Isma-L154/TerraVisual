@@ -27,7 +27,14 @@ type EditorProps = {
  * by effects: rebuilding it would throw away the cursor, the selection and the
  * undo history.
  */
-export function Editor({ path, content, diagnostics, reveal, onChange, onCursorLine }: EditorProps) {
+export function Editor({
+  path,
+  content,
+  diagnostics,
+  reveal,
+  onChange,
+  onCursorLine,
+}: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const hintId = useId();

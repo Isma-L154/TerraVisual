@@ -28,10 +28,7 @@ function ConnectionPoints() {
  * the top rather than in the middle so nesting stays readable when boxes get
  * small.
  */
-const ContainerNode = memo(function ContainerNode({
-  data,
-  selected,
-}: NodeProps<DiagramNode>) {
+const ContainerNode = memo(function ContainerNode({ data, selected }: NodeProps<DiagramNode>) {
   const { node, depth, hiddenCount } = data;
 
   return (
