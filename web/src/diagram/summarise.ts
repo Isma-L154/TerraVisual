@@ -27,7 +27,7 @@ import type { InfraModel, InfraNode } from '../model';
  * debounce, so 400 nodes leaves room for the analysis that has to happen first
  * and for hardware slower than a developer's.
  */
-export const DEFAULT_BUDGET = 400;
+const DEFAULT_BUDGET = 400;
 
 export type Summary = {
   /** The nodes to draw. A subset of the model's, unchanged. */

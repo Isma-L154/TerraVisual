@@ -29,10 +29,6 @@ for (const catalog of catalogs) {
   for (const entry of catalog.entries) byType.set(entry.type, entry);
 }
 
-export function lookup(resourceType: string): CatalogEntry | undefined {
-  return byType.get(resourceType);
-}
-
 /**
  * What to call a resource type on screen.
  *

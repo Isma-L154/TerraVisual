@@ -7,7 +7,6 @@ export type {
   InfraModel,
   // The schema's Node would shadow the DOM's Node.
   Node as InfraNode,
-  Edge,
   Diagnostic,
   Attribute,
   Range,
