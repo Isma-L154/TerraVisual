@@ -2,7 +2,7 @@ import { MarkerType, type Edge as FlowEdge, type Node as FlowNode } from '@xyflo
 
 import type { InfraModel, InfraNode } from '../model';
 import { absoluteBoxes, layout, METRICS, type Box } from '../layout/layout';
-import { announce, connectionsByNode } from './catalog';
+import { announce, connectionsByNode } from './announce';
 import { routeConnections, type Point, type Rect } from './routing';
 
 export type DiagramNodeData = {

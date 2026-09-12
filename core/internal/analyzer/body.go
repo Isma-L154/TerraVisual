@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"sort"
+	"strconv"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -98,7 +99,7 @@ func evaluateBody(
 			path = prefix + "." + block.Type
 		}
 		if counts[block.Type] > 1 {
-			path = path + "[" + itoa(seen[block.Type]) + "]"
+			path = path + "[" + strconv.Itoa(seen[block.Type]) + "]"
 			seen[block.Type]++
 		}
 

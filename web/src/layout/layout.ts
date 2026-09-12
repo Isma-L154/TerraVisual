@@ -53,6 +53,9 @@ export const METRICS = {
   rootGap: 24,
 } as const;
 
+/** How far roots run before wrapping to the next row. */
+const MAX_ROOT_ROW_WIDTH = METRICS.leafWidth * 8;
+
 /**
  * Lays out a model.
  *
@@ -145,7 +148,7 @@ export function layout(model: InfraModel, options: LayoutOptions = {}): Layout {
 
   const placeRootRow = (node: InfraNode) => {
     const size = measure(node);
-    if (cursorX > 0 && cursorX + size.width > maxRootRowWidth()) {
+    if (cursorX > 0 && cursorX + size.width > MAX_ROOT_ROW_WIDTH) {
       cursorX = 0;
       rowTop += rowHeight + METRICS.rootGap;
       rowHeight = 0;
@@ -225,10 +228,6 @@ function pack(sizes: { width: number; height: number }[]): {
   }
 
   return { positions, width, height: Math.max(0, y - METRICS.gap) };
-}
-
-function maxRootRowWidth(): number {
-  return METRICS.leafWidth * 8;
 }
 
 /** Every box in canvas coordinates rather than relative to its parent. */

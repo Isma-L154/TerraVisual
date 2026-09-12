@@ -5,7 +5,7 @@
  */
 
 import type { InfraModel, InfraNode } from '../model';
-import { announce } from '../diagram/catalog';
+import { announce } from '../diagram/announce';
 
 export type OutlineItem = {
   node: InfraNode;

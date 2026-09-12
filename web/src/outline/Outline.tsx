@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { InfraModel } from '../model';
 import { CategoryIcon } from '../diagram/CategoryIcon';
-import { connectionsByNode, displayType } from '../diagram/catalog';
+import { connectionsByNode } from '../diagram/announce';
+import { displayType } from '../diagram/catalog';
 import { buildTree, describe, visibleItems, type OutlineItem } from './tree';
 
 type OutlineProps = {

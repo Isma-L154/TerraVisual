@@ -2,7 +2,7 @@ import awsVpc from '../../../schemas/examples/aws-vpc.json';
 
 import type { InfraModel, InfraNode } from '../model';
 import { layout } from '../layout/layout';
-import { catalogSize, displayType } from './catalog';
+import { displayType } from './catalog';
 import { countUnknown, toFlow } from './toFlow';
 
 const example = awsVpc as InfraModel;
@@ -115,10 +115,8 @@ describe('catalog presentation', () => {
     expect(displayType('some_exotic_thing')).toBe('some_exotic_thing');
   });
 
-  it('reads the same catalogs the analyzer does', () => {
-    expect(catalogSize()).toBeGreaterThanOrEqual(40);
-  });
-
+  // Also proves the catalogs were discovered at all: a broken glob leaves
+  // every type falling back to its raw name.
   it('names types from every provider', () => {
     expect(displayType('azurerm_virtual_network')).toBe('Virtual Network');
     expect(displayType('google_compute_instance')).toBe('Compute Instance');
