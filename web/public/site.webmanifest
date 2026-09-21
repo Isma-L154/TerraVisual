@@ -1,0 +1,14 @@
+{
+  "name": "TerraVisual",
+  "short_name": "TerraVisual",
+  "description": "See the infrastructure your Terraform describes, as you write it.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7fa",
+  "theme_color": "#3b5bdb",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}
