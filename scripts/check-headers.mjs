@@ -68,7 +68,17 @@ const forbidden = [
       'there is no API here; an origin allowance nobody needs is one somebody comes to rely on',
   },
   { header: 'x-powered-by', describe: 'volunteers information about the stack for no benefit' },
-  { header: 'server', describe: 'same' },
+  /*
+   * Cloudflare's edge adds `Server: cloudflare` to every response after the
+   * Worker has run, on workers.dev as well as on the custom domain, and nothing
+   * in the Worker can remove it. It names the CDN, which anyone can read off the
+   * IP address anyway. Anything more (a version, a runtime) still fails.
+   */
+  {
+    header: 'server',
+    allowed: (value) => value.toLowerCase() === 'cloudflare',
+    describe: 'names more than the CDN, which volunteers information about the stack',
+  },
 ];
 
 /*
@@ -117,8 +127,9 @@ for (const path of paths) {
   }
 
   for (const rule of forbidden) {
-    if (response.headers.has(rule.header)) {
-      console.error(`  PRESENT  ${rule.header} — should not be sent: ${rule.describe}`);
+    const value = response.headers.get(rule.header);
+    if (value !== null && !rule.allowed?.(value)) {
+      console.error(`  PRESENT  ${rule.header}: ${value} — should not be sent: ${rule.describe}`);
       failures++;
     }
   }

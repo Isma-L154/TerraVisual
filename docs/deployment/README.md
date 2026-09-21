@@ -78,6 +78,11 @@ A plain `curl` sees a clean page; a browser sees the beacon. That is why the
 header check now sends a browser's `User-Agent` and `Accept` — a checker that
 looks like a bot verifies nothing about what people receive.
 
+The edge also adds `Server: cloudflare` to every response, after the Worker,
+and no Worker code can remove it. The header check accepts exactly that value,
+since it names only the CDN (readable from the IP address anyway), and fails on
+anything that says more.
+
 **A spend alert.**
 
 The Worker rate-limits requests per address, generously, which stops the
