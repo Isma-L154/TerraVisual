@@ -166,6 +166,54 @@ for (const path of paths) {
   }
 }
 
+/*
+ * Search engines. The single-page fallback answers any path with the index page
+ * and a 200, so robots.txt and the sitemap are checked by content type: a
+ * deployment that lost them would otherwise look fine. Production must be
+ * indexable; every other host (previews, local runs) must ask not to be, or it
+ * competes with the site in search results.
+ */
+const PRODUCTION_HOST = 'terravisual.cloudils.com';
+const indexable = new URL(target).hostname === PRODUCTION_HOST;
+
+const crawled = [
+  { path: '/', type: /^text\/html/ },
+  { path: '/robots.txt', type: /^text\/plain/ },
+  { path: '/sitemap.xml', type: /xml/ },
+];
+
+console.log(
+  `\nsearch engines (${indexable ? 'production: must be indexable' : 'not production: must be noindex'})`,
+);
+
+for (const { path, type } of crawled) {
+  const url = new URL(path, target);
+  let response;
+  try {
+    response = await fetch(url, { redirect: 'manual', headers: BROWSER_HEADERS });
+  } catch (error) {
+    console.error(`  FAIL     ${path} — could not be fetched: ${error.message}`);
+    failures++;
+    continue;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const robots = response.headers.get('x-robots-tag');
+
+  if (response.status !== 200 || !type.test(contentType)) {
+    console.error(`  WRONG    ${path} — got ${response.status} ${contentType || '(no type)'}`);
+    failures++;
+  } else if (indexable && robots !== null) {
+    console.error(`  PRESENT  ${path} — x-robots-tag: ${robots} would keep the site out of search`);
+    failures++;
+  } else if (!indexable && robots !== 'noindex') {
+    console.error(`  MISSING  ${path} — x-robots-tag: noindex, or this copy gets indexed`);
+    failures++;
+  } else {
+    console.log(`  ok       ${path}`);
+  }
+}
+
 if (failures > 0) {
   console.error(`\n${failures} problem${failures === 1 ? '' : 's'} with the served headers.`);
   process.exit(1);

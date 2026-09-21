@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TerraVisual</title>
+    <title>TerraVisual — Visualize Terraform as a live diagram</title>
     <meta
       name="description"
-      content="See the infrastructure your Terraform describes, as you write it. Your code never leaves your browser."
+      content="Free Terraform visualizer. Write HCL and watch the AWS, Azure and GCP infrastructure it describes become a live diagram. Your code never leaves your browser."
     />
+    <link rel="canonical" href="https://terravisual.cloudils.com/" />
 
     <!-- What a shared link unfurls into. Absolute URLs: crawlers resolve nothing. -->
     <meta property="og:type" content="website" />
@@ -51,9 +52,41 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#3b5bdb" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#12121a" media="(prefers-color-scheme: dark)" />
+
+    <!--
+      Structured data for search engines. A JSON data block, not a script: the
+      browser never executes it, so script-src does not apply to it.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "TerraVisual",
+        "url": "https://terravisual.cloudils.com/",
+        "description": "Free Terraform visualizer. Write HCL and watch the AWS, Azure and GCP infrastructure it describes become a live diagram. Your code never leaves your browser.",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Infrastructure as Code",
+        "operatingSystem": "Any (runs in the browser)",
+        "browserRequirements": "Requires JavaScript and WebAssembly.",
+        "isAccessibleForFree": true,
+        "inLanguage": "en",
+        "image": "https://terravisual.cloudils.com/og-image.png",
+        "license": "https://www.apache.org/licenses/LICENSE-2.0",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>TerraVisual</h1>
+      <p>
+        TerraVisual turns Terraform into a diagram of the infrastructure it describes, as you write
+        it: networks, compute, storage and databases on AWS, Azure and GCP, drawn inside the
+        containers they belong to. It runs entirely in your browser, so your code is never uploaded.
+      </p>
+      <p>It needs JavaScript and WebAssembly to run.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

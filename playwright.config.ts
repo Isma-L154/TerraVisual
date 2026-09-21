@@ -45,7 +45,10 @@ export default defineConfig({
 
   webServer: {
     // `npm run test:e2e` builds first, so this serves the current code.
-    command: `npx wrangler dev --port ${PORT}`,
+    // `--local-upstream` keeps the request's real host. Without it, wrangler
+    // presents every local request as the production route's hostname, and the
+    // Worker would treat the test server as the site it is allowed to index.
+    command: `npx wrangler dev --port ${PORT} --local-upstream localhost:${PORT}`,
     url: BASE_URL,
     // Never reuse a server that is already running. Wrangler reads the asset
     // directory when it starts and does not notice a later rebuild: a
