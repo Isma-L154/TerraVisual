@@ -1,4 +1,10 @@
-import { applyCaching, contentSecurityPolicy, createNonce, withSecurityHeaders } from './headers';
+import {
+  applyCaching,
+  contentSecurityPolicy,
+  createNonce,
+  PRODUCTION_HOST,
+  withSecurityHeaders,
+} from './headers';
 
 /**
  * Unit tests for the header logic.
@@ -105,6 +111,36 @@ describe('security headers', () => {
 
   it('refuses to grant capabilities nothing here uses', () => {
     expect(headersFor('/').get('Permissions-Policy')).toContain('camera=()');
+  });
+});
+
+describe('indexing', () => {
+  function robotsTag(url: string, type = 'text/html; charset=utf-8'): string | null {
+    const response = new Response('x', { headers: { 'Content-Type': type } });
+    return withSecurityHeaders(response, NONCE, new URL(url)).headers.get('X-Robots-Tag');
+  }
+
+  it('lets search engines index the site itself', () => {
+    expect(robotsTag(`https://${PRODUCTION_HOST}/`)).toBeNull();
+    expect(robotsTag(`https://${PRODUCTION_HOST}/sitemap.xml`, 'application/xml')).toBeNull();
+    expect(robotsTag(`https://${PRODUCTION_HOST}/og-image.png`, 'image/png')).toBeNull();
+  });
+
+  // A preview is the same page on another host; indexed, it competes with the site.
+  it('keeps every other host out of the index', () => {
+    for (const url of [
+      'https://abc123-terravisual.someone.workers.dev/',
+      'http://localhost:8787/',
+      `https://${PRODUCTION_HOST}.evil.test/`,
+    ]) {
+      expect(robotsTag(url), url).toBe('noindex');
+    }
+  });
+
+  // Unknown paths get the index page with a 200: a duplicate, not a page.
+  it('keeps the single-page fallback out of the index', () => {
+    expect(robotsTag(`https://${PRODUCTION_HOST}/anything`)).toBe('noindex');
+    expect(robotsTag(`https://${PRODUCTION_HOST}/index.html`)).toBe('noindex');
   });
 });
 

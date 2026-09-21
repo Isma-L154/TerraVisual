@@ -1,0 +1,6 @@
+# TerraVisual is one public page. Everything may be crawled; there is nothing
+# private here to hide, and robots.txt would not be the way to hide it.
+User-agent: *
+Allow: /
+
+Sitemap: https://terravisual.cloudils.com/sitemap.xml

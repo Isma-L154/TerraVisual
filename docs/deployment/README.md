@@ -24,6 +24,9 @@ npm run preview:worker      # builds, then serves through the real Worker
 node scripts/check-headers.mjs http://localhost:8787
 ```
 
+The header check also verifies robots.txt, the sitemap and that the local copy
+asks not to be indexed; see *Search engines and link previews* below.
+
 `npm run dev` is faster for day-to-day work, but it does not send the security
 headers. Anything to do with CSP has to be checked through the Worker.
 
@@ -145,6 +148,67 @@ Content-Type: text/plain; charset=utf-8
 The refusal carries the full set of security headers, because the one response
 on the site without a Content Security Policy would be a strange thing to leave
 lying around.
+
+## Search engines and link previews
+
+The site is one page, so what search engines and link previews need is small,
+and all of it is static files in `web/public/` plus tags in `web/index.html`:
+
+| What | Where | Why |
+|---|---|---|
+| `robots.txt` | `web/public/` | Allows everything and names the sitemap |
+| `sitemap.xml` | `web/public/` | One URL, `https://terravisual.cloudils.com/`. A shared workspace lives in the URL fragment, which crawlers never send, so there are no other pages to list |
+| Canonical, title, description | `web/index.html` | The canonical names the one address; title ≤ 60 and description 120–160 characters, which the browser suite enforces |
+| Structured data | `web/index.html` | A `WebApplication` JSON-LD block. It is a data block the browser never executes, so the CSP's `script-src` does not apply |
+| Open Graph / Twitter tags | `web/index.html` | What a pasted link unfurls into; every URL absolute |
+| Icons, manifest, `og-image.png` | `web/public/` | Generated from `favicon.svg` and `web/brand/social-card.html` by `node scripts/make-brand-assets.mjs`. The outputs are committed |
+
+These files must exist as files. The asset server answers any unknown path
+with the index page and a 200 (the single-page fallback), so a missing
+`robots.txt` or sitemap does not 404; it quietly serves HTML, which Search
+Console rejects. The checks therefore look at content types, not status codes.
+
+### Only production is indexable
+
+The Worker sends `X-Robots-Tag: noindex` on every response from a host other
+than `terravisual.cloudils.com`, and on HTML at any path but `/`. Preview
+versions (`*.workers.dev`) and local runs serve the same page, and indexed they
+would compete with the site as duplicates; so would the fallback page served
+at made-up paths. `scripts/check-headers.mjs` verifies both directions against
+the deployment it is pointed at.
+
+Locally, `wrangler dev` presents every request as the production route's
+hostname unless it is started with `--local-upstream`, and then the Worker
+would treat a local run as the site. `npm run preview:worker` and the browser
+suite both pass it.
+
+### Adding the site to Google Search Console
+
+Nothing in this repository can do these steps; they need the Google account and
+the Cloudflare dashboard.
+
+1. **Add a property.** In [Search Console](https://search.google.com/search-console),
+   *Add property → Domain*, and enter `terravisual.cloudils.com`. A domain
+   property covers http and https and needs no file or tag in the site. (If a
+   `cloudils.com` domain property already exists, it already covers this
+   subdomain: skip to step 3 there.)
+2. **Verify it by DNS.** Google shows a `google-site-verification=…` TXT value.
+   In Cloudflare, *DNS → Records → Add record*: type `TXT`, name `terravisual`,
+   content the value Google gave. Then *Verify*. Leave the record in place:
+   removing it un-verifies the property.
+3. **Submit the sitemap.** *Sitemaps*, enter
+   `https://terravisual.cloudils.com/sitemap.xml`, *Submit*. It should read
+   *Success* with one discovered page.
+4. **Ask for the page.** *URL inspection*, enter
+   `https://terravisual.cloudils.com/`, *Request indexing*. The live test there
+   also shows the page as Googlebot renders it.
+
+### Checking a link preview
+
+Platforms cache previews for days. After changing the card or its tags, check
+with [LinkedIn's Post Inspector](https://www.linkedin.com/post-inspector/),
+which also refreshes LinkedIn's cache, or re-share the link with a throwaway
+query string (`?v=2`), which platforms treat as a new URL.
 
 ## What is deliberately absent
 

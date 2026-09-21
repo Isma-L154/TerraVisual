@@ -74,13 +74,33 @@ export function withSecurityHeaders(response: Response, nonce: string, url?: URL
   // No CORS: there is no API to be called from elsewhere.
   headers.delete('Access-Control-Allow-Origin');
 
-  if (url) applyCaching(headers, url.pathname);
+  if (url) {
+    applyCaching(headers, url.pathname);
+    applyIndexing(headers, url);
+  }
 
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
   });
+}
+
+/** The one address search engines should know. The canonical URL and the sitemap name it too. */
+export const PRODUCTION_HOST = 'terravisual.cloudils.com';
+
+/**
+ * Keeps everything but the site itself out of search results. Preview versions
+ * and local runs serve the same page from other hosts, and HTML at any path but
+ * `/` is the single-page fallback rather than a page, so both would only be
+ * indexed as duplicates of the real one.
+ */
+export function applyIndexing(headers: Headers, url: URL): void {
+  const isHtml = headers.get('Content-Type')?.includes('text/html') ?? false;
+
+  if (url.hostname !== PRODUCTION_HOST || (isHtml && url.pathname !== '/')) {
+    headers.set('X-Robots-Tag', 'noindex');
+  }
 }
 
 /**

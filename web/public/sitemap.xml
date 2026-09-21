@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One URL, on purpose. The application is a single page, and a shared
+  workspace lives in the URL fragment (#...), which crawlers never send.
+  Add a <url> here only when a real, separately servable page exists.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://terravisual.cloudils.com/</loc>
+  </url>
+</urlset>

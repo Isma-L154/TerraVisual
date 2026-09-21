@@ -81,3 +81,67 @@ test.describe('social card', () => {
     expect(png.length).toBeLessThan(300_000);
   });
 });
+
+/**
+ * What Search Console reads. Every check is on the served bytes: the files sit
+ * behind a single-page fallback that answers any path with the index page and
+ * a 200, so a missing robots.txt or sitemap looks present unless its type and
+ * body are checked.
+ */
+test.describe('search engines', () => {
+  const SITE = 'https://terravisual.cloudils.com/';
+
+  test('robots.txt allows crawling and names the sitemap', async ({ request }) => {
+    const response = await request.get('/robots.txt');
+    expect(response.headers()['content-type']).toMatch(/^text\/plain/);
+
+    const body = await response.text();
+    expect(body).toMatch(/^User-agent: \*$/m);
+    expect(body).not.toMatch(/^Disallow: \/\s*$/m);
+    expect(body).toContain(`Sitemap: ${SITE}sitemap.xml`);
+  });
+
+  test('sitemap.xml is a sitemap of the canonical URL', async ({ request }) => {
+    const response = await request.get('/sitemap.xml');
+    expect(response.headers()['content-type']).toMatch(/xml/);
+
+    const body = await response.text();
+    expect(body).toMatch(/^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+    expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect([...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])).toEqual([SITE]);
+  });
+
+  test('the page names its canonical URL and describes itself', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+
+    expect(html).toContain(`<link rel="canonical" href="${SITE}" />`);
+
+    const title = /<title>([^<]+)<\/title>/.exec(html)?.[1] ?? '';
+    expect(title.length).toBeGreaterThan(20);
+    expect(title.length).toBeLessThanOrEqual(60);
+
+    const description = /<meta\s+name="description"\s+content="([^"]+)"/.exec(html)?.[1] ?? '';
+    expect(description.length).toBeGreaterThanOrEqual(120);
+    expect(description.length).toBeLessThanOrEqual(160);
+  });
+
+  test('the structured data parses and describes the application', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    const block = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html)?.[1];
+    expect(block).toBeTruthy();
+
+    const data = JSON.parse(block ?? '') as Record<string, unknown>;
+    expect(data['@type']).toBe('WebApplication');
+    expect(data.url).toBe(SITE);
+    expect(data.isAccessibleForFree).toBe(true);
+  });
+
+  // The suite runs on localhost, which is not the production host, so every
+  // response here must ask not to be indexed. Production is checked by
+  // scripts/check-headers.mjs after each deploy.
+  test('anything but the production host is kept out of the index', async ({ request }) => {
+    for (const path of ['/', '/robots.txt', '/sitemap.xml']) {
+      expect((await request.get(path)).headers()['x-robots-tag'], path).toBe('noindex');
+    }
+  });
+});
