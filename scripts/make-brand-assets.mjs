@@ -1,8 +1,9 @@
 // Renders the raster brand assets from their sources.
 //
 // The logo has exactly one source of truth, web/public/favicon.svg. Every PNG
-// and the .ico are derived from it here rather than exported by hand, so a
-// change to the mark is a change to one file followed by one command:
+// and the .ico are derived from it here rather than exported by hand, and the
+// social card (web/brand/social-card.html) embeds it rather than copying it, so
+// a change to the mark is a change to one file followed by one command:
 //
 //   node scripts/make-brand-assets.mjs
 //
@@ -80,5 +81,17 @@ const entries = images.map(({ size, data }) => {
 const ico = Buffer.concat([header, ...entries, ...images.map(({ data }) => data)]);
 writeFileSync(new URL('favicon.ico', PUBLIC), ico);
 console.log(`favicon.ico  ${ICO_SIZES.join('/')}  ${ico.length} bytes`);
+
+/*
+ * The social card: what a shared link unfurls into. 1200×630 is the size Open
+ * Graph and X's large card both expect; its source is ordinary HTML so it can
+ * use the app's own palette and type.
+ */
+await page.setViewportSize({ width: 1200, height: 630 });
+await page.goto(new URL('../web/brand/social-card.html', import.meta.url).href);
+await page.waitForLoadState('load');
+const card = await page.screenshot({ type: 'png' });
+writeFileSync(new URL('og-image.png', PUBLIC), card);
+console.log(`og-image.png  1200×630  ${card.length} bytes`);
 
 await browser.close();

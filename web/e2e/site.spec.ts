@@ -46,3 +46,38 @@ test('the web manifest parses and names icons that exist', async ({ request }) =
     expect(served.headers()['content-type'], icon.src).toMatch(/^image\//);
   }
 });
+
+/**
+ * The link preview. Crawlers resolve nothing, so every URL must be absolute,
+ * and they read tags from the served HTML — this reads them from the response,
+ * not from the page after scripts have run.
+ */
+test.describe('social card', () => {
+  const meta = (html: string, key: string) =>
+    new RegExp(`<meta\\s+(?:property|name)="${key}"\\s+content="([^"]+)"`).exec(html)?.[1];
+
+  test('the served HTML carries Open Graph and Twitter tags', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+
+    for (const key of ['og:title', 'og:description', 'og:type', 'og:site_name', 'og:image:alt']) {
+      expect(meta(html, key), key).toBeTruthy();
+    }
+    expect(meta(html, 'twitter:card')).toBe('summary_large_image');
+    expect(meta(html, 'og:url')).toMatch(/^https:\/\//);
+    expect(meta(html, 'og:image')).toMatch(/^https:\/\/.+\/og-image\.png$/);
+    expect(meta(html, 'twitter:image')).toBe(meta(html, 'og:image'));
+  });
+
+  test('the card image is served, at the size the tags declare', async ({ request }) => {
+    const response = await request.get('/og-image.png');
+    expect(response.headers()['content-type']).toBe('image/png');
+    expect(response.headers()['cross-origin-resource-policy']).toBe('cross-origin');
+
+    // Width and height are the two big-endian words after the PNG signature
+    // and the IHDR chunk header.
+    const png = await response.body();
+    expect(png.readUInt32BE(16)).toBe(1200);
+    expect(png.readUInt32BE(20)).toBe(630);
+    expect(png.length).toBeLessThan(300_000);
+  });
+});
