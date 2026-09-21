@@ -41,7 +41,10 @@ export function App() {
       </a>
 
       <header className="app-header">
-        <h1>TerraVisual</h1>
+        <h1>
+          <img className="app-logo" src="/favicon.svg" alt="" width={24} height={24} />
+          TerraVisual
+        </h1>
         <p className="tagline">See the infrastructure your Terraform describes, as you write it.</p>
       </header>
 
