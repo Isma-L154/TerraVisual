@@ -1,0 +1,174 @@
+<!doctype html>
+<!--
+  The social card: what a TerraVisual link unfurls into on Slack, WhatsApp,
+  LinkedIn, X, Discord and the rest.
+
+  The source of web/public/og-image.png. Rendered at 1200×630 by
+  scripts/make-brand-assets.mjs; edit this, then run that. It is not deployed —
+  only the PNG is.
+
+  It reuses the app's dark palette and its category colours (styles.css), so
+  the card looks like the tool it links to. Everything that matters is large:
+  most previews show it at a third of this size or less.
+-->
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+    color: #e8e8f0;
+    background:
+      radial-gradient(900px 500px at 100% 0%, rgba(76, 110, 245, 0.28), transparent 60%),
+      radial-gradient(700px 420px at 0% 100%, rgba(95, 214, 187, 0.12), transparent 60%),
+      #12121a;
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    gap: 36px;
+    padding: 64px 56px 56px 72px;
+  }
+
+  .copy { display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand img { width: 64px; height: 64px; }
+  .brand span { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+
+  h1 {
+    margin: 52px 0 0;
+    font-size: 50px;
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  h1 em { font-style: normal; color: #8da2fb; }
+
+  .facts { margin-top: auto; display: flex; flex-wrap: wrap; gap: 12px; }
+  .facts span {
+    font-size: 21px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1.5px solid #2e2e3c;
+    background: #1a1a24;
+    color: #c8c8d8;
+  }
+
+  /* The picture: code, and below it the infrastructure it describes. */
+  .scene { position: relative; }
+
+  .code {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 420px;
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: #1a1a24;
+    border: 1.5px solid #2e2e3c;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    font: 17px/1.55 'Cascadia Code', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+    white-space: pre;
+    color: #e8e8f0;
+  }
+  .k { color: #c39bf5; }
+  .s { color: #5fd6a0; }
+  .p { color: #86b0ff; }
+  .c { color: #9090a6; }
+
+  .diagram {
+    position: absolute;
+    right: 0;
+    top: 262px;
+    width: 400px;
+    padding: 16px;
+    border-radius: 14px;
+    background: #1a1a24;
+    border: 1.5px solid #2e2e3c;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  .frame {
+    border: 2px solid rgba(122, 162, 255, 0.55);
+    border-radius: 12px;
+    padding: 34px 12px 12px;
+    position: relative;
+    background: rgba(122, 162, 255, 0.06);
+  }
+  .frame + .frame { margin-top: 12px; }
+  .frame > label {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #9fb8ff;
+  }
+  .frame.subnet { border-color: rgba(154, 168, 255, 0.4); background: rgba(154, 168, 255, 0.05); }
+  .frame.subnet > label { color: #b8c2ff; }
+  .row { display: flex; gap: 10px; }
+  .node {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: 9px;
+    background: #20202c;
+    border: 1.5px solid #2e2e3c;
+    border-left: 5px solid var(--c);
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .node i {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: var(--c);
+    flex: none;
+  }
+
+</style>
+
+<div class="copy">
+  <div class="brand">
+    <img src="../public/favicon.svg" alt="" />
+    <span>TerraVisual</span>
+  </div>
+
+  <h1>See the infrastructure your <em>Terraform</em> describes, as you write it.</h1>
+
+  <div class="facts">
+    <span>Free</span>
+    <span>Runs in your browser</span>
+    <span>AWS · Azure · GCP</span>
+  </div>
+</div>
+
+<div class="scene">
+  <div class="code"><span class="k">resource</span> <span class="s">"aws_vpc"</span> <span class="s">"main"</span> {}
+<span class="k">resource</span> <span class="s">"aws_subnet"</span> <span class="s">"app"</span> {
+  <span class="p">vpc_id</span> = aws_vpc.main.id
+}
+<span class="k">resource</span> <span class="s">"aws_instance"</span> <span class="s">"web"</span> {
+  <span class="p">subnet_id</span> = aws_subnet.app.id
+}
+<span class="c"># + db, assets, lb</span></div>
+
+  <div class="diagram">
+    <div class="frame">
+      <label>VPC · main</label>
+      <div class="frame subnet">
+        <label>Subnet · app</label>
+        <div class="row">
+          <div class="node" style="--c: #c39bf5"><i></i>web</div>
+          <div class="node" style="--c: #f0c274"><i></i>db</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 12px">
+        <div class="node" style="--c: #5fd6bb"><i></i>assets</div>
+        <div class="node" style="--c: #f490c0"><i></i>lb</div>
+      </div>
+    </div>
+  </div>
+</div>

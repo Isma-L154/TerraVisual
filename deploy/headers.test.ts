@@ -87,6 +87,22 @@ describe('security headers', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
+  // The social card is shown by other sites, so it alone may be loaded by them.
+  // Everything else stays same-origin, including other images.
+  it('lets other sites load the social card and nothing else', () => {
+    expect(headersFor('/og-image.png').get('Cross-Origin-Resource-Policy')).toBe('cross-origin');
+
+    for (const path of [
+      '/',
+      '/favicon.svg',
+      '/analyzer.wasm',
+      '/og-image.png.map',
+      '/x/og-image.png',
+    ]) {
+      expect(headersFor(path).get('Cross-Origin-Resource-Policy'), path).toBe('same-origin');
+    }
+  });
+
   it('refuses to grant capabilities nothing here uses', () => {
     expect(headersFor('/').get('Permissions-Policy')).toContain('camera=()');
   });

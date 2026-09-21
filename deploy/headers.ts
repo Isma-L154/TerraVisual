@@ -52,12 +52,24 @@ const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
 };
 
+/**
+ * Paths other sites are meant to show. The social card is fetched by link
+ * previews, some of which render it in a browser context on their own origin,
+ * where `same-origin` would block it. It is a public picture of the product;
+ * nothing else is on this list.
+ */
+const EMBEDDABLE = new Set(['/og-image.png']);
+
 /** A copy of the response with the security headers and, given a URL, caching. */
 export function withSecurityHeaders(response: Response, nonce: string, url?: URL): Response {
   const headers = new Headers(response.headers);
 
   headers.set('Content-Security-Policy', contentSecurityPolicy(nonce));
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+
+  if (url && EMBEDDABLE.has(url.pathname)) {
+    headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
 
   // No CORS: there is no API to be called from elsewhere.
   headers.delete('Access-Control-Allow-Origin');
