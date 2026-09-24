@@ -87,6 +87,22 @@ ship a precompressed artifact and serve it with `Content-Encoding: br`, so the
 build's quality-11 output is what goes over the wire; that is #69, with the
 numbers in it.
 
+**Update, 2026-09-23 (#69 fixed).** The build now writes `analyzer.wasm.br` and
+the Worker serves it with `Content-Encoding: br` and `Vary: Accept-Encoding`.
+Measured on the edge, against the pull request's preview deployment, with the
+`Accept-Encoding` Chrome sends:
+
+```
+$ curl -H 'Accept-Encoding: gzip, deflate, br, zstd' <preview>/analyzer.wasm
+Content-Encoding: br
+Content-Length: 2019813   (1.93 MB)
+```
+
+NFR-5's number now means the transfer, and the deployment's header check
+(`scripts/check-headers.mjs`) measures it on the wire after every deploy,
+failing above 2.00 MB. Clients without brotli get gzip from the edge (2.60 MB),
+or the plain file with `identity`.
+
 The rest of the payload on the wire, also measured in production: the
 application bundle 256 kB brotli, the HTML 393 bytes, both cached immutably by
 content hash. Those are unaffected — 256 kB against 204 kB matters far less than
