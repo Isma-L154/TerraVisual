@@ -7,6 +7,7 @@
  */
 
 import { createNonce, withSecurityHeaders } from './headers';
+import { fetchAsset } from './precompressed';
 import { clientKey, isAllowed, tooManyRequests, type RateLimiter } from './rate-limit';
 
 // Cloudflare's types are described rather than imported, so this file checks
@@ -48,8 +49,18 @@ export default {
       return withSecurityHeaders(tooManyRequests(), nonce);
     }
 
-    const asset = await env.ASSETS.fetch(request);
+    const { response: asset, encoded } = await fetchAsset(request, env.ASSETS);
     const response = withSecurityHeaders(asset, nonce, new URL(request.url));
+
+    if (encoded) {
+      // Cloudflare's own option: without it the runtime compresses the
+      // already-compressed body again.
+      return new Response(response.body, {
+        status: response.status,
+        headers: response.headers,
+        encodeBody: 'manual',
+      } as ResponseInit);
+    }
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
     return new HTMLRewriter().on('head', new NonceInjector(nonce)).transform(response);

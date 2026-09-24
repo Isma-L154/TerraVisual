@@ -99,6 +99,35 @@ const BROWSER_HEADERS = {
 
 const BEACON_HOST = 'static.cloudflareinsights.com';
 
+// NFR-5, the same number scripts/build-core.mjs enforces on the build.
+const ANALYZER_BUDGET_BYTES = 2.0 * 1024 * 1024;
+const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+
+/** Bytes as they cross the network, with the encoding and Vary they came with. */
+async function transferSize(url) {
+  const { request } = await import(url.protocol === 'https:' ? 'node:https' : 'node:http');
+  return new Promise((resolve, reject) => {
+    request(
+      url,
+      { headers: { ...BROWSER_HEADERS, 'Accept-Encoding': 'gzip, deflate, br' } },
+      (res) => {
+        let bytes = 0;
+        res.on('data', (chunk) => (bytes += chunk.length));
+        res.on('end', () =>
+          resolve({
+            bytes,
+            encoding: res.headers['content-encoding'] ?? '',
+            vary: String(res.headers.vary ?? ''),
+          }),
+        );
+        res.on('error', reject);
+      },
+    )
+      .on('error', reject)
+      .end();
+  });
+}
+
 const paths = ['/', '/analyzer.wasm'];
 let failures = 0;
 
@@ -188,6 +217,21 @@ for (const path of paths) {
       failures++;
     } else {
       console.log('  ok       content-type');
+    }
+
+    // NFR-5 measured on the wire (#69): the bytes a brotli-capable browser
+    // downloads, which fetch() would hide by decompressing them.
+    const transfer = await transferSize(url);
+    if (transfer.encoding !== 'br' || transfer.bytes > ANALYZER_BUDGET_BYTES) {
+      console.error(
+        `  WRONG    analyzer transfer — must be brotli within ${mb(ANALYZER_BUDGET_BYTES)}, got ${transfer.encoding || 'no encoding'} ${mb(transfer.bytes)}`,
+      );
+      failures++;
+    } else if (!/accept-encoding/i.test(transfer.vary)) {
+      console.error('  MISSING  vary: accept-encoding — a cache could serve brotli to anyone');
+      failures++;
+    } else {
+      console.log(`  ok       transfer ${mb(transfer.bytes)} brotli`);
     }
   }
 }
