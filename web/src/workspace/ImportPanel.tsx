@@ -2,6 +2,13 @@ import { useId } from 'react';
 
 import { entriesFromInput, type Entry } from './import';
 
+declare module 'react' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- must match React's declaration
+  interface InputHTMLAttributes<T> {
+    webkitdirectory?: string;
+  }
+}
+
 type ImportPanelProps = {
   onEntries: (read: () => Entry[]) => void;
 };
@@ -39,8 +46,7 @@ export function ImportPanel({ onEntries }: ImportPanelProps) {
             multiple
             // Non-standard, universally supported on desktop, and the only way
             // a browser lets somebody pick a whole directory.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            {...({ webkitdirectory: '', directory: '' } as any)}
+            webkitdirectory=""
             onChange={onChange}
           />
           <label className="import-button" htmlFor={folderId}>
