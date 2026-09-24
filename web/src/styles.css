@@ -518,6 +518,17 @@ p.diagnostic-error {
   display: none;
 }
 
+/* React Flow's own chrome, drawn from our tokens so it follows dark mode. */
+.diagram .react-flow {
+  --xy-controls-button-background-color: var(--surface);
+  --xy-controls-button-background-color-hover: var(--active-line);
+  --xy-controls-button-color: var(--text);
+  --xy-controls-button-color-hover: var(--text);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: 0 0 0 1px var(--border);
+  --xy-background-pattern-color: var(--border);
+}
+
 /*
  * What a folded container is holding, and how to open it.
  *
