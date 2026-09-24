@@ -26,6 +26,12 @@ updates:
           - '@types/react-dom'
       dev-tooling:
         dependency-type: development
+    ignore:
+      # Versions after 1.11.11 drop edge paths from the PNG export (#128), as
+      # React Flow's download-image guide warns. CI checks the file, not the
+      # drawing, so it cannot catch this.
+      - dependency-name: html-to-image
+        versions: ['> 1.11.11']
 
   - package-ecosystem: github-actions
     directory: /
