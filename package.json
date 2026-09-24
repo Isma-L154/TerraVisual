@@ -40,13 +40,13 @@
     "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
-    "eslint": "10.10.0",
+    "eslint": "10.11.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.12.0",
     "json-schema-to-typescript": "16.0.0",
-    "prettier": "3.9.6",
+    "prettier": "3.9.8",
     "typescript-eslint": "8.70.0",
-    "wrangler": "4.130.0"
+    "wrangler": "4.135.0"
   },
   "prettier": {
     "singleQuote": true,

@@ -133,7 +133,7 @@ jobs:
 
       # Only on failure, and only for a week: a trace is a recording of a
       # browser session and there is no reason to keep one that passed.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
