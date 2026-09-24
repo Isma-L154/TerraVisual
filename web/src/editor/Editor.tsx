@@ -14,6 +14,11 @@ import { editorTheme, highlightStyle } from './theme';
 type EditorProps = {
   /** Which workspace file is open. Changing it starts a new document. */
   path: string;
+  /**
+   * The document to start from. Read once, when the document is created: a
+   * later value may already be older than what has been typed (#112). A new
+   * workspace remounts the editor instead.
+   */
   content: string;
   diagnostics: Diagnostic[];
   /** A range to select and scroll to; pass a fresh object to jump again. */
@@ -97,17 +102,6 @@ export function Editor({
     // its undo history should not continue the previous one's.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, hintId]);
-
-  // Content from elsewhere — an import, a shared link, a reset.
-  useEffect(() => {
-    const instance = view.current;
-    if (!instance) return;
-
-    const current = instance.state.doc.toString();
-    if (current === content) return;
-
-    instance.dispatch({ changes: { from: 0, to: current.length, insert: content } });
-  }, [content]);
 
   // Pushed in when analysis finishes rather than pulled by CodeMirror's
   // linter: these are analysis results, and they arrive from a worker.

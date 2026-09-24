@@ -151,6 +151,8 @@ export function App() {
           </div>
 
           <Editor
+            // A new workspace is a new document, never an edit to the old one.
+            key={session.generation}
             path={activePath}
             content={workspace.read(activePath) ?? ''}
             diagnostics={diagnostics}
