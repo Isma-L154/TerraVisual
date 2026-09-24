@@ -386,14 +386,62 @@ body {
   color: var(--muted);
 }
 
+.file-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
 /* Many files scroll sideways rather than pushing the editor off the pane. */
 .file-tabs {
   display: flex;
   gap: 4px;
   flex: 1 1 0;
   min-width: 0;
-  justify-content: flex-end;
   overflow-x: auto;
+}
+
+.file-actions {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.file-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 0 16px 8px;
+  font-size: 12px;
+}
+
+.file-form input {
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-family: ui-monospace, monospace;
+}
+
+.file-form input[aria-invalid='true'] {
+  border-color: var(--severity-error);
+}
+
+.file-form-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--severity-error);
 }
 
 .file-tabs .file-tab {

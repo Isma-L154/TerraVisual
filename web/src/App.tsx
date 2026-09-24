@@ -13,6 +13,8 @@ import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
 import { ImportDropZone } from './workspace/ImportDropZone';
 import { ImportReport } from './workspace/ImportReport';
+import { FileBar } from './workspace/FileBar';
+import { checkNewPath } from './workspace/newPath';
 import { entriesFromDrop } from './workspace/import';
 import { useFileDrop } from './workspace/useFileDrop';
 import { useImport } from './workspace/useImport';
@@ -133,22 +135,37 @@ export function App() {
         <section className="pane pane-editor" aria-labelledby="editor-heading">
           <div className="pane-header">
             <h2 id="editor-heading">Code</h2>
-            {paths.length > 1 ? (
-              <nav aria-label="Workspace files" className="file-tabs">
-                {paths.map((path) => (
-                  <button
-                    key={path}
-                    type="button"
-                    className="file-tab"
-                    aria-current={path === activePath ? 'true' : undefined}
-                    onClick={() => navigation.openFile(path)}
-                  >
-                    {path}
-                  </button>
-                ))}
-              </nav>
-            ) : null}
           </div>
+
+          <FileBar
+            paths={paths}
+            activePath={activePath}
+            onOpen={navigation.openFile}
+            onCreate={(input) => {
+              const checked = checkNewPath(input, (path) => workspace.has(path));
+              if (!checked.ok) return checked.message;
+              const refused = attempt(() => workspace.write(checked.path, ''));
+              if (refused) return refused;
+              navigation.openFile(checked.path);
+              return null;
+            }}
+            onRename={(input) => {
+              const checked = checkNewPath(
+                input,
+                (path) => path !== activePath && workspace.has(path),
+              );
+              if (!checked.ok) return checked.message;
+              const refused = attempt(() => workspace.rename(activePath, checked.path));
+              if (refused) return refused;
+              navigation.openFile(checked.path);
+              return null;
+            }}
+            onDelete={() => {
+              if (!window.confirm(`Delete ${activePath}? This cannot be undone.`)) return;
+              workspace.remove(activePath);
+              navigation.openFile(workspace.list()[0] ?? '');
+            }}
+          />
 
           <Editor
             // A new workspace is a new document, never an edit to the old one.
@@ -269,6 +286,16 @@ function AnalysisStatus({ analyzing, error }: { analyzing: boolean; error: strin
       {analyzing ? 'Analyzing…' : ''}
     </span>
   );
+}
+
+/** Runs a workspace change, turning a refusal (a limit, say) into what to tell the user. */
+function attempt(change: () => void): string | null {
+  try {
+    change();
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : 'That change could not be made.';
+  }
 }
 
 function plural(count: number, noun: string): string {
