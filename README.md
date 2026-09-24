@@ -30,6 +30,34 @@ anywhere — you can confirm it yourself in your browser's network panel.
 That matters because the tool is meant to be useful on *real* Terraform, which
 tends to contain bucket names, internal CIDR ranges and account identifiers.
 
+## Using it
+
+- **Start from an example.** *Examples* opens ready-made workspaces: an AWS web
+  app, AWS serverless, an Azure VM, a Google Cloud instance, and a root module
+  calling a child module.
+- **Bring your own project.** *Import project* takes a folder or individual
+  `.tf`/`.tfvars` files, or drop them anywhere on the page. The folder you pick
+  becomes the root module; state files and `.terraform` are skipped, and a
+  report says what was imported and what was left out.
+- **Work with files.** Create, rename and delete files from the bar above the
+  editor, for instance to add `modules/network/main.tf` and watch it drawn
+  inside the module's box.
+- **Write with help.** Resource types complete from the catalog as you type
+  `resource "`, brackets and quotes close themselves, and Ctrl+F (⌘F) finds and
+  replaces.
+- **Read the picture.** Click a box to see its attributes, including why an
+  unknown value is unknown, and to jump to its code; moving the cursor in the
+  code selects the box it is in. The *Outline* lists everything as a keyboard
+  tree. Large workspaces fold loose resources behind counts and keep their
+  networks visible.
+- **Arrange the view.** Drag the line between the code and the diagram, or focus
+  it and use the arrow keys. The diagram keeps everything in view until you pan
+  or zoom it yourself.
+- **Keep or share it.** *Save as PNG* exports the whole diagram. *Copy share
+  link* puts the workspace inside the link itself, so anyone with the link has
+  the code. Your work is kept in this browser between visits, and *Reset* goes
+  back to the first example after asking.
+
 ## How it works
 
 ```
