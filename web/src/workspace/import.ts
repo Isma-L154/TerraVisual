@@ -2,6 +2,7 @@
 
 import { isAnalysable, LIMITS } from './workspace';
 import { InvalidPathError, normalisePath } from './paths';
+import { plural } from '../plural';
 
 type SkipReason =
   | 'not-terraform'
@@ -214,7 +215,7 @@ export function describeImport(result: ImportResult): string[] {
     ];
   }
 
-  const notes = [`Imported ${paths.length} file${paths.length === 1 ? '' : 's'}.`];
+  const notes = [`Imported ${plural(paths.length, 'file')}.`];
   if (!paths.some((path) => !path.includes('/') && path.endsWith('.tf'))) {
     notes.push(
       'There is no Terraform at the top level, and the diagram starts from the root module. Import the folder that holds it, such as one environment.',
@@ -232,6 +233,6 @@ export function describeSkipped(skipped: Skipped[]): string[] {
     .filter((reason) => counts.has(reason))
     .map((reason) => {
       const count = counts.get(reason)!;
-      return SKIP_MESSAGES[reason](`${count} file${count === 1 ? '' : 's'}`);
+      return SKIP_MESSAGES[reason](plural(count, 'file'));
     });
 }

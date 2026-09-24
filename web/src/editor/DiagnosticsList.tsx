@@ -1,4 +1,5 @@
 import type { Diagnostic } from '../model';
+import { plural } from '../plural';
 
 type DiagnosticsListProps = {
   diagnostics: Diagnostic[];
@@ -72,8 +73,4 @@ function summarise(diagnostics: Diagnostic[]): string {
   if (counts.info) parts.push(plural(counts.info, 'note'));
 
   return parts.join(', ');
-}
-
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
