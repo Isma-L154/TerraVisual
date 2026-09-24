@@ -29,7 +29,7 @@ import type { InfraModel, InfraNode } from '../model';
  */
 const DEFAULT_BUDGET = 400;
 
-export type Summary = {
+type Summary = {
   /** The nodes to draw. A subset of the model's, unchanged. */
   nodes: InfraNode[];
   /** For each collapsed container, how many descendants it is holding. */
@@ -38,7 +38,7 @@ export type Summary = {
   hiddenTotal: number;
 };
 
-export type SummariseOptions = {
+type SummariseOptions = {
   budget?: number;
   /** Containers the user has opened. These are always drawn, budget or not. */
   expanded?: ReadonlySet<string>;

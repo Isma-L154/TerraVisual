@@ -9,6 +9,7 @@
 
 import type { InfraModel, InfraNode } from '../model';
 import { displayType } from './catalog';
+import { plural } from '../plural';
 
 /**
  * Shared by the diagram and the outline on purpose. They are two views of one
@@ -20,10 +21,17 @@ import { displayType } from './catalog';
  */
 export function announce(
   node: InfraNode,
-  parent?: InfraNode,
-  connections?: string[],
-  childCount = 0,
-  hiddenCount = 0,
+  {
+    parent,
+    connections,
+    childCount = 0,
+    hiddenCount = 0,
+  }: {
+    parent?: InfraNode | undefined;
+    connections?: string[] | undefined;
+    childCount?: number;
+    hiddenCount?: number;
+  } = {},
 ): string {
   const parts: string[] = [`${node.label}, ${displayType(node.type)}`];
 
@@ -36,7 +44,7 @@ export function announce(
 
   const unknown = Object.values(node.attributes).filter((attribute) => !attribute.known).length;
   if (unknown > 0) {
-    parts.push(`${unknown} value${unknown === 1 ? '' : 's'} not determinable`);
+    parts.push(`${plural(unknown, 'value')} not determinable`);
   }
 
   if (childCount > 0) parts.push(`contains ${childCount}`);

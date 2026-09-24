@@ -90,6 +90,19 @@ describe('decoding untrusted links', () => {
     expect((await decodeFragment(escaping)).ok).toBe(false);
   });
 
+  // A short link can still expand a thousandfold. Anything beyond what a
+  // workspace may hold is refused while decompressing, not after.
+  it('refuses a link that decompresses into more than a workspace can hold', async () => {
+    const bomb = await encodeWorkspaceRaw({ v: 1, files: { 'main.tf': 'a'.repeat(40_000_000) } });
+    expect(bomb.length).toBeLessThan(MAX_SHARE_BYTES * 2);
+
+    const decoded = await decodeFragment(bomb);
+
+    expect(decoded.ok).toBe(false);
+    if (decoded.ok) return;
+    expect(decoded.reason).toBe('too-large');
+  });
+
   it('refuses an absurdly long fragment before decoding it', async () => {
     const decoded = await decodeFragment('#w=' + 'A'.repeat(MAX_SHARE_BYTES * 4));
 

@@ -2,7 +2,14 @@ import { useId } from 'react';
 
 import { entriesFromInput, type Entry } from './import';
 
-type ImportDropZoneProps = {
+declare module 'react' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- must match React's declaration
+  interface InputHTMLAttributes<T> {
+    webkitdirectory?: string;
+  }
+}
+
+type ImportPanelProps = {
   onEntries: (read: () => Entry[]) => void;
 };
 
@@ -11,7 +18,7 @@ type ImportDropZoneProps = {
  * they are the path that works with a keyboard, and they do the same thing.
  * Drops are handled for the whole page, not only here.
  */
-export function ImportDropZone({ onEntries }: ImportDropZoneProps) {
+export function ImportPanel({ onEntries }: ImportPanelProps) {
   const folderId = useId();
   const filesId = useId();
 
@@ -39,8 +46,7 @@ export function ImportDropZone({ onEntries }: ImportDropZoneProps) {
             multiple
             // Non-standard, universally supported on desktop, and the only way
             // a browser lets somebody pick a whole directory.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            {...({ webkitdirectory: '', directory: '' } as any)}
+            webkitdirectory=""
             onChange={onChange}
           />
           <label className="import-button" htmlFor={folderId}>

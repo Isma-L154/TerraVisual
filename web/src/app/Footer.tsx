@@ -1,11 +1,14 @@
 import type { SessionOrigin } from './useSession';
+import { plural } from '../plural';
 
 type FooterProps = {
   origin: SessionOrigin;
   storageAvailable: boolean;
+  sharedLinkRefused: boolean;
+  leftOut: number;
 };
 
-export function Footer({ origin, storageAvailable }: FooterProps) {
+export function Footer({ origin, storageAvailable, sharedLinkRefused, leftOut }: FooterProps) {
   return (
     <footer className="app-footer">
       {origin === 'shared' ? (
@@ -14,6 +17,17 @@ export function Footer({ origin, storageAvailable }: FooterProps) {
         </p>
       ) : null}
       {origin === 'restored' ? <p className="footer-note">Restored from your last visit.</p> : null}
+      {sharedLinkRefused ? (
+        <p className="footer-note" role="status">
+          The shared link could not be opened: it is damaged, too large, or needs a newer browser.
+        </p>
+      ) : null}
+      {leftOut > 0 ? (
+        <p className="footer-note" role="status">
+          {plural(leftOut, 'file')} could not be opened: over the size limits, or with an unusable
+          path.
+        </p>
+      ) : null}
       {!storageAvailable ? (
         <p className="footer-note">
           This browser is not letting the page store anything, so your work will not be here next

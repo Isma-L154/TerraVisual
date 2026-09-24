@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
+import { encodeWorkspace } from './persistence/share';
+import { LIMITS } from './workspace/workspace';
 
 // jsdom has no Worker, so analysis never succeeds here. That is useful: these
 // tests double as proof that the interface stays usable while the analyzer is
@@ -92,5 +94,34 @@ describe('App shell', () => {
 
     expect(confirm).toHaveBeenCalledOnce();
     confirm.mockRestore();
+  });
+
+  // A link that fails to open used to fall back to the last workspace without
+  // a word, leaving the recipient wondering where the shared code went.
+  it('says when a shared link could not be opened', async () => {
+    window.location.hash = '#w=not-a-workspace';
+    try {
+      render(<App />);
+      expect(await screen.findByText(/shared link could not be opened/i)).toBeInTheDocument();
+    } finally {
+      window.location.hash = '';
+    }
+  });
+
+  // A workspace can arrive holding more than the limits allow; the part that
+  // fits must not be presented as the whole.
+  it('says how many files a shared workspace could not open', async () => {
+    const encoded = await encodeWorkspace({
+      'main.tf': 'resource "aws_vpc" "main" {}',
+      'huge.tf': 'x'.repeat(LIMITS.maxFileBytes + 1),
+    });
+    if (!encoded.ok) throw new Error('could not build the link');
+    window.location.hash = encoded.fragment;
+    try {
+      render(<App />);
+      expect(await screen.findByText(/1 file could not be opened/i)).toBeInTheDocument();
+    } finally {
+      window.location.hash = '';
+    }
   });
 });

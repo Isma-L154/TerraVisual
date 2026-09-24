@@ -6,20 +6,22 @@ import { Diagram } from './diagram/Diagram';
 import { NodeDetails } from './diagram/NodeDetails';
 import { Outline } from './outline/Outline';
 import { Footer } from './app/Footer';
-import { ShareButton } from './app/ShareButton';
+import { AppHeader, type HeaderPanel } from './app/AppHeader';
 import { ExamplesPanel } from './app/ExamplesPanel';
 import { Splitter } from './app/Splitter';
 import { SPLIT } from './app/split';
 import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
-import { ImportDropZone } from './workspace/ImportDropZone';
+import { ImportPanel } from './workspace/ImportPanel';
 import { ImportReport } from './workspace/ImportReport';
 import { FileBar } from './workspace/FileBar';
-import { checkNewPath } from './workspace/newPath';
+import { fileActions } from './workspace/fileActions';
 import { entriesFromDrop } from './workspace/import';
 import { useFileDrop } from './workspace/useFileDrop';
 import { useImport } from './workspace/useImport';
+import type { SessionOrigin } from './app/useSession';
+import { plural } from './plural';
 
 /** The page: the code, the infrastructure it describes, details, and problems. */
 export function App() {
@@ -31,20 +33,21 @@ export function App() {
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
   const [split, setSplit] = useState<number>(SPLIT.initial);
   // One panel under the header at a time.
-  const [panel, setPanel] = useState<'import' | 'examples' | null>(null);
-  const toggle = (next: 'import' | 'examples') => setPanel((open) => (open === next ? null : next));
+  const [panel, setPanel] = useState<HeaderPanel | null>(null);
   const [hiddenInDiagram, setHiddenInDiagram] = useState(0);
 
   const { paths, activePath } = navigation;
   const diagnostics = analysis.model?.diagnostics ?? [];
 
-  // An import replaces the workspace rather than merging into it.
-  const importer = useImport((files) => {
-    session.replace(files, 'imported');
+  // An import or an example replaces the workspace rather than merging into it.
+  const openWorkspace = (files: Record<string, string>, origin: SessionOrigin) => {
+    session.replace(files, origin);
     navigation.forget();
     setPanel(null);
-  });
+  };
+  const importer = useImport((files) => openWorkspace(files, 'imported'));
   const dropping = useFileDrop((transfer) => void importer.run(() => entriesFromDrop(transfer)));
+  const files = fileActions(workspace, activePath, navigation.openFile);
 
   return (
     <>
@@ -58,69 +61,29 @@ export function App() {
         Skip to workspace
       </a>
 
-      <header className="app-header">
-        <div className="app-title">
-          <h1>
-            <img className="app-logo" src="/favicon.svg" alt="" width={24} height={24} />
-            TerraVisual
-          </h1>
-          <p className="tagline">
-            See the infrastructure your Terraform describes, as you write it.
-          </p>
-        </div>
+      <AppHeader
+        panel={panel}
+        onToggle={(next) => setPanel((open) => (open === next ? null : next))}
+        files={() => workspace.snapshot()}
+        onReset={() => {
+          // Reset discards the stored workspace too, so there is no undo.
+          if (!window.confirm('Discard this workspace and go back to the example?')) return;
+          session.reset();
+          navigation.forget();
+        }}
+      />
 
-        <div className="app-actions">
-          <button
-            type="button"
-            className="action"
-            aria-expanded={panel === 'examples'}
-            aria-controls="header-panel"
-            onClick={() => toggle('examples')}
-          >
-            Examples
-          </button>
-          <button
-            type="button"
-            className="action"
-            aria-expanded={panel === 'import'}
-            aria-controls="header-panel"
-            onClick={() => toggle('import')}
-          >
-            {panel === 'import' ? 'Close import' : 'Import project'}
-          </button>
-          <ShareButton files={() => workspace.snapshot()} />
-          <button
-            type="button"
-            className="action"
-            onClick={() => {
-              // Reset discards the stored workspace too, so there is no undo.
-              if (window.confirm('Discard this workspace and go back to the example?')) {
-                session.reset();
-                navigation.forget();
-              }
-            }}
-          >
-            Reset
-          </button>
-        </div>
-      </header>
-
-      <div id="header-panel" className="app-import">
+      <div id="header-panel" className="header-panel">
         {panel === 'examples' ? (
           <ExamplesPanel
             onOpen={(example) => {
-              if (!window.confirm(`Replace this workspace with the "${example.title}" example?`)) {
-                return;
+              if (window.confirm(`Replace this workspace with the "${example.title}" example?`)) {
+                openWorkspace(example.files, 'example');
               }
-              session.replace(example.files, 'example');
-              navigation.forget();
-              setPanel(null);
             }}
           />
         ) : null}
-        {panel === 'import' ? (
-          <ImportDropZone onEntries={(read) => void importer.run(read)} />
-        ) : null}
+        {panel === 'import' ? <ImportPanel onEntries={(read) => void importer.run(read)} /> : null}
         <ImportReport
           progress={importer.progress}
           report={importer.report}
@@ -150,29 +113,10 @@ export function App() {
             paths={paths}
             activePath={activePath}
             onOpen={navigation.openFile}
-            onCreate={(input) => {
-              const checked = checkNewPath(input, (path) => workspace.has(path));
-              if (!checked.ok) return checked.message;
-              const refused = attempt(() => workspace.write(checked.path, ''));
-              if (refused) return refused;
-              navigation.openFile(checked.path);
-              return null;
-            }}
-            onRename={(input) => {
-              const checked = checkNewPath(
-                input,
-                (path) => path !== activePath && workspace.has(path),
-              );
-              if (!checked.ok) return checked.message;
-              const refused = attempt(() => workspace.rename(activePath, checked.path));
-              if (refused) return refused;
-              navigation.openFile(checked.path);
-              return null;
-            }}
+            onCreate={files.create}
+            onRename={files.rename}
             onDelete={() => {
-              if (!window.confirm(`Delete ${activePath}? This cannot be undone.`)) return;
-              workspace.remove(activePath);
-              navigation.openFile(workspace.list()[0] ?? '');
+              if (window.confirm(`Delete ${activePath}? This cannot be undone.`)) files.remove();
             }}
           />
 
@@ -284,7 +228,12 @@ export function App() {
         </section>
       </main>
 
-      <Footer origin={session.origin} storageAvailable={session.storageAvailable} />
+      <Footer
+        origin={session.origin}
+        storageAvailable={session.storageAvailable}
+        sharedLinkRefused={session.sharedLinkRefused}
+        leftOut={session.leftOut}
+      />
     </>
   );
 }
@@ -297,18 +246,4 @@ function AnalysisStatus({ analyzing, error }: { analyzing: boolean; error: strin
       {analyzing ? 'Analyzing…' : ''}
     </span>
   );
-}
-
-/** Runs a workspace change, turning a refusal (a limit, say) into what to tell the user. */
-function attempt(change: () => void): string | null {
-  try {
-    change();
-    return null;
-  } catch (error) {
-    return error instanceof Error ? error.message : 'That change could not be made.';
-  }
-}
-
-function plural(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }

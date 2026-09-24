@@ -11,8 +11,8 @@
 export type Point = { x: number; y: number };
 export type Rect = { x: number; y: number; width: number; height: number };
 
-export type Connection = { id: string; source: Rect; target: Rect; label: string };
-export type RoutedConnection = { points: Point[]; label: Rect | null };
+type Connection = { id: string; source: Rect; target: Rect; label: string };
+type RoutedConnection = { points: Point[]; label: Rect | null };
 
 /** Distance kept between an arrow and any box; half the layout's sibling gap. */
 const CLEARANCE = 6;

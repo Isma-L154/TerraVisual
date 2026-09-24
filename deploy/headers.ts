@@ -95,7 +95,7 @@ export const PRODUCTION_HOST = 'terravisual.cloudils.com';
  * `/` is the single-page fallback rather than a page, so both would only be
  * indexed as duplicates of the real one.
  */
-export function applyIndexing(headers: Headers, url: URL): void {
+function applyIndexing(headers: Headers, url: URL): void {
   const isHtml = headers.get('Content-Type')?.includes('text/html') ?? false;
 
   if (url.hostname !== PRODUCTION_HOST || (isHtml && url.pathname !== '/')) {

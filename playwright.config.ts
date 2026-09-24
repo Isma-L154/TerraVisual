@@ -36,9 +36,20 @@ export default defineConfig({
     actionTimeout: 15_000,
   },
 
+  /*
+   * Two projects, so every spec runs without anyone listing it. The budgets are
+   * timed alone (`--workers=1`): a second browser on the same cores measures
+   * the machine, not the application.
+   */
   projects: [
     {
       name: 'chromium',
+      testIgnore: /performance.spec.ts$/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'performance',
+      testMatch: /performance.spec.ts$/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
