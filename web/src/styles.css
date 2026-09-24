@@ -197,12 +197,14 @@ body {
 .workspace {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(0, var(--code-share, 1fr)) var(--gap)
+    minmax(0, var(--diagram-share, 1fr));
   grid-template-rows: minmax(0, 1fr) clamp(120px, 24vh, 240px);
   grid-template-areas:
-    'editor diagram'
-    'problems details';
-  gap: 12px var(--gap);
+    'editor split diagram'
+    'problems split details';
+  gap: 12px 0;
   padding: 8px 24px 12px;
   min-height: 480px;
 }
@@ -220,6 +222,27 @@ body {
   grid-area: problems;
 }
 
+/* A thin line in a gap-wide strip: easy to grab, quiet to look at. */
+.splitter {
+  grid-area: split;
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.splitter::after {
+  content: '';
+  position: absolute;
+  inset: 0 calc(50% - 1px);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.splitter:hover::after,
+.splitter:focus-visible::after {
+  background: var(--accent);
+}
+
 .pane-diagnostics,
 .pane-details {
   overflow: auto;
@@ -234,6 +257,7 @@ body {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     grid-template-areas: none;
+    row-gap: var(--gap);
     padding-inline: 12px;
   }
 
@@ -242,6 +266,10 @@ body {
   .pane-details,
   .pane-diagnostics {
     grid-area: auto;
+  }
+
+  .splitter {
+    display: none;
   }
 
   .pane-editor {

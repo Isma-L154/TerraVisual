@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 import { Editor } from './editor/Editor';
 import { DiagnosticsList } from './editor/DiagnosticsList';
@@ -8,6 +8,8 @@ import { Outline } from './outline/Outline';
 import { Footer } from './app/Footer';
 import { ShareButton } from './app/ShareButton';
 import { ExamplesPanel } from './app/ExamplesPanel';
+import { Splitter } from './app/Splitter';
+import { SPLIT } from './app/split';
 import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
@@ -27,6 +29,7 @@ export function App() {
   const navigation = useSourceNavigation(workspace, analysis.model);
 
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
+  const [split, setSplit] = useState<number>(SPLIT.initial);
   // One panel under the header at a time.
   const [panel, setPanel] = useState<'import' | 'examples' | null>(null);
   const toggle = (next: 'import' | 'examples') => setPanel((open) => (open === next ? null : next));
@@ -131,7 +134,13 @@ export function App() {
         </p>
       ) : null}
 
-      <main id="workspace" className="workspace">
+      <main
+        id="workspace"
+        className="workspace"
+        style={
+          { '--code-share': `${split}fr`, '--diagram-share': `${100 - split}fr` } as CSSProperties
+        }
+      >
         <section className="pane pane-editor" aria-labelledby="editor-heading">
           <div className="pane-header">
             <h2 id="editor-heading">Code</h2>
@@ -178,6 +187,8 @@ export function App() {
             onCursorLine={navigation.followCursor}
           />
         </section>
+
+        <Splitter value={split} onChange={setSplit} />
 
         <section className="pane pane-diagram" aria-labelledby="diagram-heading">
           <div className="pane-header">

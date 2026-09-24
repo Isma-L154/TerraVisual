@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react';
-import { useReactFlow, type FitViewOptions } from '@xyflow/react';
+import { useReactFlow, useStore, type FitViewOptions } from '@xyflow/react';
 
 import type { DiagramNode } from './toFlow';
 
@@ -39,17 +39,20 @@ type FollowCameraProps = {
 };
 
 /**
- * Fits the view whenever the diagram's outer edges move, so what the code
+ * Fits the view whenever the diagram's outer edges or the pane's size change, so what the code
  * describes stays on screen. Boxes never move while typing (ADR-0003); only
  * the camera does, and only until the user takes it over.
  */
 export function FollowCamera({ bounds, following }: FollowCameraProps) {
   const { fitView } = useReactFlow();
+  // The pane's size too: resizing the split or the window should not crop.
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
 
   // React Flow queues the fit until the new nodes have been measured.
   useEffect(() => {
     if (following.current) void fitView(FIT_VIEW);
-  }, [bounds, fitView, following]);
+  }, [bounds, width, height, fitView, following]);
 
   return null;
 }
