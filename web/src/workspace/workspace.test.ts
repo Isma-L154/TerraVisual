@@ -177,3 +177,54 @@ describe('analysable files', () => {
     expect(isAnalysable('terraform.tfstate')).toBe(false);
   });
 });
+
+describe('removing and renaming', () => {
+  it('removes a file, frees its bytes, and says so', () => {
+    const workspace = new Workspace();
+    const full = 'x'.repeat(LIMITS.maxFileBytes);
+    const count = LIMITS.maxTotalBytes / LIMITS.maxFileBytes;
+    for (let i = 0; i < count; i++) workspace.write(`f${i}.tf`, full);
+    const seen: unknown[] = [];
+    workspace.subscribe((change) => seen.push(change));
+
+    workspace.remove('f0.tf');
+
+    expect(workspace.has('f0.tf')).toBe(false);
+    expect(seen).toEqual([{ type: 'removed', path: 'f0.tf' }]);
+    // The bytes are free again, or the total limit would refuse this.
+    expect(() => workspace.write('other.tf', full)).not.toThrow();
+  });
+
+  it('ignores removing a file that is not there', () => {
+    const workspace = new Workspace();
+    const listener = vi.fn();
+    workspace.subscribe(listener);
+
+    workspace.remove('missing.tf');
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('renames a file, keeping its content, as one change', () => {
+    const workspace = new Workspace();
+    workspace.write('main.tf', 'content');
+    const seen: unknown[] = [];
+    workspace.subscribe((change) => seen.push(change));
+
+    workspace.rename('main.tf', './network/vpc.tf');
+
+    expect(workspace.list()).toEqual(['network/vpc.tf']);
+    expect(workspace.read('network/vpc.tf')).toBe('content');
+    expect(seen).toEqual([{ type: 'renamed', from: 'main.tf', to: 'network/vpc.tf' }]);
+  });
+
+  it('refuses to rename over another file or out of the workspace', () => {
+    const workspace = new Workspace();
+    workspace.write('a.tf', 'a');
+    workspace.write('b.tf', 'b');
+
+    expect(() => workspace.rename('a.tf', 'b.tf')).toThrow(/already exists/);
+    expect(() => workspace.rename('a.tf', '../a.tf')).toThrow(InvalidPathError);
+    expect(workspace.read('a.tf')).toBe('a');
+  });
+});

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { App } from './App';
 
 // jsdom has no Worker, so analysis never succeeds here. That is useful: these
@@ -80,5 +81,16 @@ describe('App shell', () => {
     render(<App />);
 
     expect(await screen.findByRole('button', { name: /^reset$/i })).toBeInTheDocument();
+  });
+
+  // Reset also clears what was stored, so a stray click would be unrecoverable.
+  it('asks before a reset discards the workspace', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /^reset$/i }));
+
+    expect(confirm).toHaveBeenCalledOnce();
+    confirm.mockRestore();
   });
 });

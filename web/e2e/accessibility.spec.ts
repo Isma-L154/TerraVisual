@@ -95,6 +95,14 @@ test.describe('automated accessibility', () => {
     await expectNoViolations(page);
   });
 
+  test('the examples panel', async ({ page }) => {
+    await openApp(page);
+    await page.getByRole('button', { name: 'Examples' }).click();
+
+    await expect(page.getByTestId('examples')).toBeVisible();
+    await expectNoViolations(page);
+  });
+
   test('problems, when the code has some', async ({ page }) => {
     await openApp(page);
     await typeWorkspace(page, BROKEN_SOURCE, 2);

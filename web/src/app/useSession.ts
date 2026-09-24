@@ -7,7 +7,7 @@ import { STARTER_WORKSPACE } from './examples';
 
 const SAVE_DEBOUNCE_MS = 800;
 
-export type SessionOrigin = 'starter' | 'restored' | 'shared' | 'imported';
+export type SessionOrigin = 'starter' | 'restored' | 'shared' | 'imported' | 'example';
 
 type Session = {
   workspace: Workspace;
@@ -15,10 +15,15 @@ type Session = {
   /** True until the first load has been attempted. */
   loading: boolean;
   storageAvailable: boolean;
+  /**
+   * Changes whenever the workspace is swapped for another, so views that keep
+   * state about the old one (what is expanded, where the camera is) start over.
+   */
+  generation: number;
   /** Back to the example. */
   reset: () => void;
-  /** Replaces everything, as an import does. */
-  replace: (files: Record<string, string>) => void;
+  /** Replaces everything, as an import or an example does. */
+  replace: (files: Record<string, string>, origin: SessionOrigin) => void;
 };
 
 /**
@@ -30,6 +35,7 @@ export function useSession(): Session {
   const [origin, setOrigin] = useState<SessionOrigin>('starter');
   const [loading, setLoading] = useState(true);
   const [storageAvailable, setStorageAvailable] = useState(true);
+  const [generation, setGeneration] = useState(0);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,21 +88,23 @@ export function useSession(): Session {
     workspace.clear();
     fill(workspace, STARTER_WORKSPACE);
     setOrigin('starter');
+    setGeneration((current) => current + 1);
     void clearStored();
     forgetSharedLink();
   }, [workspace]);
 
   const replace = useCallback(
-    (files: Record<string, string>) => {
+    (files: Record<string, string>, origin: SessionOrigin) => {
       workspace.clear();
       fill(workspace, files);
-      setOrigin('imported');
+      setOrigin(origin);
+      setGeneration((current) => current + 1);
       forgetSharedLink();
     },
     [workspace],
   );
 
-  return { workspace, origin, loading, storageAvailable, reset, replace };
+  return { workspace, origin, loading, storageAvailable, generation, reset, replace };
 }
 
 /** Otherwise a reload would bring the shared workspace back. */

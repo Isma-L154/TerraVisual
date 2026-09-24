@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -7,6 +7,8 @@ import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import { toFlow, type DiagramNode } from './toFlow';
 import { summarise } from './summarise';
+import { FIT_VIEW, FollowCamera, outerBounds } from './camera';
+import { SaveImage } from './SaveImage';
 
 /**
  * What a screen reader is told about the diagram's controls.
@@ -97,6 +99,9 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
     return () => element.removeEventListener('tv:expand', onExpand);
   }, []);
 
+  const bounds = useMemo(() => outerBounds(nodes), [nodes]);
+  const following = useRef(true);
+
   const withSelection = useMemo(
     () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
     [nodes, selectedId],
@@ -157,6 +162,11 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
           if (next !== undefined && next !== selectedId) onSelect(next);
         }}
         fitView
+        fitViewOptions={FIT_VIEW}
+        // Only a person's pan or zoom carries an event; fitting does not.
+        onMoveStart={(event) => {
+          if (event) following.current = false;
+        }}
         // Layout is ours, so React Flow must not move anything.
         nodesDraggable={false}
         nodesConnectable={false}
@@ -168,7 +178,14 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
         ariaLabelConfig={ARIA_LABELS}
       >
         <Background gap={20} size={1} />
-        <Controls showInteractive={false} />
+        <Controls
+          showInteractive={false}
+          onZoomIn={() => (following.current = false)}
+          onZoomOut={() => (following.current = false)}
+          onFitView={() => (following.current = true)}
+        />
+        <FollowCamera bounds={bounds} following={following} />
+        <SaveImage />
       </ReactFlow>
     </div>
   );

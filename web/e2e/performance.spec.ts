@@ -265,6 +265,10 @@ test.describe('the loop (NFR-3)', () => {
         // document never changed.
         await startStopwatch(page);
         await page.keyboard.type('r');
+        // Said separately, so a lost keystroke fails as one rather than as a
+        // diagram that never changed. That was #112: under load the editor
+        // overwrote the keystroke, and this test timed out waiting for it.
+        await expect(area).toContainText(`resource "aws_s3_bucket" "probe${i}" {}`);
         samples.push(await readStopwatch(page));
       }
 

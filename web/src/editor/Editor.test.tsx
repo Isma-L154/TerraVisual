@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { EditorView } from '@codemirror/view';
 
 import type { Range } from '../model';
 import { Editor } from './Editor';
@@ -98,5 +99,25 @@ describe('the editor', () => {
     const content = document.querySelector('.cm-content') as HTMLElement;
     expect(content).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  // A re-render can carry text read from the workspace before the latest
+  // keystroke. Treating it as "content from elsewhere" replaced what had just
+  // been typed and threw the cursor to the top of the file (#112).
+  it('never replaces what was typed with a stale copy from a re-render', () => {
+    const { rerender } = render(
+      <Editor path="main.tf" content={source} diagnostics={[]} onChange={() => {}} />,
+    );
+    const view = EditorView.findFromDOM(document.querySelector('.cm-editor') as HTMLElement)!;
+
+    // Two keystrokes; the re-render only saw the first.
+    const end = view.state.doc.length;
+    view.dispatch({ changes: { from: end, insert: 'a' }, selection: { anchor: end + 1 } });
+    view.dispatch({ changes: { from: end + 1, insert: 'b' }, selection: { anchor: end + 2 } });
+
+    rerender(<Editor path="main.tf" content={`${source}a`} diagnostics={[]} onChange={() => {}} />);
+
+    expect(view.state.doc.toString()).toBe(`${source}ab`);
+    expect(view.state.selection.main.head).toBe(end + 2);
   });
 });

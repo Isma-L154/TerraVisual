@@ -13,7 +13,11 @@ export const LIMITS = {
   maxTotalBytes: 8 * 1024 * 1024,
 } as const;
 
-type WorkspaceChange = { type: 'written'; path: string } | { type: 'cleared' };
+type WorkspaceChange =
+  | { type: 'written'; path: string }
+  | { type: 'removed'; path: string }
+  | { type: 'renamed'; from: string; to: string }
+  | { type: 'cleared' };
 type LimitRejection = 'too-many-files' | 'file-too-large' | 'workspace-too-large';
 type Listener = (change: WorkspaceChange) => void;
 
@@ -112,6 +116,38 @@ export class Workspace {
     this.#files.set(normalised, content);
     this.#totalBytes = total;
     this.#emit({ type: 'written', path: normalised });
+  }
+
+  /** Removes a file; a path that is not there is not an error. */
+  remove(path: string): void {
+    const normalised = this.#tryNormalise(path);
+    if (normalised === null) return;
+    const content = this.#files.get(normalised);
+    if (content === undefined) return;
+
+    this.#files.delete(normalised);
+    this.#totalBytes -= byteLength(content);
+    this.#emit({ type: 'removed', path: normalised });
+  }
+
+  /**
+   * Moves a file. One change rather than a write and a remove, so nothing
+   * listening sees a moment with the file in both places or in neither.
+   *
+   * @throws {InvalidPathError} when the new path escapes the workspace or is malformed
+   * @throws {Error} when either path is not usable as described
+   */
+  rename(from: string, to: string): void {
+    const source = normalisePath(from);
+    const target = normalisePath(to);
+    const content = this.#files.get(source);
+    if (content === undefined) throw new Error(`${source} does not exist.`);
+    if (source === target) return;
+    if (this.#files.has(target)) throw new Error(`${target} already exists.`);
+
+    this.#files.delete(source);
+    this.#files.set(target, content);
+    this.#emit({ type: 'renamed', from: source, to: target });
   }
 
   clear(): void {

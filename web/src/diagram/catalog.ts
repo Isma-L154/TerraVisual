@@ -44,3 +44,8 @@ export function displayType(resourceType: string): string {
 export function documentationUrl(resourceType: string): string | undefined {
   return byType.get(resourceType)?.documentationUrl;
 }
+
+/** Every catalogued type, in a stable order. */
+export function catalogEntries(): CatalogEntry[] {
+  return [...byType.values()].sort((a, b) => (a.type < b.type ? -1 : 1));
+}
