@@ -68,10 +68,11 @@ the site. Its absence has already cost one improvement: see #69.
 back with Cloudflare's beacon injected into the page — `beacon.min.js` from
 `static.cloudflareinsights.com`, added at the edge after the Worker, by a zone
 setting no file in this repository can see. The Content Security Policy refused
-to run it, so nothing was ever collected, and `scripts/check-headers.mjs` now
-fails a deployment that serves it. But a promise of zero telemetry should not
-depend on a policy catching an injection every time: *Analytics → Web Analytics*
-on the zone, off.
+to run it, so nothing was ever collected. Turning it off (*Analytics → Web
+Analytics* on the zone) is still the better state, but it was decided not to
+pursue it (#88), so `scripts/check-headers.mjs` tolerates exactly that beacon,
+and only while the same response's policy refuses to run it (#100). Any other
+third-party script, or a policy that allowed the beacon's host, fails the check.
 
 It is worth knowing that Cloudflare only injects it for browser-shaped requests.
 A plain `curl` sees a clean page; a browser sees the beacon. That is why the
