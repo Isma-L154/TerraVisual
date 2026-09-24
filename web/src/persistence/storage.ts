@@ -72,11 +72,11 @@ export async function load(): Promise<StoredWorkspace | null> {
       request.onsuccess = () => {
         const value: unknown = request.result;
         // Records outlive versions of the app; an old or corrupt one starts empty.
+        const files = (value as Partial<StoredWorkspace> | null)?.files;
         const usable =
-          typeof value === 'object' &&
-          value !== null &&
-          typeof (value as StoredWorkspace).files === 'object' &&
-          (value as StoredWorkspace).files !== null;
+          typeof files === 'object' &&
+          files !== null &&
+          Object.values(files).every((content) => typeof content === 'string');
         resolve(usable ? (value as StoredWorkspace) : null);
       };
       request.onerror = () => resolve(null);

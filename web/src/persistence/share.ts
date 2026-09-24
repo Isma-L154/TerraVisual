@@ -5,11 +5,20 @@
  */
 
 import { normalisePath } from '../workspace/paths';
+import { LIMITS } from '../workspace/workspace';
 
 const PREFIX = '#w=';
 
 /** Small enough to survive chat clients and URL handlers unchanged. */
 export const MAX_SHARE_BYTES = 32 * 1024;
+
+/**
+ * A short link can decompress a thousandfold. Nothing larger than a workspace
+ * may hold is worth expanding, and JSON escaping at most doubles the text.
+ */
+const MAX_DECOMPRESSED_BYTES = LIMITS.maxTotalBytes * 2;
+
+class TooLarge extends Error {}
 
 type ShareFailure =
   | { reason: 'too-large'; bytes: number }
@@ -58,7 +67,9 @@ export async function decodeFragment(fragment: string): Promise<DecodeResult> {
   if (encoded.length > MAX_SHARE_BYTES * 2) return { ok: false, reason: 'too-large' };
 
   try {
-    const json = new TextDecoder().decode(await decompress(fromBase64Url(encoded)));
+    const json = new TextDecoder().decode(
+      await decompress(fromBase64Url(encoded), MAX_DECOMPRESSED_BYTES),
+    );
     const parsed: unknown = JSON.parse(json);
     if (!isPayload(parsed)) return { ok: false, reason: 'malformed' };
 
@@ -71,8 +82,8 @@ export async function decodeFragment(fragment: string): Promise<DecodeResult> {
 
     if (Object.keys(files).length === 0) return { ok: false, reason: 'malformed' };
     return { ok: true, files };
-  } catch {
-    return { ok: false, reason: 'malformed' };
+  } catch (error) {
+    return { ok: false, reason: error instanceof TooLarge ? 'too-large' : 'malformed' };
   }
 }
 
@@ -97,7 +108,10 @@ function streamOf(bytes: Uint8Array<ArrayBuffer>): ReadableStream<BufferSource> 
   });
 }
 
-async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array<ArrayBuffer>> {
+async function collect(
+  stream: ReadableStream<Uint8Array>,
+  limit = Infinity,
+): Promise<Uint8Array<ArrayBuffer>> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -105,8 +119,12 @@ async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array<A
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    chunks.push(value);
     total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      throw new TooLarge();
+    }
+    chunks.push(value);
   }
 
   const out = new Uint8Array(total);
@@ -122,8 +140,14 @@ function compress(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffe
   return collect(streamOf(bytes).pipeThrough<Uint8Array>(new CompressionStream('deflate-raw')));
 }
 
-function decompress(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
-  return collect(streamOf(bytes).pipeThrough<Uint8Array>(new DecompressionStream('deflate-raw')));
+function decompress(
+  bytes: Uint8Array<ArrayBuffer>,
+  limit: number,
+): Promise<Uint8Array<ArrayBuffer>> {
+  return collect(
+    streamOf(bytes).pipeThrough<Uint8Array>(new DecompressionStream('deflate-raw')),
+    limit,
+  );
 }
 
 // Base64url, so the fragment needs no escaping when pasted.

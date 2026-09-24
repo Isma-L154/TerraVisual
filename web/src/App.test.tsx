@@ -93,4 +93,16 @@ describe('App shell', () => {
     expect(confirm).toHaveBeenCalledOnce();
     confirm.mockRestore();
   });
+
+  // A link that fails to open used to fall back to the last workspace without
+  // a word, leaving the recipient wondering where the shared code went.
+  it('says when a shared link could not be opened', async () => {
+    window.location.hash = '#w=not-a-workspace';
+    try {
+      render(<App />);
+      expect(await screen.findByText(/shared link could not be opened/i)).toBeInTheDocument();
+    } finally {
+      window.location.hash = '';
+    }
+  });
 });

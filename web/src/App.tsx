@@ -284,7 +284,11 @@ export function App() {
         </section>
       </main>
 
-      <Footer origin={session.origin} storageAvailable={session.storageAvailable} />
+      <Footer
+        origin={session.origin}
+        storageAvailable={session.storageAvailable}
+        sharedLinkRefused={session.sharedLinkRefused}
+      />
     </>
   );
 }

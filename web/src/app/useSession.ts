@@ -15,6 +15,8 @@ type Session = {
   /** True until the first load has been attempted. */
   loading: boolean;
   storageAvailable: boolean;
+  /** A link carried a workspace that could not be opened. */
+  sharedLinkRefused: boolean;
   /**
    * Changes whenever the workspace is swapped for another, so views that keep
    * state about the old one (what is expanded, where the camera is) start over.
@@ -35,6 +37,7 @@ export function useSession(): Session {
   const [origin, setOrigin] = useState<SessionOrigin>('starter');
   const [loading, setLoading] = useState(true);
   const [storageAvailable, setStorageAvailable] = useState(true);
+  const [sharedLinkRefused, setSharedLinkRefused] = useState(false);
   const [generation, setGeneration] = useState(0);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +48,8 @@ export function useSession(): Session {
     const start = async () => {
       const shared = await decodeFragment(window.location.hash);
       if (cancelled) return;
+
+      if (!shared.ok && shared.reason !== 'absent') setSharedLinkRefused(true);
 
       if (shared.ok) {
         fill(workspace, shared.files);
@@ -104,7 +109,16 @@ export function useSession(): Session {
     [workspace],
   );
 
-  return { workspace, origin, loading, storageAvailable, generation, reset, replace };
+  return {
+    workspace,
+    origin,
+    loading,
+    storageAvailable,
+    sharedLinkRefused,
+    generation,
+    reset,
+    replace,
+  };
 }
 
 /** Otherwise a reload would bring the shared workspace back. */
