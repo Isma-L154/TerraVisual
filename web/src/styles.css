@@ -164,11 +164,11 @@ body {
   border-color: var(--accent);
 }
 
-.app-import:empty {
+.header-panel:empty {
   display: none;
 }
 
-.app-import {
+.header-panel {
   padding: 0 24px;
 }
 .app-header h1 {
@@ -281,7 +281,7 @@ body {
   }
 
   .app-header,
-  .app-import,
+  .header-panel,
   .app-footer {
     padding-inline: 12px;
   }

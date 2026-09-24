@@ -2,7 +2,7 @@ import { useId } from 'react';
 
 import { entriesFromInput, type Entry } from './import';
 
-type ImportDropZoneProps = {
+type ImportPanelProps = {
   onEntries: (read: () => Entry[]) => void;
 };
 
@@ -11,7 +11,7 @@ type ImportDropZoneProps = {
  * they are the path that works with a keyboard, and they do the same thing.
  * Drops are handled for the whole page, not only here.
  */
-export function ImportDropZone({ onEntries }: ImportDropZoneProps) {
+export function ImportPanel({ onEntries }: ImportPanelProps) {
   const folderId = useId();
   const filesId = useId();
 

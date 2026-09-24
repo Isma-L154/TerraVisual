@@ -25,7 +25,7 @@ export type Box = {
   depth: number;
 };
 
-export type Layout = {
+type Layout = {
   boxes: Map<string, Box>;
   /** Order to render in: parents before children, so a renderer needs one pass. */
   order: string[];
@@ -65,7 +65,7 @@ const MAX_ROOT_ROW_WIDTH = METRICS.leafWidth * 8;
  * stable key rather than left in model order, so nothing depends on the order
  * the analyzer happened to emit.
  */
-export type LayoutOptions = {
+type LayoutOptions = {
   /** Containers drawn without their children, which render a button instead. */
   folded?: ReadonlySet<string>;
 };

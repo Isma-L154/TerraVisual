@@ -30,7 +30,7 @@ const ARIA_LABELS = {
   'edge.a11yDescription.default': 'A connection between two resources.',
 };
 
-export type DiagramProps = {
+type DiagramProps = {
   model: InfraModel | null;
   selectedId: string | null;
   onSelect: (id: string | null) => void;

@@ -132,7 +132,7 @@ export async function tabThrough(
   }
 }
 
-export type TabStop = { role: string; name: string; tag: string; className: string };
+type TabStop = { role: string; name: string; tag: string; className: string };
 
 /** Tabs until the focused element matches, and says whether it got there. */
 export async function tabUntil(

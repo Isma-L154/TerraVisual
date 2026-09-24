@@ -13,7 +13,7 @@ import { SPLIT } from './app/split';
 import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
-import { ImportDropZone } from './workspace/ImportDropZone';
+import { ImportPanel } from './workspace/ImportPanel';
 import { ImportReport } from './workspace/ImportReport';
 import { FileBar } from './workspace/FileBar';
 import { checkNewPath } from './workspace/newPath';
@@ -105,7 +105,7 @@ export function App() {
         </div>
       </header>
 
-      <div id="header-panel" className="app-import">
+      <div id="header-panel" className="header-panel">
         {panel === 'examples' ? (
           <ExamplesPanel
             onOpen={(example) => {
@@ -118,9 +118,7 @@ export function App() {
             }}
           />
         ) : null}
-        {panel === 'import' ? (
-          <ImportDropZone onEntries={(read) => void importer.run(read)} />
-        ) : null}
+        {panel === 'import' ? <ImportPanel onEntries={(read) => void importer.run(read)} /> : null}
         <ImportReport
           progress={importer.progress}
           report={importer.report}
