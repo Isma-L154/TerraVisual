@@ -97,6 +97,8 @@ const BROWSER_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
 };
 
+const BEACON_HOST = 'static.cloudflareinsights.com';
+
 const paths = ['/', '/analyzer.wasm'];
 let failures = 0;
 
@@ -146,12 +148,25 @@ for (const path of paths) {
    *
    * NFR-1 says user code never leaves the browser and the project ships no
    * telemetry. This is that promise checked rather than asserted.
+   *
+   * One exception, decided in #88/#100: that beacon, and only while this same
+   * response's policy refuses to run it. Removing it is a zone setting nobody
+   * here controls; a policy that ever allowed its host fails the check again.
    */
   if (path === '/') {
     const body = await response.text();
-    const injected = [...body.matchAll(/<script[^>]+src=["']([^"']+)["']/g)]
+    const policy = response.headers.get('content-security-policy') ?? '';
+    const external = [...body.matchAll(/<script[^>]+src=["']([^"']+)["']/g)]
       .map((match) => match[1])
       .filter((src) => /^https?:\/\//.test(src) && !src.includes(new URL(target).host));
+
+    const beaconBlocked = !policy.includes(BEACON_HOST);
+    const tolerated = external.filter((src) => beaconBlocked && new URL(src).host === BEACON_HOST);
+    const injected = external.filter((src) => !tolerated.includes(src));
+
+    for (const src of tolerated) {
+      console.log(`  tolerated  edge-injected beacon the policy refuses to run: ${src}`);
+    }
 
     if (injected.length > 0) {
       console.error(
