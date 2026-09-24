@@ -93,16 +93,7 @@ describe('large models', () => {
   // "Three of forty-seven subnets" invites the reader to believe they are
   // looking at three subnets. A container shows its children or says how many.
   it('never draws part of a container', () => {
-    const summary = summarise(model, { budget: 120 });
-    const drawn = new Set(summary.nodes.map((n) => n.id));
-
-    for (const parent of summary.nodes) {
-      const kids = model.nodes.filter((n) => n.parentId === parent.id);
-      if (kids.length === 0) continue;
-
-      const shown = kids.filter((kid) => drawn.has(kid.id)).length;
-      expect(shown === 0 || shown === kids.length).toBe(true);
-    }
+    expectWholeKinds(model, summarise(model, { budget: 120 }));
   });
 
   it('counts every descendant it is holding, not just the direct children', () => {
@@ -168,6 +159,43 @@ describe('large models', () => {
   });
 });
 
+describe('regions crowded with loose resources', () => {
+  // Buckets, functions and roles belong to no network, so they sit directly in
+  // the region. Enough of them used to fold the region itself, and a thousand-
+  // resource workspace became two boxes (#117).
+  const crowded = withLooseResources(infrastructure(20, 2, 0), 500);
+
+  it('keeps the networks and folds the loose resources', () => {
+    const summary = summarise(crowded, { budget: 400 });
+    const drawn = new Set(summary.nodes.map((n) => n.id));
+
+    for (let v = 0; v < 20; v++) expect(drawn.has(`aws_vpc.v${v}`)).toBe(true);
+    expect(drawn.has('aws_s3_bucket.b0')).toBe(false);
+    expect(summary.hidden.get('region.eu')).toBe(500);
+  });
+
+  it('still shows each kind of child whole or not at all', () => {
+    expectWholeKinds(crowded, summarise(crowded, { budget: 400 }));
+  });
+
+  it('counts every hidden resource exactly once', () => {
+    for (const budget of [30, 60, 400]) {
+      const summary = summarise(crowded, { budget });
+      const counted = [...summary.hidden.values()].reduce((a, b) => a + b, 0);
+
+      expect(counted).toBe(summary.hiddenTotal);
+      expect(summary.nodes.length + summary.hiddenTotal).toBe(crowded.nodes.length);
+    }
+  });
+
+  it('folds the region whole when even its networks do not fit', () => {
+    const summary = summarise(crowded, { budget: 10 });
+
+    expect(summary.nodes.map((n) => n.id)).toEqual(['provider.aws', 'region.eu']);
+    expect(summary.hidden.get('region.eu')).toBe(crowded.nodes.length - 2);
+  });
+});
+
 describe('models that are strange rather than large', () => {
   it('draws every root even when there are more of them than the budget', () => {
     // Nothing above a root to fold it into, so the budget cannot help. Drawing
@@ -192,6 +220,32 @@ describe('models that are strange rather than large', () => {
     expect(summary.nodes.map((n) => n.id)).toContain('aws_subnet.orphan');
   });
 });
+
+/** Adds resources that belong to no network, straight under the region. */
+function withLooseResources(model: InfraModel, count: number): InfraModel {
+  const loose = Array.from({ length: count }, (_, i) =>
+    node(`aws_s3_bucket.b${i}`, `b${i}`, 'aws_s3_bucket', 'region.eu', false),
+  );
+  return { ...model, nodes: [...model.nodes, ...loose] } as InfraModel;
+}
+
+/**
+ * Of a drawn node's children, the containers are all drawn or none are, and
+ * so are the leaves; anything left out is counted on the node.
+ */
+function expectWholeKinds(model: InfraModel, summary: ReturnType<typeof summarise>) {
+  const drawn = new Set(summary.nodes.map((n) => n.id));
+
+  for (const parent of summary.nodes) {
+    const kids = model.nodes.filter((n) => n.parentId === parent.id);
+    for (const kind of [true, false]) {
+      const group = kids.filter((kid) => kid.isContainer === kind);
+      const shown = group.filter((kid) => drawn.has(kid.id)).length;
+      expect(shown === 0 || shown === group.length).toBe(true);
+    }
+    if (kids.some((kid) => !drawn.has(kid.id))) expect(summary.hidden.has(parent.id)).toBe(true);
+  }
+}
 
 /** Counts descendants independently of the implementation being tested. */
 function trueDescendantCount(model: InfraModel, id: string): number {
