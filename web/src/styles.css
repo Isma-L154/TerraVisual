@@ -929,6 +929,24 @@ code {
   text-decoration: underline;
 }
 
+.save-image {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.save-image .file-tab {
+  background: var(--surface);
+}
+
+.save-image-error {
+  margin: 0;
+  max-width: 24ch;
+  font-size: 11px;
+  color: var(--severity-error);
+}
+
 /* --- connections --------------------------------------------------------- */
 
 .dg-handle {
