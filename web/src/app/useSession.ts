@@ -7,7 +7,7 @@ import { STARTER_WORKSPACE } from './examples';
 
 const SAVE_DEBOUNCE_MS = 800;
 
-export type SessionOrigin = 'starter' | 'restored' | 'shared' | 'imported';
+export type SessionOrigin = 'starter' | 'restored' | 'shared' | 'imported' | 'example';
 
 type Session = {
   workspace: Workspace;
@@ -22,8 +22,8 @@ type Session = {
   generation: number;
   /** Back to the example. */
   reset: () => void;
-  /** Replaces everything, as an import does. */
-  replace: (files: Record<string, string>) => void;
+  /** Replaces everything, as an import or an example does. */
+  replace: (files: Record<string, string>, origin: SessionOrigin) => void;
 };
 
 /**
@@ -94,10 +94,10 @@ export function useSession(): Session {
   }, [workspace]);
 
   const replace = useCallback(
-    (files: Record<string, string>) => {
+    (files: Record<string, string>, origin: SessionOrigin) => {
       workspace.clear();
       fill(workspace, files);
-      setOrigin('imported');
+      setOrigin(origin);
       setGeneration((current) => current + 1);
       forgetSharedLink();
     },
