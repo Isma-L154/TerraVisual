@@ -1,17 +1,13 @@
-import { ShareButton } from './ShareButton';
 import type { SessionOrigin } from './useSession';
 
 type FooterProps = {
   origin: SessionOrigin;
   storageAvailable: boolean;
-  files: () => Record<string, string>;
 };
 
-export function Footer({ origin, storageAvailable, files }: FooterProps) {
+export function Footer({ origin, storageAvailable }: FooterProps) {
   return (
     <footer className="app-footer">
-      <ShareButton files={files} />
-
       {origin === 'shared' ? (
         <p className="footer-note">
           This workspace came from a shared link. Editing it changes only your copy.

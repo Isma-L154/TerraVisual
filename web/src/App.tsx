@@ -6,6 +6,7 @@ import { Diagram } from './diagram/Diagram';
 import { NodeDetails } from './diagram/NodeDetails';
 import { Outline } from './outline/Outline';
 import { Footer } from './app/Footer';
+import { ShareButton } from './app/ShareButton';
 import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
@@ -50,12 +51,51 @@ export function App() {
       </a>
 
       <header className="app-header">
-        <h1>
-          <img className="app-logo" src="/favicon.svg" alt="" width={24} height={24} />
-          TerraVisual
-        </h1>
-        <p className="tagline">See the infrastructure your Terraform describes, as you write it.</p>
+        <div className="app-title">
+          <h1>
+            <img className="app-logo" src="/favicon.svg" alt="" width={24} height={24} />
+            TerraVisual
+          </h1>
+          <p className="tagline">
+            See the infrastructure your Terraform describes, as you write it.
+          </p>
+        </div>
+
+        <div className="app-actions">
+          <button
+            type="button"
+            className="action"
+            aria-expanded={importing}
+            aria-controls="import-panel"
+            onClick={() => setImporting((open) => !open)}
+          >
+            {importing ? 'Close import' : 'Import project'}
+          </button>
+          <ShareButton files={() => workspace.snapshot()} />
+          <button
+            type="button"
+            className="action"
+            onClick={() => {
+              // Reset discards the stored workspace too, so there is no undo.
+              if (window.confirm('Discard this workspace and go back to the example?')) {
+                session.reset();
+                navigation.forget();
+              }
+            }}
+          >
+            Reset
+          </button>
+        </div>
       </header>
+
+      <div id="import-panel" className="app-import">
+        {importing ? <ImportDropZone onEntries={(read) => void importer.run(read)} /> : null}
+        <ImportReport
+          progress={importer.progress}
+          report={importer.report}
+          onDismiss={importer.dismissReport}
+        />
+      </div>
 
       {session.loading ? (
         <p className="app-loading" role="status">
@@ -67,17 +107,6 @@ export function App() {
         <section className="pane pane-editor" aria-labelledby="editor-heading">
           <div className="pane-header">
             <h2 id="editor-heading">Code</h2>
-            <button
-              type="button"
-              className="file-tab"
-              aria-expanded={importing}
-              onClick={() => setImporting((open) => !open)}
-            >
-              {importing ? 'Close import' : 'Import project'}
-            </button>
-            <button type="button" className="file-tab" onClick={session.reset}>
-              Reset
-            </button>
             {paths.length > 1 ? (
               <nav aria-label="Workspace files" className="file-tabs">
                 {paths.map((path) => (
@@ -95,13 +124,6 @@ export function App() {
             ) : null}
           </div>
 
-          {importing ? <ImportDropZone onEntries={(read) => void importer.run(read)} /> : null}
-          <ImportReport
-            progress={importer.progress}
-            report={importer.report}
-            onDismiss={importer.dismissReport}
-          />
-
           <Editor
             path={activePath}
             content={workspace.read(activePath) ?? ''}
@@ -112,7 +134,7 @@ export function App() {
           />
         </section>
 
-        <section className="pane" aria-labelledby="diagram-heading">
+        <section className="pane pane-diagram" aria-labelledby="diagram-heading">
           <div className="pane-header">
             <h2 id="diagram-heading">Infrastructure</h2>
             <div className="pane-tools">
@@ -135,6 +157,12 @@ export function App() {
                 </button>
               </div>
               <AnalysisStatus analyzing={analysis.analyzing} error={analysis.error} />
+              {analysis.model ? (
+                <span className="resource-count">
+                  {plural(analysis.model.stats.resources, 'resource')}
+                  {analysis.model.stats.truncated ? ', partial' : ''}
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -171,7 +199,9 @@ export function App() {
           )}
         </section>
 
-        <section className="pane pane-details" aria-labelledby="details-heading">
+        {/* Focusable because it scrolls: a long attribute table must be
+            readable without a mouse (WCAG 2.1.1). */}
+        <section className="pane pane-details" aria-labelledby="details-heading" tabIndex={0}>
           <div className="pane-header">
             <h2 id="details-heading">Details</h2>
           </div>
@@ -184,12 +214,6 @@ export function App() {
         <section className="pane pane-diagnostics" aria-labelledby="diagnostics-heading">
           <div className="pane-header">
             <h2 id="diagnostics-heading">Problems</h2>
-            {analysis.model ? (
-              <span className="analysis-status">
-                {plural(analysis.model.stats.resources, 'resource')}
-                {analysis.model.stats.truncated ? ', partial' : ''}
-              </span>
-            ) : null}
           </div>
           {analysis.error ? (
             <p className="diagnostic-error" role="alert">
@@ -204,11 +228,7 @@ export function App() {
         </section>
       </main>
 
-      <Footer
-        origin={session.origin}
-        storageAvailable={session.storageAvailable}
-        files={() => workspace.snapshot()}
-      />
+      <Footer origin={session.origin} storageAvailable={session.storageAvailable} />
     </>
   );
 }

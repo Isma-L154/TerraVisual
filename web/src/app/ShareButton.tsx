@@ -53,17 +53,30 @@ export function ShareButton({ files }: ShareButtonProps) {
 
   return (
     <div className="share">
-      <button type="button" className="file-tab" onClick={() => void share()}>
+      <button type="button" className="action" onClick={() => void share()}>
         Copy share link
       </button>
 
       {status ? (
-        <p className="share-status" role="status" aria-live="polite">
-          {status}
-        </p>
+        <div className="share-result">
+          <p className="share-status" role="status" aria-live="polite">
+            {status}
+          </p>
+          {link ? (
+            <input className="share-link" readOnly value={link} aria-label="Share link" />
+          ) : null}
+          <button
+            type="button"
+            className="file-tab"
+            onClick={() => {
+              setStatus(null);
+              setLink(null);
+            }}
+          >
+            Done
+          </button>
+        </div>
       ) : null}
-
-      {link ? <input className="share-link" readOnly value={link} aria-label="Share link" /> : null}
     </div>
   );
 }

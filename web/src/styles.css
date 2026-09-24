@@ -119,8 +119,57 @@ body {
   left: 0;
 }
 
+/*
+ * The page is exactly one screen on a desktop: the header and footer take
+ * what they need and the workspace gets the rest, so the editor and the
+ * diagram never scroll the page away from each other.
+ */
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
 .app-header {
-  padding: 20px 24px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 16px 24px 8px;
+}
+
+.app-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.action {
+  font: inherit;
+  font-size: 13px;
+  min-height: 32px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.action:hover,
+.action[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+
+.app-import:empty {
+  display: none;
+}
+
+.app-import {
+  padding: 0 24px;
 }
 .app-header h1 {
   display: flex;
@@ -135,20 +184,40 @@ body {
   border-radius: 5px;
 }
 .tagline {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--muted);
   font-size: 14px;
 }
 
+/*
+ * Problems sit under the code that causes them, details under the diagram
+ * they describe. Their row has a fixed height: if it grew with its content,
+ * selecting a node would shrink the diagram out from under the pointer.
+ */
 .workspace {
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: var(--gap);
-  padding: 12px 24px 24px;
-  align-items: stretch;
-  height: calc(100vh - 150px);
-  min-height: 420px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) clamp(120px, 24vh, 240px);
+  grid-template-areas:
+    'editor diagram'
+    'problems details';
+  gap: 12px var(--gap);
+  padding: 8px 24px 12px;
+  min-height: 480px;
+}
+
+.pane-editor {
+  grid-area: editor;
+}
+.pane-diagram {
+  grid-area: diagram;
+}
+.pane-details {
+  grid-area: details;
+}
+.pane-diagnostics {
+  grid-area: problems;
 }
 
 .pane-diagnostics,
@@ -157,17 +226,47 @@ body {
 }
 
 @media (max-width: 800px) {
-  .workspace {
-    grid-template-columns: 1fr;
+  #root {
     height: auto;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: none;
+    padding-inline: 12px;
+  }
+
+  .pane-editor,
+  .pane-diagram,
+  .pane-details,
+  .pane-diagnostics {
+    grid-area: auto;
+  }
+
+  .pane-editor {
+    height: 60vh;
+  }
+
+  .pane-diagram {
+    height: 55vh;
+  }
+
+  .app-header,
+  .app-import,
+  .app-footer {
+    padding-inline: 12px;
   }
 }
 
 .pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 12px 16px;
 }
 .pane h2 {
   margin: 0 0 8px;
@@ -184,13 +283,17 @@ body {
 }
 
 .app-footer {
-  padding: 0 24px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+  padding: 0 24px 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .app-footer p {
   margin: 0;
-  max-width: 60ch;
+  max-width: 80ch;
 }
 
 /*
@@ -201,8 +304,7 @@ body {
  * precision, not alarm.
  */
 .privacy-detail {
-  margin-top: 8px;
-  max-width: 60ch;
+  max-width: 80ch;
 }
 
 .privacy-detail summary {
@@ -234,18 +336,17 @@ body {
 
 /* --- panes --------------------------------------------------------------- */
 
-.pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+.pane-editor,
+.pane-diagram {
   overflow: hidden;
 }
 
 .pane-header {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 12px;
   margin-bottom: 8px;
 }
 
@@ -254,7 +355,7 @@ body {
 }
 
 .pane-editor {
-  padding: 16px 0 0;
+  padding: 12px 0 0;
 }
 
 .pane-editor .pane-header {
@@ -278,15 +379,25 @@ body {
  * is announced on entry and read on the page.
  */
 .editor-hint {
-  margin: 6px 2px 0;
+  margin: 0;
+  padding: 6px 16px 8px;
+  border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--muted);
 }
 
+/* Many files scroll sideways rather than pushing the editor off the pane. */
 .file-tabs {
   display: flex;
   gap: 4px;
-  flex-wrap: wrap;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
+  overflow-x: auto;
+}
+
+.file-tabs .file-tab {
+  flex: none;
 }
 
 .file-tab {
@@ -306,11 +417,14 @@ body {
   border-color: var(--accent);
 }
 
-.analysis-status {
+.analysis-status:empty {
+  display: none;
+}
+
+.analysis-status,
+.resource-count {
   font-size: 12px;
   color: var(--muted);
-  min-width: 8ch;
-  text-align: right;
 }
 
 /* --- diagnostics --------------------------------------------------------- */
@@ -818,10 +932,11 @@ code {
 /* --- import -------------------------------------------------------------- */
 
 .import {
-  padding: 0 16px 12px;
+  padding: 0 0 8px;
 }
 
 .import-zone {
+  background: var(--surface);
   border: 1.5px dashed var(--border);
   border-radius: var(--radius);
   padding: 16px;
@@ -868,7 +983,8 @@ input:focus-visible + .import-button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 16px 12px;
+  margin: 0 0 8px;
+  background: var(--surface);
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -900,18 +1016,35 @@ input:focus-visible + .import-button {
 /* --- sharing ------------------------------------------------------------- */
 
 .share {
-  margin-bottom: 8px;
+  position: relative;
+}
+
+/* Under the button rather than in the flow, so the header does not jump. */
+.share-result {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  width: min(420px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.12);
 }
 
 .share-status {
-  margin: 6px 0 0;
+  align-self: stretch;
+  margin: 0;
   font-size: 12px;
 }
 
 .share-link {
-  margin-top: 6px;
   width: 100%;
-  max-width: 60ch;
   font-family: ui-monospace, monospace;
   font-size: 11px;
   padding: 4px 6px;
@@ -922,7 +1055,6 @@ input:focus-visible + .import-button {
 }
 
 .footer-note {
-  margin: 4px 0 0;
   font-size: 12px;
   color: var(--muted);
 }
