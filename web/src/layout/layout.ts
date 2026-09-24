@@ -51,7 +51,7 @@ export const METRICS = {
   emptyContainerHeight: 44,
   foldedContainerHeight: 72,
   /** The "+ N not shown" button's row, above any children still drawn. */
-  foldedRowHeight: 28,
+  foldedRowHeight: 36,
   rootGap: 24,
 } as const;
 
