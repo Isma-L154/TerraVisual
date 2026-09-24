@@ -41,6 +41,11 @@ export function Footer({ origin, storageAvailable, sharedLinkRefused, leftOut }:
       </p>
 
       <PrivacyDetail />
+
+      <nav className="footer-links" aria-label="Legal">
+        <a href="/privacy">Privacy policy</a>
+        <a href="/terms">Terms of use</a>
+      </nav>
     </footer>
   );
 }

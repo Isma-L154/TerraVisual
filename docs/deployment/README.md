@@ -167,6 +167,7 @@ and all of it is static files in `web/public/` plus tags in `web/index.html`:
 | Canonical, title, description | `web/index.html` | The canonical names the one address; title ≤ 60 and description 120–160 characters, which the browser suite enforces |
 | Structured data | `web/index.html` | A `WebApplication` JSON-LD block. It is a data block the browser never executes, so the CSP's `script-src` does not apply |
 | Open Graph / Twitter tags | `web/index.html` | What a pasted link unfurls into; every URL absolute |
+| Privacy policy and terms | `web/public/privacy.html`, `terms.html`, `legal.css` | Static pages at `/privacy` and `/terms` (the asset server maps the extensionless path; `/privacy.html` redirects to it). Styled by an external sheet because the CSP refuses inline styles. Keep the privacy policy true: it describes the hosting logs, storage and CSP, so a change to any of those means a change to it |
 | Icons, manifest, `og-image.png` | `web/public/` | Generated from `favicon.svg` and `web/brand/social-card.html` by `node scripts/make-brand-assets.mjs`. The outputs are committed |
 
 These files must exist as files. The asset server answers any unknown path
