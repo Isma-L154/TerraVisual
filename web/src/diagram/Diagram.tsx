@@ -1,11 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Background,
-  Controls,
-  ReactFlow,
-  type FitViewOptions,
-  type NodeChange,
-} from '@xyflow/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
@@ -13,6 +7,7 @@ import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import { toFlow, type DiagramNode } from './toFlow';
 import { summarise } from './summarise';
+import { FIT_VIEW, FollowCamera, outerBounds } from './camera';
 
 /**
  * What a screen reader is told about the diagram's controls.
@@ -32,10 +27,6 @@ const ARIA_LABELS = {
   // about two resources rather than a thing to operate. The outline names each
   // resource's connections, which is where somebody reading by ear finds them.
   'edge.a11yDescription.default': 'A connection between two resources.',
-};
-
-const FIT_VIEW: FitViewOptions = {
-  padding: { top: '24px', right: '24px', bottom: '24px', left: '64px' },
 };
 
 export type DiagramProps = {
@@ -107,6 +98,9 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
     return () => element.removeEventListener('tv:expand', onExpand);
   }, []);
 
+  const bounds = useMemo(() => outerBounds(nodes), [nodes]);
+  const following = useRef(true);
+
   const withSelection = useMemo(
     () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
     [nodes, selectedId],
@@ -167,9 +161,11 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
           if (next !== undefined && next !== selectedId) onSelect(next);
         }}
         fitView
-        // Room on the left for the zoom controls, so the fitted diagram is
-        // never drawn underneath them.
         fitViewOptions={FIT_VIEW}
+        // Only a person's pan or zoom carries an event; fitting does not.
+        onMoveStart={(event) => {
+          if (event) following.current = false;
+        }}
         // Layout is ours, so React Flow must not move anything.
         nodesDraggable={false}
         nodesConnectable={false}
@@ -181,7 +177,13 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
         ariaLabelConfig={ARIA_LABELS}
       >
         <Background gap={20} size={1} />
-        <Controls showInteractive={false} />
+        <Controls
+          showInteractive={false}
+          onZoomIn={() => (following.current = false)}
+          onZoomOut={() => (following.current = false)}
+          onFitView={() => (following.current = true)}
+        />
+        <FollowCamera bounds={bounds} following={following} />
       </ReactFlow>
     </div>
   );
