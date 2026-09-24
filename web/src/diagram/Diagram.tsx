@@ -8,6 +8,7 @@ import { edgeTypes } from './edges';
 import { toFlow, type DiagramNode } from './toFlow';
 import { summarise } from './summarise';
 import { FIT_VIEW, FollowCamera, outerBounds } from './camera';
+import { SaveImage } from './SaveImage';
 
 /**
  * What a screen reader is told about the diagram's controls.
@@ -184,6 +185,7 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
           onFitView={() => (following.current = true)}
         />
         <FollowCamera bounds={bounds} following={following} />
+        <SaveImage />
       </ReactFlow>
     </div>
   );

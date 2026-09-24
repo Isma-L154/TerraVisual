@@ -3,9 +3,9 @@ import { useReactFlow, type FitViewOptions } from '@xyflow/react';
 
 import type { DiagramNode } from './toFlow';
 
-/** Room on the left for the zoom controls, so the fitted diagram is never under them. */
+/** Room for the zoom controls on the left and the save button on top, so the fitted diagram is under neither. */
 export const FIT_VIEW: FitViewOptions = {
-  padding: { top: '24px', right: '24px', bottom: '24px', left: '64px' },
+  padding: { top: '52px', right: '24px', bottom: '24px', left: '64px' },
 };
 
 /**
