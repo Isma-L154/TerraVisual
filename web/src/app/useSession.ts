@@ -17,6 +17,8 @@ type Session = {
   storageAvailable: boolean;
   /** A link carried a workspace that could not be opened. */
   sharedLinkRefused: boolean;
+  /** Files a shared or stored workspace held that did not fit the limits. */
+  leftOut: number;
   /**
    * Changes whenever the workspace is swapped for another, so views that keep
    * state about the old one (what is expanded, where the camera is) start over.
@@ -38,6 +40,7 @@ export function useSession(): Session {
   const [loading, setLoading] = useState(true);
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [sharedLinkRefused, setSharedLinkRefused] = useState(false);
+  const [leftOut, setLeftOut] = useState(0);
   const [generation, setGeneration] = useState(0);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,14 +55,14 @@ export function useSession(): Session {
       if (!shared.ok && shared.reason !== 'absent') setSharedLinkRefused(true);
 
       if (shared.ok) {
-        fill(workspace, shared.files);
+        setLeftOut(fill(workspace, shared.files));
         setOrigin('shared');
       } else {
         const stored = await load();
         if (cancelled) return;
 
         const restorable = stored && Object.keys(stored.files).length > 0;
-        fill(workspace, restorable ? stored.files : STARTER_WORKSPACE);
+        setLeftOut(fill(workspace, restorable ? stored.files : STARTER_WORKSPACE));
         setOrigin(restorable ? 'restored' : 'starter');
       }
       setLoading(false);
@@ -115,6 +118,7 @@ export function useSession(): Session {
     loading,
     storageAvailable,
     sharedLinkRefused,
+    leftOut,
     generation,
     reset,
     replace,
@@ -128,13 +132,19 @@ function forgetSharedLink(): void {
   }
 }
 
-/** Sorted, so which files fit within the limits does not depend on key order. */
-function fill(workspace: Workspace, files: Record<string, string>): void {
+/**
+ * Sorted, so which files fit within the limits does not depend on key order.
+ * Returns how many were left out (an unusable path, or over a limit), which
+ * the page reports: a partial workspace must not pass for a whole one.
+ */
+function fill(workspace: Workspace, files: Record<string, string>): number {
+  let leftOut = 0;
   for (const path of Object.keys(files).sort()) {
     try {
       workspace.write(path, files[path]!);
     } catch {
-      // An invalid path or a file over the limits is left out.
+      leftOut++;
     }
   }
+  return leftOut;
 }

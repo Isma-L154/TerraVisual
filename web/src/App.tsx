@@ -232,6 +232,7 @@ export function App() {
         origin={session.origin}
         storageAvailable={session.storageAvailable}
         sharedLinkRefused={session.sharedLinkRefused}
+        leftOut={session.leftOut}
       />
     </>
   );
