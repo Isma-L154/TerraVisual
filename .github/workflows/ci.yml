@@ -115,21 +115,15 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Everything that does not time anything, in parallel.
-      - name: Accessibility, keyboard journey, security policy and site metadata
-        run: >-
-          npx playwright test
-          web/e2e/accessibility.spec.ts
-          web/e2e/keyboard.spec.ts
-          web/e2e/security.spec.ts
-          web/e2e/summarising.spec.ts
-          web/e2e/diagram-geometry.spec.ts
-          web/e2e/site.spec.ts
+      # Every spec except the budgets, in parallel. The same script runs
+      # locally, so a new spec cannot be left out of CI by a hand-kept list.
+      - name: Browser suite
+        run: npm run test:e2e:browser
 
       # Alone on the machine. Timing anything while a second browser competes
       # for the same two cores measures the runner, not the application.
       - name: Performance budgets
-        run: npx playwright test web/e2e/performance.spec.ts --workers=1
+        run: npm run test:e2e:performance
 
       # Only on failure, and only for a week: a trace is a recording of a
       # browser session and there is no reason to keep one that passed.
