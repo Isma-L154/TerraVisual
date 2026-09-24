@@ -50,6 +50,8 @@ export const METRICS = {
   emptyContainerWidth: 190,
   emptyContainerHeight: 44,
   foldedContainerHeight: 72,
+  /** The "+ N not shown" button's row, above any children still drawn. */
+  foldedRowHeight: 28,
   rootGap: 24,
 } as const;
 
@@ -99,6 +101,11 @@ export function layout(model: InfraModel, options: LayoutOptions = {}): Layout {
   const placedRoots = sortedRoots.filter((node) => !node.unplaced);
   const unplacedRoots = sortedRoots.filter((node) => node.unplaced);
 
+  // Where a container's children start: below the header, and below the
+  // folded button when it also shows some of its children.
+  const contentTop = (id: string) =>
+    METRICS.headerHeight + (folded.has(id) ? METRICS.foldedRowHeight : 0);
+
   const measured = new Map<string, { width: number; height: number }>();
   const measure = (node: InfraNode): { width: number; height: number } => {
     const cached = measured.get(node.id);
@@ -117,7 +124,7 @@ export function layout(model: InfraModel, options: LayoutOptions = {}): Layout {
       const rows = pack(children.map(measure));
       size = {
         width: rows.width + METRICS.padding * 2,
-        height: rows.height + METRICS.padding + METRICS.headerHeight,
+        height: rows.height + METRICS.padding + contentTop(node.id),
       };
     }
 
@@ -136,7 +143,7 @@ export function layout(model: InfraModel, options: LayoutOptions = {}): Layout {
     const rows = pack(children.map(measure));
     rows.positions.forEach((position, index) => {
       const child = children[index]!;
-      place(child, METRICS.padding + position.x, METRICS.headerHeight + position.y, depth + 1);
+      place(child, METRICS.padding + position.x, contentTop(node.id) + position.y, depth + 1);
     });
   };
 

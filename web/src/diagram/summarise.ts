@@ -103,6 +103,21 @@ export function summarise(model: InfraModel, options: SummariseOptions = {}): Su
       const fits = drawn.size + kids.length <= budget;
 
       if (!openedByUser && !fits) {
+        // The structure first: networks and subnets are the shape somebody
+        // came to see, and loose resources beside them are what can wait
+        // behind a count. Each kind is still all or nothing (#117).
+        const structure = kids.filter((kid) => kid.isContainer);
+        if (structure.length > 0 && drawn.size + structure.length <= budget) {
+          for (const kid of structure) drawn.add(kid.id);
+          next.push(...sortForStability(structure));
+          const loose = kids.filter((kid) => !kid.isContainer);
+          hidden.set(
+            node.id,
+            loose.reduce((total, kid) => total + 1 + (descendants.get(kid.id) ?? 0), 0),
+          );
+          continue;
+        }
+
         // Folded. The count is every descendant, not only direct children:
         // "holds 3" would be misleading when those three hold forty more.
         hidden.set(node.id, descendants.get(node.id) ?? kids.length);

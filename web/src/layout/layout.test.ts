@@ -252,6 +252,22 @@ describe('folded containers', () => {
     expect(result.boxes.get('vpc')!.height).toBe(METRICS.foldedContainerHeight);
     expect(METRICS.foldedContainerHeight).toBeGreaterThan(METRICS.emptyContainerHeight);
   });
+
+  // A region can show its networks and fold its loose resources (#117). The
+  // button then shares the box with children, and must not sit under them.
+  it('keep a row for the button above the children they still show', () => {
+    const input = model([
+      node({ id: 'region', isContainer: true }),
+      node({ id: 'vpc', isContainer: true, parentId: 'region' }),
+    ]);
+    const plain = layout(input);
+    const partial = layout(input, { folded: new Set(['region']) });
+
+    expect(partial.boxes.get('vpc')!.y).toBe(plain.boxes.get('vpc')!.y + METRICS.foldedRowHeight);
+    expect(partial.boxes.get('region')!.height).toBe(
+      plain.boxes.get('region')!.height + METRICS.foldedRowHeight,
+    );
+  });
 });
 
 // The shared example is the same one the Go tests validate, so a layout that
