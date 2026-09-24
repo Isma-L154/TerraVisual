@@ -25,13 +25,17 @@ export function useAnalysis(workspace: Workspace): AnalysisState {
   });
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Bumped when the workspace is cleared, so an analysis of the old one that
+  // lands afterwards is not drawn.
+  const epoch = useRef(0);
 
   const run = useCallback(() => {
     setState((previous) => ({ ...previous, analyzing: true }));
+    const started = epoch.current;
 
     void client.analyze(workspace.snapshot()).then((outcome) => {
       // The user typed again and a newer analysis is already on its way.
-      if (outcome.status === 'superseded') return;
+      if (outcome.status === 'superseded' || started !== epoch.current) return;
 
       if (outcome.status === 'failed') {
         setState((previous) => ({ ...previous, analyzing: false, error: outcome.message }));
@@ -50,7 +54,16 @@ export function useAnalysis(workspace: Workspace): AnalysisState {
     // Also on mount, so a restored or shared workspace draws itself.
     schedule();
 
-    const unsubscribe = workspace.subscribe(schedule);
+    const unsubscribe = workspace.subscribe((change) => {
+      // A cleared workspace is being replaced: the old model describes nothing
+      // the user can see any more, and keeping it would draw the old project
+      // until the new one had been analysed.
+      if (change.type === 'cleared') {
+        epoch.current++;
+        setState((previous) => ({ ...previous, model: null }));
+      }
+      schedule();
+    });
     return () => {
       unsubscribe();
       if (timer.current) clearTimeout(timer.current);

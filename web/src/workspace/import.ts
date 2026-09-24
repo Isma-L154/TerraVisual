@@ -23,7 +23,7 @@ export type ImportResult = {
   bytes: number;
 };
 
-type Entry = { path: string; file: File };
+export type Entry = { path: string; file: File };
 
 // .terraform holds downloaded providers; state files routinely contain secrets.
 const IGNORED_DIRECTORIES = new Set(['.terraform', '.git', 'node_modules', '.idea', '.vscode']);
@@ -108,7 +108,34 @@ export async function importFiles(
   }
 
   onProgress?.(sorted.length, sorted.length);
-  return { files, skipped, bytes };
+  return { files: withoutSharedDirectory(files), skipped, bytes };
+}
+
+/**
+ * A folder picker and a dropped folder name the folder in every path, but the
+ * analyzer reads the root module from the workspace root. Removing what every
+ * path shares makes the chosen folder the root; relative module sources are
+ * unaffected, because only a prefix common to all of them goes.
+ */
+function withoutSharedDirectory(files: Record<string, string>): Record<string, string> {
+  const directories = Object.keys(files).map((path) => path.split('/').slice(0, -1));
+  if (directories.length === 0) return files;
+
+  let shared = 0;
+  const [first] = directories;
+  while (
+    shared < first!.length &&
+    directories.every((segments) => segments[shared] === first![shared])
+  ) {
+    shared++;
+  }
+  if (shared === 0) return files;
+
+  const out: Record<string, string> = {};
+  for (const [path, content] of Object.entries(files)) {
+    out[path.split('/').slice(shared).join('/')] = content;
+  }
+  return out;
 }
 
 /** Keeps the directory structure, which relative module sources depend on. */
@@ -176,6 +203,25 @@ const SKIP_MESSAGES: Record<SkipReason, (files: string) => string> = {
   'invalid-path': (files) => `${files} skipped: the path was not usable.`,
   unreadable: (files) => `${files} could not be read.`,
 };
+
+/** What an import did, in sentences a user can act on. */
+export function describeImport(result: ImportResult): string[] {
+  const paths = Object.keys(result.files);
+  if (paths.length === 0) {
+    return [
+      'Nothing was imported: no Terraform files were found.',
+      ...describeSkipped(result.skipped),
+    ];
+  }
+
+  const notes = [`Imported ${paths.length} file${paths.length === 1 ? '' : 's'}.`];
+  if (!paths.some((path) => !path.includes('/') && path.endsWith('.tf'))) {
+    notes.push(
+      'There is no Terraform at the top level, and the diagram starts from the root module. Import the folder that holds it, such as one environment.',
+    );
+  }
+  return [...notes, ...describeSkipped(result.skipped)];
+}
 
 /** One sentence a user can act on, per reason something was left out. */
 export function describeSkipped(skipped: Skipped[]): string[] {
