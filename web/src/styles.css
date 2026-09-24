@@ -1024,6 +1024,51 @@ input:focus-visible + .import-button {
   pointer-events: none;
 }
 
+/* --- examples ------------------------------------------------------------ */
+
+.examples {
+  padding-bottom: 8px;
+}
+
+.examples-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.example {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.example:hover {
+  border-color: var(--accent);
+}
+
+.example-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.example-summary {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* --- sharing ------------------------------------------------------------- */
 
 .share {

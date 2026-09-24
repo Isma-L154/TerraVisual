@@ -7,6 +7,7 @@ import { NodeDetails } from './diagram/NodeDetails';
 import { Outline } from './outline/Outline';
 import { Footer } from './app/Footer';
 import { ShareButton } from './app/ShareButton';
+import { ExamplesPanel } from './app/ExamplesPanel';
 import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
@@ -24,7 +25,9 @@ export function App() {
   const navigation = useSourceNavigation(workspace, analysis.model);
 
   const [view, setView] = useState<'diagram' | 'outline'>('diagram');
-  const [importing, setImporting] = useState(false);
+  // One panel under the header at a time.
+  const [panel, setPanel] = useState<'import' | 'examples' | null>(null);
+  const toggle = (next: 'import' | 'examples') => setPanel((open) => (open === next ? null : next));
   const [hiddenInDiagram, setHiddenInDiagram] = useState(0);
 
   const { paths, activePath } = navigation;
@@ -32,9 +35,9 @@ export function App() {
 
   // An import replaces the workspace rather than merging into it.
   const importer = useImport((files) => {
-    session.replace(files);
+    session.replace(files, 'imported');
     navigation.forget();
-    setImporting(false);
+    setPanel(null);
   });
   const dropping = useFileDrop((transfer) => void importer.run(() => entriesFromDrop(transfer)));
 
@@ -65,11 +68,20 @@ export function App() {
           <button
             type="button"
             className="action"
-            aria-expanded={importing}
-            aria-controls="import-panel"
-            onClick={() => setImporting((open) => !open)}
+            aria-expanded={panel === 'examples'}
+            aria-controls="header-panel"
+            onClick={() => toggle('examples')}
           >
-            {importing ? 'Close import' : 'Import project'}
+            Examples
+          </button>
+          <button
+            type="button"
+            className="action"
+            aria-expanded={panel === 'import'}
+            aria-controls="header-panel"
+            onClick={() => toggle('import')}
+          >
+            {panel === 'import' ? 'Close import' : 'Import project'}
           </button>
           <ShareButton files={() => workspace.snapshot()} />
           <button
@@ -88,8 +100,22 @@ export function App() {
         </div>
       </header>
 
-      <div id="import-panel" className="app-import">
-        {importing ? <ImportDropZone onEntries={(read) => void importer.run(read)} /> : null}
+      <div id="header-panel" className="app-import">
+        {panel === 'examples' ? (
+          <ExamplesPanel
+            onOpen={(example) => {
+              if (!window.confirm(`Replace this workspace with the "${example.title}" example?`)) {
+                return;
+              }
+              session.replace(example.files, 'example');
+              navigation.forget();
+              setPanel(null);
+            }}
+          />
+        ) : null}
+        {panel === 'import' ? (
+          <ImportDropZone onEntries={(read) => void importer.run(read)} />
+        ) : null}
         <ImportReport
           progress={importer.progress}
           report={importer.report}
