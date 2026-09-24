@@ -1,4 +1,12 @@
-import { describeSkipped, entriesFromInput, importFiles, shouldIgnore } from './import';
+import {
+  describeImport,
+  describeSkipped,
+  entriesFromInput,
+  importFiles,
+  shouldIgnore,
+  type ImportResult,
+  type Skipped,
+} from './import';
 import { LIMITS } from './workspace';
 
 function fileEntry(
@@ -104,11 +112,84 @@ describe('importing', () => {
     expect(seen[seen.length - 1]).toBe(2);
   });
 
+  // A folder picker and a dropped folder both name the folder in every path.
+  // The analyzer reads the root module from the workspace root, so leaving the
+  // folder in place drew an empty diagram for every project imported.
+  it('drops the folder every file shares, so the project is the root module', async () => {
+    const result = await importFiles([
+      fileEntry('project/main.tf'),
+      fileEntry('project/modules/network/main.tf'),
+    ]);
+
+    expect(Object.keys(result.files).sort()).toEqual(['main.tf', 'modules/network/main.tf']);
+  });
+
+  it('drops every level the files share, not only the first', async () => {
+    const result = await importFiles([
+      fileEntry('repo/infra/main.tf'),
+      fileEntry('repo/infra/variables.tf'),
+    ]);
+
+    expect(Object.keys(result.files).sort()).toEqual(['main.tf', 'variables.tf']);
+  });
+
+  it('keeps folders that differ, which relative module sources depend on', async () => {
+    const result = await importFiles([
+      fileEntry('repo/envs/dev/main.tf'),
+      fileEntry('repo/modules/vpc/main.tf'),
+    ]);
+
+    expect(Object.keys(result.files).sort()).toEqual(['envs/dev/main.tf', 'modules/vpc/main.tf']);
+  });
+
+  it('decides what is shared from the files kept, not from what was skipped', async () => {
+    const result = await importFiles([fileEntry('project/main.tf'), fileEntry('README.md', '#')]);
+
+    expect(Object.keys(result.files)).toEqual(['main.tf']);
+  });
+
   it('imports nothing from an empty drop without failing', async () => {
     const result = await importFiles([]);
 
     expect(result.files).toEqual({});
     expect(result.skipped).toEqual([]);
+  });
+});
+
+describe('reporting an import', () => {
+  const result = (files: string[], skipped: Skipped[] = []): ImportResult => ({
+    files: Object.fromEntries(files.map((path) => [path, ''])),
+    skipped,
+    bytes: 0,
+  });
+
+  it('says how many files came in', () => {
+    expect(describeImport(result(['main.tf', 'outputs.tf']))[0]).toBe('Imported 2 files.');
+    expect(describeImport(result(['main.tf']))[0]).toBe('Imported 1 file.');
+  });
+
+  it('says when nothing was Terraform', () => {
+    expect(describeImport(result([]))[0]).toMatch(/no Terraform files were found/);
+  });
+
+  it('includes why files were skipped', () => {
+    const report = describeImport(result(['main.tf'], [{ path: 'a.md', reason: 'not-terraform' }]));
+
+    expect(report).toContain('1 file skipped: not Terraform.');
+  });
+
+  // Several environments side by side have no root module at the top: the
+  // diagram would be empty, and this is the only place that can say why.
+  it('explains an empty diagram when there is no Terraform at the top level', () => {
+    const report = describeImport(result(['envs/dev/main.tf', 'envs/prod/main.tf']));
+
+    expect(report.join(' ')).toMatch(/root module/);
+  });
+
+  it('does not warn about the root module when there is one', () => {
+    const report = describeImport(result(['main.tf', 'modules/vpc/main.tf']));
+
+    expect(report.join(' ')).not.toMatch(/root module/);
   });
 });
 

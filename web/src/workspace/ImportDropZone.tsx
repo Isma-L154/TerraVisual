@@ -1,102 +1,70 @@
-import { useCallback, useId, useState } from 'react';
+import { useId } from 'react';
 
-import {
-  describeSkipped,
-  entriesFromDrop,
-  entriesFromInput,
-  importFiles,
-  type ImportResult,
-} from './import';
+import { entriesFromInput, type Entry } from './import';
 
 type ImportDropZoneProps = {
-  onImported: (result: ImportResult) => void;
+  onEntries: (read: () => Entry[]) => void;
 };
 
 /**
- * Bringing an existing project in. The button is not a fallback for the drop
- * zone: it is the path that works with a keyboard, and it does the same thing.
+ * Bringing an existing project in. The buttons are not a fallback for dropping:
+ * they are the path that works with a keyboard, and they do the same thing.
+ * Drops are handled for the whole page, not only here.
  */
-export function ImportDropZone({ onImported }: ImportDropZoneProps) {
-  const inputId = useId();
-  const [dragging, setDragging] = useState(false);
-  const [progress, setProgress] = useState<{ read: number; total: number } | null>(null);
-  const [notes, setNotes] = useState<string[]>([]);
+export function ImportDropZone({ onEntries }: ImportDropZoneProps) {
+  const folderId = useId();
+  const filesId = useId();
 
-  const run = useCallback(
-    async (entries: { path: string; file: File }[]) => {
-      if (entries.length === 0) return;
-
-      setProgress({ read: 0, total: entries.length });
-      const result = await importFiles(entries, (read, total) => setProgress({ read, total }));
-      setProgress(null);
-
-      const imported = Object.keys(result.files).length;
-      setNotes([
-        imported === 0
-          ? 'Nothing was imported: no Terraform files were found.'
-          : `Imported ${imported} file${imported === 1 ? '' : 's'}.`,
-        ...describeSkipped(result.skipped),
-      ]);
-
-      onImported(result);
-    },
-    [onImported],
-  );
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { files } = event.target;
+    if (files && files.length > 0) {
+      const entries = entriesFromInput(files);
+      onEntries(() => entries);
+    }
+    event.target.value = '';
+  };
 
   return (
     <div className="import">
-      <div
-        className={`import-zone${dragging ? ' is-dragging' : ''}`}
-        onDragOver={(event) => {
-          event.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          event.preventDefault();
-          setDragging(false);
-          void entriesFromDrop(event.dataTransfer).then(run);
-        }}
-        data-testid="import-zone"
-      >
-        <p className="import-hint">Drop a Terraform project here, or</p>
+      <div className="import-zone" data-testid="import-zone">
+        <p className="import-hint">Drop a Terraform project anywhere on this page, or</p>
 
-        {/* A label rather than a button wrapping the input: the input is what a
-            screen reader announces and what a keyboard activates. */}
-        <label className="import-button" htmlFor={inputId}>
-          choose a folder
-        </label>
-        <input
-          id={inputId}
-          type="file"
-          className="visually-hidden"
-          multiple
-          // Non-standard, universally supported, and the only way a browser
-          // lets somebody pick a whole directory.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {...({ webkitdirectory: '', directory: '' } as any)}
-          onChange={(event) => {
-            if (event.target.files) void run(entriesFromInput(event.target.files));
-            event.target.value = '';
-          }}
-        />
+        <div className="import-choices">
+          {/* Labels rather than buttons wrapping the inputs: the input is what a
+              screen reader announces and what a keyboard activates. */}
+          <input
+            id={folderId}
+            type="file"
+            className="visually-hidden"
+            multiple
+            // Non-standard, universally supported on desktop, and the only way
+            // a browser lets somebody pick a whole directory.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            {...({ webkitdirectory: '', directory: '' } as any)}
+            onChange={onChange}
+          />
+          <label className="import-button" htmlFor={folderId}>
+            Choose a folder
+          </label>
 
-        <p className="import-privacy">Files are read in this page. Nothing is uploaded.</p>
-      </div>
+          {/* Phones have no directory picker, and one file needs no folder. */}
+          <input
+            id={filesId}
+            type="file"
+            className="visually-hidden"
+            multiple
+            accept=".tf,.tfvars"
+            onChange={onChange}
+          />
+          <label className="import-button" htmlFor={filesId}>
+            Choose files
+          </label>
+        </div>
 
-      {progress ? (
-        <p className="import-progress" role="status" aria-live="polite">
-          Reading {progress.read} of {progress.total} files…
+        <p className="import-privacy">
+          Replaces the current workspace. Files are read in this page; nothing is uploaded.
         </p>
-      ) : null}
-
-      {notes.length > 0 ? (
-        <ul className="import-notes" aria-live="polite">
-          {notes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-      ) : null}
+      </div>
     </div>
   );
 }

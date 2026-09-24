@@ -10,7 +10,10 @@ import { useAnalysis } from './app/useAnalysis';
 import { useSession } from './app/useSession';
 import { useSourceNavigation } from './app/useSourceNavigation';
 import { ImportDropZone } from './workspace/ImportDropZone';
-import type { ImportResult } from './workspace/import';
+import { ImportReport } from './workspace/ImportReport';
+import { entriesFromDrop } from './workspace/import';
+import { useFileDrop } from './workspace/useFileDrop';
+import { useImport } from './workspace/useImport';
 
 /** The page: the code, the infrastructure it describes, details, and problems. */
 export function App() {
@@ -26,16 +29,22 @@ export function App() {
   const { paths, activePath } = navigation;
   const diagnostics = analysis.model?.diagnostics ?? [];
 
-  // An import replaces the example rather than merging into it.
-  const handleImported = (result: ImportResult) => {
-    if (Object.keys(result.files).length === 0) return;
-    session.replace(result.files);
+  // An import replaces the workspace rather than merging into it.
+  const importer = useImport((files) => {
+    session.replace(files);
     navigation.forget();
     setImporting(false);
-  };
+  });
+  const dropping = useFileDrop((transfer) => void importer.run(() => entriesFromDrop(transfer)));
 
   return (
     <>
+      {dropping ? (
+        <div className="drop-overlay" aria-hidden="true">
+          Drop to import. This replaces the current workspace.
+        </div>
+      ) : null}
+
       <a className="skip-link" href="#workspace">
         Skip to workspace
       </a>
@@ -86,7 +95,12 @@ export function App() {
             ) : null}
           </div>
 
-          {importing ? <ImportDropZone onImported={handleImported} /> : null}
+          {importing ? <ImportDropZone onEntries={(read) => void importer.run(read)} /> : null}
+          <ImportReport
+            progress={importer.progress}
+            report={importer.report}
+            onDismiss={importer.dismissReport}
+          />
 
           <Editor
             path={activePath}
@@ -141,6 +155,7 @@ export function App() {
 
           {view === 'diagram' ? (
             <Diagram
+              key={session.generation}
               model={analysis.model}
               selectedId={navigation.selectedId}
               onSelect={navigation.selectNode}
@@ -148,6 +163,7 @@ export function App() {
             />
           ) : (
             <Outline
+              key={session.generation}
               model={analysis.model}
               selectedId={navigation.selectedId}
               onSelect={navigation.selectNode}
