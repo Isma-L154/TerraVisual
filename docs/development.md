@@ -37,7 +37,8 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run build:core` | Compiles the analyzer to WebAssembly **and fails if it exceeds the size budget** |
 | `npm run test` | Go tests and web tests |
 | `npm run test:core` / `test:web` | One side only |
-| `npm run test:e2e` | Accessibility and the keyboard journey, in a real browser. Builds first, then serves the build through the deployment Worker so the tests run under the production CSP |
+| `npm run test:e2e` | Every browser test: builds first, then serves the build through the deployment Worker so the tests run under the production CSP |
+| `npm run test:e2e:browser` / `test:e2e:performance` | The functional specs in parallel / the timed budgets alone (`--workers=1`), against an existing build. CI runs these two scripts, so a new spec in `web/e2e` runs everywhere without being listed |
 | `npm run fuzz` | 30 seconds of fuzzing against the analyzer |
 | `npm run perf:fixtures` | Regenerates the reference workspaces the performance budgets are measured against. Changing them changes the baseline |
 | `npm run typecheck` | TypeScript, no emit |
