@@ -21,10 +21,17 @@ import { plural } from '../plural';
  */
 export function announce(
   node: InfraNode,
-  parent?: InfraNode,
-  connections?: string[],
-  childCount = 0,
-  hiddenCount = 0,
+  {
+    parent,
+    connections,
+    childCount = 0,
+    hiddenCount = 0,
+  }: {
+    parent?: InfraNode | undefined;
+    connections?: string[] | undefined;
+    childCount?: number;
+    hiddenCount?: number;
+  } = {},
 ): string {
   const parts: string[] = [`${node.label}, ${displayType(node.type)}`];
 

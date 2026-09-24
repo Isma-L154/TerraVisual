@@ -75,7 +75,7 @@ export function visibleItems(items: OutlineItem[], collapsed: ReadonlySet<string
  * somebody almost nothing; this is the outline's real content.
  */
 export function describe(item: OutlineItem, parent?: InfraNode, connections?: string[]): string {
-  return announce(item.node, parent, connections, item.children.length);
+  return announce(item.node, { parent, connections, childCount: item.children.length });
 }
 
 export function countItems(items: OutlineItem[]): number {

@@ -62,13 +62,12 @@ export function toFlow(
       ...(parentId ? { parentId, extent: 'parent' as const } : {}),
       draggable: false,
       selectable: true,
-      ariaLabel: announce(
-        node,
-        parentId ? byId.get(parentId) : undefined,
-        connections.get(id),
-        childCount.get(id) ?? 0,
-        hidden.get(id) ?? 0,
-      ),
+      ariaLabel: announce(node, {
+        parent: parentId ? byId.get(parentId) : undefined,
+        connections: connections.get(id),
+        childCount: childCount.get(id) ?? 0,
+        hiddenCount: hidden.get(id) ?? 0,
+      }),
       data: {
         node,
         depth: box.depth,
