@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
+import {
+  Background,
+  Controls,
+  ReactFlow,
+  type FitViewOptions,
+  type NodeChange,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import type { InfraModel } from '../model';
@@ -26,6 +32,10 @@ const ARIA_LABELS = {
   // about two resources rather than a thing to operate. The outline names each
   // resource's connections, which is where somebody reading by ear finds them.
   'edge.a11yDescription.default': 'A connection between two resources.',
+};
+
+const FIT_VIEW: FitViewOptions = {
+  padding: { top: '24px', right: '24px', bottom: '24px', left: '64px' },
 };
 
 export type DiagramProps = {
@@ -157,6 +167,9 @@ export function Diagram({ model, selectedId, onSelect, onSummarised }: DiagramPr
           if (next !== undefined && next !== selectedId) onSelect(next);
         }}
         fitView
+        // Room on the left for the zoom controls, so the fitted diagram is
+        // never drawn underneath them.
+        fitViewOptions={FIT_VIEW}
         // Layout is ours, so React Flow must not move anything.
         nodesDraggable={false}
         nodesConnectable={false}
