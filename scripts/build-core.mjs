@@ -49,6 +49,10 @@ const brotli = zlib.brotliCompressSync(bytes, {
   params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 },
 });
 
+// Served as-is by the Worker (#69), so the budget below is checked against
+// the bytes a visitor downloads rather than against a hypothetical.
+fs.writeFileSync(`${outFile}.br`, brotli);
+
 const mb = (n) => (n / 1024 / 1024).toFixed(2) + ' MB';
 const withinBudget = brotli.length <= BUDGET_BYTES;
 
