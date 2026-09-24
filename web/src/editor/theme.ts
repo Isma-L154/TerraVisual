@@ -30,6 +30,42 @@ export const editorTheme = EditorView.theme({
   '.cm-selectionBackground, ::selection': { backgroundColor: 'var(--selection)' },
   '&.cm-focused .cm-selectionBackground': { backgroundColor: 'var(--selection)' },
   '.cm-scroller': { overflow: 'auto' },
+
+  // Search panel and completion list, drawn from the page's tokens so they
+  // follow dark mode and pass the same contrast checks.
+  '.cm-panels': {
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    borderColor: 'var(--border)',
+  },
+  '.cm-panels.cm-panels-top': { borderBottom: '1px solid var(--border)' },
+  '.cm-panel.cm-search': { padding: '6px 8px', fontSize: '12px' },
+  '.cm-textfield': {
+    backgroundColor: 'var(--bg)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '4px',
+  },
+  '.cm-button': {
+    backgroundImage: 'none',
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '4px',
+  },
+  '.cm-searchMatch': { backgroundColor: 'var(--active-line)', outline: '1px solid var(--accent)' },
+  '.cm-searchMatch.cm-searchMatch-selected': { backgroundColor: 'var(--selection)' },
+  '.cm-tooltip': {
+    backgroundColor: 'var(--surface)',
+    color: 'var(--text)',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+  },
+  '.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+    backgroundColor: 'var(--selection)',
+    color: 'var(--text)',
+  },
+  '.cm-completionDetail': { color: 'var(--muted)', fontStyle: 'normal', marginLeft: '8px' },
 });
 
 export const highlightStyle = HighlightStyle.define([

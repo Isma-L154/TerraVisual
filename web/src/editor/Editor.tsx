@@ -4,11 +4,20 @@ import { EditorView, highlightActiveLine, keymap, lineNumbers } from '@codemirro
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
+import {
+  autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
+  completionKeymap,
+} from '@codemirror/autocomplete';
+import { search, searchKeymap } from '@codemirror/search';
 import { hcl } from 'codemirror-lang-hcl';
 
 import type { Diagnostic, Range } from '../model';
 import { toLintDiagnostics, toOffsets } from './diagnostics';
 import { cspNonce } from './nonce';
+import { resourceTypeCompletion } from './completion';
+import { catalogEntries } from '../diagram/catalog';
 import { editorTheme, highlightStyle } from './theme';
 
 type EditorProps = {
@@ -65,6 +74,9 @@ export function Editor({
       history(),
       bracketMatching(),
       indentOnInput(),
+      closeBrackets(),
+      autocompletion({ override: [resourceTypeCompletion(catalogEntries())] }),
+      search({ top: true }),
       syntaxHighlighting(highlightStyle),
       // Without the nonce the Content Security Policy refuses CodeMirror's own
       // stylesheet and the editor renders unstyled.
@@ -74,7 +86,15 @@ export function Editor({
       EditorView.lineWrapping,
       // Tab indents, so Tab no longer moves focus. WCAG 2.1.2 then requires the
       // way out to be advertised: the hint below says Escape, then Tab.
-      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+      // Completion first, so Enter accepts a suggestion rather than breaking the line.
+      keymap.of([
+        ...completionKeymap,
+        ...closeBracketsKeymap,
+        ...searchKeymap,
+        ...defaultKeymap,
+        ...historyKeymap,
+        indentWithTab,
+      ]),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) changeHandler.current(update.state.doc.toString());
         if (update.selectionSet && cursorHandler.current) {
@@ -133,7 +153,8 @@ export function Editor({
     <>
       <div className="editor" ref={host} data-testid="editor" />
       <p className="editor-hint" id={hintId}>
-        Tab indents. To leave the editor, press Escape and then Tab.
+        Tab indents. To leave the editor, press Escape and then Tab. Ctrl+F (⌘F on a Mac) finds and
+        replaces.
       </p>
     </>
   );
