@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Terms of use — TerraVisual</title>
+    <meta
+      name="description"
+      content="The terms for using TerraVisual, a free, open-source tool for learning Terraform."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/legal.css" />
+  </head>
+  <body>
+    <div class="legal">
+      <nav class="legal-nav" aria-label="Site">
+        <a class="legal-home" href="/">
+          <img src="/favicon.svg" alt="" width="22" height="22" />
+          TerraVisual
+        </a>
+        <a href="/privacy">Privacy policy</a>
+      </nav>
+
+      <main>
+        <article>
+          <h1>Terms of use</h1>
+          <p class="updated">Last updated: 23 September 2026</p>
+
+          <p class="summary">
+            <strong>In short:</strong> TerraVisual is a free learning tool, offered as it is. The
+            diagrams are for understanding code, not for approving changes to real infrastructure.
+            You are responsible for what you import and share, and for not abusing the site.
+          </p>
+
+          <h2>Accepting these terms</h2>
+          <p>
+            By using TerraVisual (terravisual.cloudils.com) you agree to these terms. If you do not
+            agree, please do not use the site. How we handle data is described in the
+            <a href="/privacy">privacy policy</a>.
+          </p>
+
+          <h2>What TerraVisual is</h2>
+          <p>
+            An educational tool that shows the infrastructure a Terraform configuration describes.
+            It runs in your browser, is free, and needs no account.
+          </p>
+
+          <h2>What the diagrams are, and are not</h2>
+          <ul>
+            <li>
+              TerraVisual reads your code on its own: it does not contact your cloud accounts, does
+              not run Terraform, and does not download remote modules or provider schemas. Some
+              values cannot be known this way and are shown as unknown, and resources outside its
+              catalog are drawn without a category.
+            </li>
+            <li>
+              A diagram can therefore be incomplete or differ from what Terraform would do.
+              <strong
+                >Do not rely on it to approve, plan, apply or audit changes to real
+                infrastructure:</strong
+              >
+              use <code>terraform plan</code> and your own review for that.
+            </li>
+          </ul>
+
+          <h2>Your content</h2>
+          <ul>
+            <li>
+              The code you write or import stays yours. It is processed in your browser, and we do
+              not receive a copy.
+            </li>
+            <li>
+              Only import code you have the right to use. Do not paste secrets such as passwords,
+              keys or tokens: nothing here needs them, and they would end up in any share link you
+              create.
+            </li>
+            <li>
+              A share link contains the code it shares. You are responsible for who you give it to.
+            </li>
+          </ul>
+
+          <h2>Acceptable use</h2>
+          <p>Do not:</p>
+          <ul>
+            <li>overload the site with automated requests or try to get around its rate limit;</li>
+            <li>try to break its security or use it to attack anyone else;</li>
+            <li>use it for anything unlawful.</li>
+          </ul>
+          <p>
+            If you find a security problem, please report it privately as described in the
+            <a href="https://github.com/Isma-L154/TerraVisual/security/policy">security policy</a>.
+          </p>
+
+          <h2>Open source</h2>
+          <p>
+            TerraVisual's source code is published on
+            <a href="https://github.com/Isma-L154/TerraVisual">GitHub</a> under the
+            <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>, which
+            governs the use of the code itself. These terms govern the use of this website.
+          </p>
+
+          <h2>Trademarks</h2>
+          <p>
+            Terraform is a trademark of HashiCorp. AWS, Azure and Google Cloud are trademarks of
+            their respective owners. TerraVisual is an independent project and is not affiliated
+            with, endorsed by or sponsored by any of them.
+          </p>
+
+          <h2>Availability and changes</h2>
+          <p>
+            We aim to keep the site working but do not guarantee that it will always be available,
+            or that it will stay the same. Features may change or be removed. Your workspace is
+            stored in your browser, so keep your own copy of anything that matters.
+          </p>
+
+          <h2>No warranty</h2>
+          <p>
+            The site is provided <strong>"as is" and "as available"</strong>, without warranties of
+            any kind, express or implied, including fitness for a particular purpose, accuracy and
+            non-infringement, to the extent the law allows.
+          </p>
+
+          <h2>Limitation of liability</h2>
+          <p>
+            To the extent the law allows, the maintainers are not liable for any loss or damage
+            arising from using or being unable to use the site, including decisions made on the
+            basis of a diagram, lost work, or costs from infrastructure deployed with code you
+            studied here. Nothing in these terms limits liability that cannot be limited by law.
+          </p>
+
+          <h2>Changes to these terms</h2>
+          <p>
+            We may update these terms. The new version will be published on this page with a new
+            date, and the full history is public in the repository. Continuing to use the site after
+            a change means you accept it.
+          </p>
+
+          <h2>Contact</h2>
+          <p>
+            Questions about these terms: email
+            <a href="mailto:info@cloudils.com">info@cloudils.com</a>, or open an issue in the
+            <a href="https://github.com/Isma-L154/TerraVisual/issues">project's issue tracker</a>.
+          </p>
+        </article>
+
+        <footer><a href="/">Back to TerraVisual</a> · <a href="/privacy">Privacy policy</a></footer>
+      </main>
+    </div>
+  </body>
+</html>

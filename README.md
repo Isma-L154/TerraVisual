@@ -30,6 +30,10 @@ anywhere — you can confirm it yourself in your browser's network panel.
 That matters because the tool is meant to be useful on *real* Terraform, which
 tends to contain bucket names, internal CIDR ranges and account identifiers.
 
+The [privacy policy](https://terravisual.cloudils.com/privacy) and
+[terms of use](https://terravisual.cloudils.com/terms) say exactly what is and is
+not collected.
+
 ## Using it
 
 - **Start from an example.** *Examples* opens ready-made workspaces: an AWS web

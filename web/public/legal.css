@@ -1,0 +1,128 @@
+/*
+ * The privacy policy and the terms. A separate stylesheet because these pages
+ * are static: the CSP refuses inline styles, and they load no application code.
+ * Colours follow the application's tokens.
+ */
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7fa;
+  --surface: #ffffff;
+  --border: #d7d7e0;
+  --text: #1a1a22;
+  --muted: #5a5a68;
+  --accent: #3b5bdb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12121a;
+    --surface: #1a1a24;
+    --border: #2e2e3c;
+    --text: #e8e8f0;
+    --muted: #a0a0b4;
+    --accent: #8da2fb;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    16px/1.6 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.legal {
+  max-width: 72ch;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  align-items: center;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.legal-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.legal-home img {
+  border-radius: 5px;
+}
+
+.legal article {
+  padding: 24px 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+h2 {
+  margin: 32px 0 8px;
+  font-size: 19px;
+}
+
+.updated,
+.legal footer {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.summary {
+  margin: 20px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+li + li {
+  margin-top: 6px;
+}
+
+code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.92em;
+}
+
+.legal footer {
+  margin-top: 24px;
+}
+
+@media (max-width: 600px) {
+  .legal article {
+    padding: 18px 16px;
+  }
+}

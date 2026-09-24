@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy policy — TerraVisual</title>
+    <meta
+      name="description"
+      content="How TerraVisual handles your data: your Terraform stays in your browser, no accounts, no cookies, no analytics."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/legal.css" />
+  </head>
+  <body>
+    <div class="legal">
+      <nav class="legal-nav" aria-label="Site">
+        <a class="legal-home" href="/">
+          <img src="/favicon.svg" alt="" width="22" height="22" />
+          TerraVisual
+        </a>
+        <a href="/terms">Terms of use</a>
+      </nav>
+
+      <main>
+        <article>
+          <h1>Privacy policy</h1>
+          <p class="updated">Last updated: 23 September 2026</p>
+
+          <p class="summary">
+            <strong>In short:</strong> the Terraform you write or import never leaves your browser.
+            There are no accounts, no cookies and no analytics. The hosting provider sees ordinary
+            request data, such as your IP address, to deliver the site, and keeps its logs for at
+            most seven days.
+          </p>
+
+          <h2>Who this is about</h2>
+          <p>
+            TerraVisual (terravisual.cloudils.com) is a free, open-source learning tool maintained
+            by the owner of the
+            <a href="https://github.com/Isma-L154/TerraVisual">TerraVisual repository on GitHub</a>
+            ("we"). This policy covers the website and the application it serves.
+          </p>
+
+          <h2>Your Terraform code</h2>
+          <ul>
+            <li>
+              Everything you type, paste or import is parsed, evaluated and drawn
+              <strong>inside your browser</strong>. It is not uploaded to us or to anyone else.
+            </li>
+            <li>
+              This is enforced, not just promised: the page's Content Security Policy only allows it
+              to connect to its own origin, and the application makes no request containing your
+              code.
+            </li>
+            <li>
+              When you import a project, the files are read on your device. Terraform state files
+              (<code>.tfstate</code>) and <code>.terraform</code> directories are skipped, because
+              they often contain secrets.
+            </li>
+          </ul>
+
+          <h2>What is stored on your device</h2>
+          <ul>
+            <li>
+              Your workspace is saved in your browser's storage (IndexedDB), so it is still there
+              when you come back. It stays on your device and we cannot read it.
+            </li>
+            <li>
+              <strong>Reset</strong> in the application deletes it, and so does clearing this site's
+              data in your browser. In a private window it is gone when the window closes.
+            </li>
+            <li>We do not use cookies.</li>
+          </ul>
+
+          <h2>Share links</h2>
+          <p>
+            <strong>Copy share link</strong> puts your workspace, compressed, inside the link
+            itself, after the <code>#</code>. Browsers never send that part of an address to a
+            server, so opening a share link does not send its code to us. But
+            <strong>anyone who has the link can read the code</strong>, and wherever you paste it,
+            such as a chat or an email, may keep a copy. Share only what you would be comfortable
+            publishing.
+          </p>
+
+          <h2>What the hosting provider sees</h2>
+          <p>
+            The site is served by <a href="https://www.cloudflare.com/">Cloudflare</a> (Cloudflare
+            Workers). Like any website, it receives the ordinary data your browser sends when it
+            requests a page: your <strong>IP address</strong>, the address of the file requested
+            (never the part after <code>#</code>), the time, and standard headers such as your
+            browser's user agent. Cloudflare may infer an approximate location from the IP address.
+          </p>
+          <ul>
+            <li>
+              <strong>Why:</strong> to deliver the site, to keep it secure, and to limit abuse. The
+              site refuses more than 1,000 requests a minute from one IP address, a limit no person
+              reaches.
+            </li>
+            <li>
+              <strong>Logs:</strong> request logs, which include the data above, are kept for up to
+              7 days to diagnose problems, then deleted automatically. Cloudflare hides cookie and
+              credential headers in them.
+            </li>
+            <li>
+              Cloudflare processes this data under its own
+              <a href="https://www.cloudflare.com/privacypolicy/">privacy policy</a>.
+            </li>
+          </ul>
+          <p>We do not combine this data with anything else or use it to identify you.</p>
+
+          <h2>Analytics and tracking</h2>
+          <p>
+            We use no analytics, advertising or tracking. Cloudflare's network can add its own
+            analytics script to the page; the site's Content Security Policy blocks it from running,
+            so no data is collected through it.
+          </p>
+
+          <h2>Links to other sites</h2>
+          <p>
+            The details panel links to the official Terraform Registry documentation. Those pages
+            are only loaded if you choose to open them, and they have their own privacy policies.
+          </p>
+
+          <h2>Browser extensions</h2>
+          <p>
+            Extensions installed in your browser can read any page you open, including this one. No
+            website can prevent that. If your code is sensitive, keep that in mind here as anywhere
+            else.
+          </p>
+
+          <h2>Children</h2>
+          <p>
+            The site does not knowingly collect personal information from anyone, including
+            children.
+          </p>
+
+          <h2>Your choices and rights</h2>
+          <p>
+            Your workspace is under your control on your device: delete it with Reset or by clearing
+            site data. We hold no account or profile about you. If you have a question, or a request
+            about the request logs described above, contact us as described below.
+          </p>
+
+          <h2>Changes</h2>
+          <p>
+            If this policy changes, the new version will be published on this page with a new date.
+            The full history is public in the repository.
+          </p>
+
+          <h2>Contact</h2>
+          <p>
+            Email <a href="mailto:info@cloudils.com">info@cloudils.com</a>, or open an issue in the
+            <a href="https://github.com/Isma-L154/TerraVisual/issues">project's issue tracker</a>.
+            To report a security problem privately, use a
+            <a href="https://github.com/Isma-L154/TerraVisual/security/advisories/new"
+              >GitHub security advisory</a
+            >.
+          </p>
+        </article>
+
+        <footer><a href="/">Back to TerraVisual</a> · <a href="/terms">Terms of use</a></footer>
+      </main>
+    </div>
+  </body>
+</html>
