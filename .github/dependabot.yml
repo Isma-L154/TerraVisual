@@ -16,6 +16,14 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      # react and react-dom refuse to run at different versions, so bumping
+      # them in separate pull requests makes both fail.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
       dev-tooling:
         dependency-type: development
 
