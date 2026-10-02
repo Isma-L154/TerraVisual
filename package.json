@@ -48,7 +48,7 @@
     "json-schema-to-typescript": "16.0.0",
     "prettier": "3.9.8",
     "typescript-eslint": "8.70.0",
-    "wrangler": "4.135.0"
+    "wrangler": "4.147.0"
   },
   "prettier": {
     "singleQuote": true,
