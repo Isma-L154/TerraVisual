@@ -44,7 +44,7 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` / `lint:core` | ESLint / gofmt check and `go vet` |
 | `npm run format` | Prettier, writing changes |
-| `npm run generate` | Regenerates the TypeScript types from `schemas/` and the Go copy of the catalog (`core/internal/catalog/data.gen.go`) from `catalog/`. `npm run verify` fails on any drift; CI does not run that check |
+| `npm run generate` | Regenerates the TypeScript types from `schemas/` and the Go copy of the catalog (`core/internal/catalog/data.gen.go`) from `catalog/`. CI and `npm run verify` fail on any drift |
 
 ## How the pieces fit
 
@@ -103,12 +103,12 @@ itself (#142).
 
 Five jobs run on every pull request: the Go core (format, vet, race tests, a
 short fuzz run, and the size-budgeted WebAssembly build), the browser
-application (typecheck, lint, format, tests, build), the browser suite against
-the real build (every spec in `web/e2e`, then the performance budgets on their
-own), security checks (`govulncheck` and `npm audit`), and dependency review.
+application (generated-code drift, typecheck, lint, format, tests, build), the
+browser suite against the real build (every spec in `web/e2e`, then the
+performance budgets on their own), security checks (`govulncheck` and
+`npm audit`), and dependency review.
 
 `npm run verify` covers the first two jobs apart from the race detector and the
-fuzz run (`npm run fuzz` runs the latter), and adds the generated-code drift
-check that CI does not run. The browser suite needs a build and a browser
-and so has its own command, `npm run test:e2e`. Between the two, a red pipeline
-should rarely be a surprise.
+fuzz run (`npm run fuzz` runs the latter). The browser suite needs a build and
+a browser and so has its own command, `npm run test:e2e`. Between the two, a
+red pipeline should rarely be a surprise.

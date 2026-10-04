@@ -24,7 +24,8 @@ than edited into the text.
 - **Testing (§12).** The worker and WebAssembly path is covered by the
   Playwright suite against the real build, not by a Vitest integration test.
 - **CI/CD (§15).** CI runs on pull requests and on pushes to `main`, not on every
-  branch push, and preview deployments are made per pull request.
+  branch push; preview deployments are made per pull request, and production
+  deploys only after CI has passed on `main` (#143).
 - **Security tooling (§10).** Dependency scanning (`govulncheck`, `npm audit`,
   Dependency Review) and secret scanning (GitGuardian) are in place; static
   analysis in CI and an SBOM are not.

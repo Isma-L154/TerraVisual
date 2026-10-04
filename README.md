@@ -151,8 +151,9 @@ The site's icons and link-preview card come from `web/public/favicon.svg` and
 A Cloudflare Worker serves the static build and sets the security headers
 ([ADR-0006](docs/adr/0006-hosting-cloudflare-workers.md)). The
 [Deploy workflow](.github/workflows/deploy.yml) uploads a preview version for
-each pull request and deploys to production on every push to `main`; after
-either, `scripts/check-headers.mjs` verifies the headers on the real response.
+each pull request, and deploys to production once CI has passed on `main`;
+after either, `scripts/check-headers.mjs` verifies the headers on the real
+response.
 Production is https://terravisual.cloudils.com.
 
 Repository secrets: `CLOUDFLARE_API_TOKEN` (a scoped token with *Workers
