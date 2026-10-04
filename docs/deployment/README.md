@@ -63,7 +63,6 @@ deploy workflow tries to post on each pull request, and it is how a change to
 the way the edge serves things gets tested on the real edge before it becomes
 the site. Its absence has already cost one improvement: see #69.
 
-
 **Turn off Web Analytics for this zone.** The first production deployment came
 back with Cloudflare's beacon injected into the page — `beacon.min.js` from
 `static.cloudflareinsights.com`, added at the edge after the Worker, by a zone
@@ -114,17 +113,22 @@ The header check runs against whichever deployment was just made. It reads the
 response, because [the audit baseline](../security/) is explicit that a control
 must never be inferred from the configuration that was supposed to produce it.
 
-## A custom domain
+## Changing the domain
 
-`wrangler.jsonc` deploys to the `workers.dev` subdomain by default. To use your
-own domain, add a route:
+The site has one address, the custom-domain route in `wrangler.jsonc`;
+`workers_dev` is off, so there is no permanent `workers.dev` copy. To move the
+site, change the route's pattern:
 
 ```jsonc
 "routes": [{ "pattern": "terravisual.example", "custom_domain": true }]
 ```
 
-The zone has to be on the same Cloudflare account. After changing this, run the
-header check against the custom hostname: a route that resolves elsewhere would
+The zone has to be on the same Cloudflare account. The address is also named
+by `PRODUCTION_HOST` in `deploy/headers.ts` (the one host that may be indexed),
+by `scripts/check-headers.mjs`, by the canonical and social tags in
+`web/index.html`, and by `robots.txt`, `sitemap.xml` and the legal pages in
+`web/public/`, so all of them move with it. After changing this, run the
+header check against the new hostname: a route that resolves elsewhere would
 serve the site without the Worker, and therefore without any of its headers.
 
 ## The rate limit

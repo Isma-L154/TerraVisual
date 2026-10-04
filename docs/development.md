@@ -31,7 +31,7 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 
 | Command | What it does |
 |---|---|
-| `npm run verify` | Everything CI runs. Use this before opening a pull request |
+| `npm run verify` | Generated-code drift, gofmt, `go vet`, Go tests, typecheck, lint, formatting, web tests and the build. Use this before opening a pull request |
 | `npm run dev` | Development server for the browser application |
 | `npm run build` | Builds the analyzer and the application |
 | `npm run build:core` | Compiles the analyzer to WebAssembly **and fails if it exceeds the size budget** |
@@ -42,9 +42,9 @@ wrapping is how the cost of a two-language repository is kept off daily work.
 | `npm run fuzz` | 30 seconds of fuzzing against the analyzer |
 | `npm run perf:fixtures` | Regenerates the reference workspaces the performance budgets are measured against. Changing them changes the baseline |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm run lint` / `lint:core` | ESLint / `go vet` |
+| `npm run lint` / `lint:core` | ESLint / gofmt check and `go vet` |
 | `npm run format` | Prettier, writing changes |
-| `npm run generate` | Regenerates the TypeScript types from `schemas/`. CI fails on any drift |
+| `npm run generate` | Regenerates the TypeScript types from `schemas/` and the Go copy of the catalog (`core/internal/catalog/data.gen.go`) from `catalog/`. `npm run verify` fails on any drift; CI does not run that check |
 
 ## How the pieces fit
 
@@ -53,7 +53,8 @@ schemas/  JSON Schema: the single source of truth for the InfraModel and the cat
 core/     Go, compiled to WebAssembly. The only producer of the InfraModel
 web/      React + Vite. Consumes the model; never parses Terraform itself
 catalog/  Per-provider data: containment rules, icons, categories
-scripts/  Cross-platform wrappers around the Go toolchain
+scripts/  Node scripts: Go toolchain wrappers, code generation, the header check, brand assets
+fixtures/ Terraform workspaces for the browser suite and the performance budgets
 deploy/   The Cloudflare Worker that serves the static build with its headers
 ```
 
@@ -76,7 +77,8 @@ Some conventions worth stating, because they are easy to break by accident:
   [the spike](architecture/spike-wasm-core.md).
 - **`dangerouslySetInnerHTML` is banned** and ESLint enforces it. Resource names
   come from user input and reach the DOM.
-- **Do not commit build artifacts.** The WebAssembly binary is produced by CI.
+- **Do not commit build artifacts.** The WebAssembly binary is produced by the
+  build, locally and in CI.
 - **Do not hand-edit anything under `generated/`.** Change the schema and run
   `npm run generate`. The schema is the source of truth for both languages: Go
   validates itself against it in a test, TypeScript is generated from it, and
@@ -101,10 +103,12 @@ itself (#142).
 
 Five jobs run on every pull request: the Go core (format, vet, race tests, a
 short fuzz run, and the size-budgeted WebAssembly build), the browser
-application (typecheck, lint, format, tests, build), the accessibility and
-keyboard journey in a real browser, security checks (`govulncheck` and
-`npm audit`), and dependency review.
+application (typecheck, lint, format, tests, build), the browser suite against
+the real build (every spec in `web/e2e`, then the performance budgets on their
+own), security checks (`govulncheck` and `npm audit`), and dependency review.
 
-`npm run verify` runs everything except the browser suite, which needs a build
-and a browser and so has its own command, `npm run test:e2e`. Between the two, a
-red pipeline should rarely be a surprise.
+`npm run verify` covers the first two jobs apart from the race detector and the
+fuzz run (`npm run fuzz` runs the latter), and adds the generated-code drift
+check that CI does not run. The browser suite needs a build and a browser
+and so has its own command, `npm run test:e2e`. Between the two, a red pipeline
+should rarely be a surprise.

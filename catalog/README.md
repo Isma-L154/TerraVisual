@@ -57,9 +57,10 @@ stays in the model without cluttering the picture.
 An attribute must not appear in both lists. An edge to the box you are already
 inside says nothing.
 
-**Categories are shared across providers on purpose.** A VPC and an Azure VNet
-are both `network` so that a learner can see they play the same role. Reach for
-`other` rarely: it is where meaning goes to disappear.
+**Categories are shared across providers on purpose.** A VPC, an Azure VNet and
+a GCP network are all `network`, so a learner can see they play the same role.
+The boxes stay separate; the vocabulary does not. Reach for `other` rarely: it
+is where meaning goes to disappear.
 
 ## Judgement calls worth knowing about
 
@@ -71,10 +72,6 @@ rather than a simplification that hides it.
 **GCP containment often lives in a nested block.** A compute instance reaches
 its subnetwork through `network_interface.subnetwork`, which is why parent
 rules accept dotted paths.
-
-**Categories are deliberately shared across providers.** A VPC, a VNet and a
-GCP network are all `network`, so a learner can see they play the same role.
-The boxes stay separate; the vocabulary does not.
 
 ## What happens to types that are not here
 
