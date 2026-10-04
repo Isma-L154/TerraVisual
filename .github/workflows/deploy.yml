@@ -1,9 +1,15 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  # Production deploys only once CI has passed on main, rather than racing it.
+  # workflow_run runs with the repository's secrets whatever started it, so the
+  # job below acts only on a CI run started by a push to this repository, and
+  # checks out exactly the commit that run tested.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -17,18 +23,30 @@ jobs:
     name: Deploy to Cloudflare
     runs-on: ubuntu-latest
 
-    # Skips cleanly when the credentials are not configured, rather than
-    # failing every pull request with a red X nobody can fix. The repository
-    # settings say whether this project can deploy; the workflow should not
-    # pretend otherwise.
-    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    # A pull request from a fork has no secrets, so it skips cleanly rather
+    # than failing with a red X nobody can fix. A completed CI run deploys only
+    # if it passed and was started by a push here: a fork's branch can also be
+    # called main.
+    if: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository) ||
+        (github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository)
+      }}
 
     permissions:
       contents: read
       pull-requests: write
 
     steps:
+      # On workflow_run, github.sha is whatever main points at by now; the
+      # commit to deploy is the one CI tested.
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-go@v7
         with:
@@ -73,7 +91,7 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to production
-        if: steps.credentials.outputs.available == 'true' && github.event_name == 'push'
+        if: steps.credentials.outputs.available == 'true' && github.event_name == 'workflow_run'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

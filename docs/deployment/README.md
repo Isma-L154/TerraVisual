@@ -97,13 +97,18 @@ noticing in a month.
 ## How deployment happens
 
 ```
-pull request  →  wrangler versions upload  →  preview URL, headers verified, URL posted on the PR
-merge to main →  wrangler deploy           →  production, headers verified
+pull request             →  wrangler versions upload  →  preview URL, headers verified, URL posted on the PR
+merge to main, CI passes →  wrangler deploy           →  production, headers verified
 ```
 
 A pull request gets a **versioned preview** rather than taking over the live
 site, which is what makes reviewing a change on a real deployment possible
 without publishing it.
+
+Production waits for CI. The deploy workflow is started by the CI workflow
+finishing (`workflow_run`), deploys only if that run passed and came from a
+push to `main`, and checks out the commit it tested, so a commit whose tests
+fail on `main` is never deployed.
 
 The header check runs against whichever deployment was just made. It reads the
 response, because [the audit baseline](../security/) is explicit that a control

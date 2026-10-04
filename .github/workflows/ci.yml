@@ -73,6 +73,12 @@ jobs:
 
       - run: npm ci
 
+      # The TypeScript types and the Go copy of the catalog are generated from
+      # schemas/ and catalog/. A change to either that was not regenerated
+      # would otherwise pass, with the two languages disagreeing.
+      - name: Generated code is up to date
+        run: npm run generate:check
+
       - name: Typecheck
         run: npm run typecheck
 
