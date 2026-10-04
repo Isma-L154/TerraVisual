@@ -1,8 +1,34 @@
 # Architecture Proposal — TerraVisual
 
-**Status:** proposed, pending project owner approval
+**Status:** accepted on 2026-09-07 through [ADRs 0001–0006](../adr/), implemented and deployed
 **Date:** 2026-09-07
 **Scope:** initial architecture and technology stack for the MVP and its evolution
+
+This is the proposal as it was approved, kept as the record of what was decided
+and why. Where the build went another way, the difference is listed here rather
+than edited into the text.
+
+## Since approval
+
+- **Rate limiting (§10, control 5)** is no longer N/A. The Worker limits each
+  address to 1000 requests a minute and fails open (#55; `deploy/rate-limit.ts`,
+  `wrangler.jsonc`).
+- **Uncatalogued types (§7)** are drawn in their provider's box when the type
+  prefix names a provider; only the rest go to the unplaced area
+  (`core/internal/analyzer/place.go`).
+- **Repository structure (§13).** There is no `internal/evaluator/`: evaluation
+  lives in `core/internal/analyzer/`, with its fixtures in
+  `core/internal/analyzer/testdata/`. The JSON Schemas live in `schemas/`, not
+  `catalog/`, and `scripts/` and `fixtures/` were added. The current layout is in
+  [development.md](../development.md#how-the-pieces-fit).
+- **Testing (§12).** The worker and WebAssembly path is covered by the
+  Playwright suite against the real build, not by a Vitest integration test.
+- **CI/CD (§15).** CI runs on pull requests and on pushes to `main`, not on every
+  branch push; preview deployments are made per pull request, and production
+  deploys only after CI has passed on `main` (#143).
+- **Security tooling (§10).** Dependency scanning (`govulncheck`, `npm audit`,
+  Dependency Review) and secret scanning (GitGuardian) are in place; static
+  analysis in CI and an SBOM are not.
 
 ---
 
