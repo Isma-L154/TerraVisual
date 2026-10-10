@@ -6,7 +6,7 @@ on:
   # workflow_run runs with the repository's secrets whatever started it, so the
   # job below acts only on a CI run started by a push to this repository, and
   # checks out exactly the commit that run tested.
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: [CI]
     types: [completed]
     branches: [main]
@@ -44,16 +44,17 @@ jobs:
     steps:
       # On workflow_run, github.sha is whatever main points at by now; the
       # commit to deploy is the one CI tested.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: core/go.mod
           cache-dependency-path: '**/go.sum'
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -113,10 +114,12 @@ jobs:
 
       - name: Comment the preview URL
         if: steps.credentials.outputs.available == 'true' && github.event_name == 'pull_request' && steps.preview.outputs.url != ''
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
         with:
           script: |
-            const url = '${{ steps.preview.outputs.url }}';
+            const url = process.env.PREVIEW_URL;
             const marker = '<!-- terravisual-preview -->';
             const body = `${marker}\n**Preview:** ${url}\n\nSecurity headers were verified against this deployment.`;
 
