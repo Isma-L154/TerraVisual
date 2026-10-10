@@ -2,18 +2,24 @@ version: 2
 
 # The dependency surface here is deliberately small, which only helps if it
 # stays current. Weekly is frequent enough to keep updates reviewable and rare
-# enough that they do not become noise people learn to ignore.
+# enough that they do not become noise people learn to ignore. The cooldown
+# keeps a release out until it has been public for a week, which is when
+# malicious versions are usually caught and pulled.
 updates:
   - package-ecosystem: gomod
     directory: /core
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
 
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       # react and react-dom refuse to run at different versions, so bumping
@@ -37,3 +43,5 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7

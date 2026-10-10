@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/Isma-L154/TerraVisual/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Isma-L154/TerraVisual/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="https://github.com/Isma-L154/TerraVisual/actions/workflows/deploy.yml"><img alt="Deploy" src="https://github.com/Isma-L154/TerraVisual/actions/workflows/deploy.yml/badge.svg" /></a>
+  <a href="https://github.com/Isma-L154/TerraVisual/actions/workflows/security.yml"><img alt="Security" src="https://github.com/Isma-L154/TerraVisual/actions/workflows/security.yml/badge.svg" /></a>
   <img alt="Go 1.27" src="https://img.shields.io/badge/Go-1.27-3b5bdb?logo=go&logoColor=white" />
   <img alt="React 19" src="https://img.shields.io/badge/React-19-3b5bdb?logo=react&logoColor=white" />
   <img alt="Cloudflare Workers" src="https://img.shields.io/badge/Cloudflare-Workers-3b5bdb?logo=cloudflareworkers&logoColor=white" />
@@ -169,7 +170,11 @@ alert, and the dashboard settings no file in this repository can hold — is in
 
 - **No secrets to leak.** Nothing in the code or the Worker needs one; the only
   secrets are the two deployment credentials, kept as GitHub Actions secrets.
-  GitGuardian scans every pull request.
+  GitGuardian and gitleaks scan every pull request, and the deploy job only
+  runs actions pinned to a commit SHA.
+- **Scanned on every change.** The [Security workflow](.github/workflows/security.yml)
+  runs gitleaks, semgrep, osv-scanner and zizmor alongside CI's `npm audit` and
+  `govulncheck`.
 - **No CORS.** There is no API, and the Worker deletes any
   `Access-Control-Allow-Origin` header (`deploy/headers.ts`).
 - **Hostile input is bounded.** The analyzer caps files (1000), source size
