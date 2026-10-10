@@ -1,0 +1,9 @@
+# A custom file replaces Semgrep's defaults, so .gitignore is pulled in here.
+:include .gitignore
+
+# Terraform the analyzer reads and draws, never applied to any account. Cloud
+# misconfiguration rules on it would only measure how realistic the samples are.
+fixtures/
+core/internal/analyzer/testdata/
+
+.security-scan/

@@ -1,0 +1,8 @@
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+reason = """
+x/crypto/openpgp is deprecated and will never get a fixed version. The analyzer
+never imports it: x/crypto arrives through go-cty-funcs for bcrypt only
+(internal/analyzer/funcs.go), and govulncheck, which checks reachability,
+reports nothing. Revisit if anything starts importing x/crypto/openpgp.
+"""

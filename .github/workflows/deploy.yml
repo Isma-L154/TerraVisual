@@ -43,7 +43,9 @@ jobs:
 
     steps:
       # On workflow_run, github.sha is whatever main points at by now; the
-      # commit to deploy is the one CI tested.
+      # commit to deploy is the one CI tested. It was pushed to this repository's
+      # main (the job's guard), so it is never code from a pull request.
+      # nosemgrep: yaml.github-actions.security.workflow-run-target-code-checkout.workflow-run-target-code-checkout
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

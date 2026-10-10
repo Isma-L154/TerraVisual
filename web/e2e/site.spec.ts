@@ -53,7 +53,9 @@ test('the web manifest parses and names icons that exist', async ({ request }) =
  * not from the page after scripts have run.
  */
 test.describe('social card', () => {
+  // Keys are literals in this file, not input.
   const meta = (html: string, key: string) =>
+    // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
     new RegExp(`<meta\\s+(?:property|name)="${key}"\\s+content="([^"]+)"`).exec(html)?.[1];
 
   test('the served HTML carries Open Graph and Twitter tags', async ({ request }) => {

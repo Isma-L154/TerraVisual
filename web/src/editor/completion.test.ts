@@ -11,7 +11,7 @@ const source = resourceTypeCompletion([
 /** Completion at the `|` in the given text. */
 function complete(text: string) {
   const pos = text.indexOf('|');
-  const state = EditorState.create({ doc: text.replace('|', '') });
+  const state = EditorState.create({ doc: text.slice(0, pos) + text.slice(pos + 1) });
   return source(new CompletionContext(state, pos, false));
 }
 
