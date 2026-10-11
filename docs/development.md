@@ -89,15 +89,19 @@ Some conventions worth stating, because they are easy to break by accident:
 
 ## Dependency overrides
 
-`package.json` carries none. When one is needed it is explained here, because
-JSON has nowhere to explain itself. Overrides are a way of taking responsibility
-for somebody else's dependency tree; each one should be temporary and should say
-when it can go.
+Each override in `package.json` is explained here, because JSON has nowhere to
+explain itself. Overrides are a way of taking responsibility for somebody else's
+dependency tree; each one should be temporary and should say when it can go.
 
-The last one pinned `sharp` to 0.35.4, which arrives through `wrangler` →
-`miniflare`, to clear a high-severity libheif advisory (GHSA-g89c-p67h-r497,
-GHSA-2jg2-4ch7-h545). It was removed once `miniflare` requested that version
-itself (#142).
+- **`sharp` 0.35.5.** It arrives through `wrangler` → `miniflare`, and 0.35.4
+  carries a high-severity librsvg advisory (GHSA-wq5f-xc86-pv6w). The `wrangler`
+  release that brings 0.35.5 was a day old, inside Dependabot's one-week
+  cooldown, so the fix is taken here instead (#148). Remove the override once
+  `miniflare` requests 0.35.5 or later itself.
+
+An earlier override pinned `sharp` to 0.35.4 for a libheif advisory
+(GHSA-g89c-p67h-r497, GHSA-2jg2-4ch7-h545) and was removed once `miniflare`
+requested that version (#142).
 
 ## Continuous integration
 
@@ -106,7 +110,14 @@ short fuzz run, and the size-budgeted WebAssembly build), the browser
 application (generated-code drift, typecheck, lint, format, tests, build), the
 browser suite against the real build (every spec in `web/e2e`, then the
 performance budgets on their own), security checks (`govulncheck` and
-`npm audit`), and dependency review.
+`npm audit`), and dependency review. A separate Security workflow runs gitleaks,
+semgrep, osv-scanner and zizmor on every pull request and on `main`; see
+[docs/security/](security/README.md) for what each covers and where
+suppressions are explained.
+
+Every action is pinned to a commit SHA with its version in a comment, and
+checkouts set `persist-credentials: false`; Dependabot keeps the pins current
+and waits a week before proposing any release.
 
 `npm run verify` covers the first two jobs apart from the race detector and the
 fuzz run (`npm run fuzz` runs the latter). The browser suite needs a build and

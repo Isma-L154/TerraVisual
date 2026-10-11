@@ -32,7 +32,8 @@ type Session = {
 
 /**
  * The workspace for this visit, kept between visits. A shared link wins over
- * stored work, which stays in storage untouched.
+ * stored work, which stays in storage untouched until the shared workspace is
+ * edited.
  */
 export function useSession(): Session {
   const [workspace] = useState(() => new Workspace());
@@ -44,6 +45,9 @@ export function useSession(): Session {
   const [generation, setGeneration] = useState(0);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set while a shared link is being opened, so its files are not saved over
+  // the visitor's own until they edit them.
+  const openingSharedLink = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +59,9 @@ export function useSession(): Session {
       if (!shared.ok && shared.reason !== 'absent') setSharedLinkRefused(true);
 
       if (shared.ok) {
+        openingSharedLink.current = true;
         setLeftOut(fill(workspace, shared.files));
+        openingSharedLink.current = false;
         setOrigin('shared');
       } else {
         const stored = await load();
@@ -77,6 +83,7 @@ export function useSession(): Session {
   // Debounced, so typing is not a write per keystroke and a crash loses little.
   useEffect(() => {
     const schedule = () => {
+      if (openingSharedLink.current) return;
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
         void save(workspace.snapshot()).then((saved) => {
