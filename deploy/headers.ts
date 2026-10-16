@@ -91,9 +91,9 @@ export const PRODUCTION_HOST = 'terravisual.cloudils.com';
 
 /**
  * Keeps everything but the site itself out of search results. Preview versions
- * and local runs serve the same page from other hosts, and HTML at any path but
- * `/` is the single-page fallback rather than a page, so both would only be
- * indexed as duplicates of the real one.
+ * and local runs serve the same page from other hosts, so they would only be
+ * indexed as duplicates of the real one. HTML at any path but `/` is the 404
+ * page or one of the legal pages, none of which belongs in search results.
  */
 function applyIndexing(headers: Headers, url: URL): void {
   const isHtml = headers.get('Content-Type')?.includes('text/html') ?? false;

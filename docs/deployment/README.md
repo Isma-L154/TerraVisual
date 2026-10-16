@@ -178,19 +178,20 @@ and all of it is static files in `web/public/` plus tags in `web/index.html`:
 | Open Graph / Twitter tags | `web/index.html` | What a pasted link unfurls into; every URL absolute |
 | Privacy policy and terms | `web/public/privacy.html`, `terms.html`, `legal.css` | Static pages at `/privacy` and `/terms` (the asset server maps the extensionless path; `/privacy.html` redirects to it). Styled by an external sheet because the CSP refuses inline styles. Keep the privacy policy true: it describes the hosting logs, storage and CSP, so a change to any of those means a change to it |
 | Icons, manifest, `og-image.png` | `web/public/` | Generated from `favicon.svg` and `web/brand/social-card.html` by `node scripts/make-brand-assets.mjs`. The outputs are committed |
+| Not-found page | `web/public/404.html` | Served with a 404 for any path that matches no file (`not_found_handling: "404-page"` in `wrangler.jsonc`, #155). The application lives only at `/` and a shared workspace travels in the fragment, so nothing needs a single-page fallback, and a real 404 keeps made-up paths from being soft 404s in Search Console |
 
-These files must exist as files. The asset server answers any unknown path
-with the index page and a 200 (the single-page fallback), so a missing
-`robots.txt` or sitemap does not 404; it quietly serves HTML, which Search
-Console rejects. The checks therefore look at content types, not status codes.
+The checks look at content types as well as status codes, so a file that is
+served as the wrong thing fails as clearly as one that is missing.
+`scripts/check-headers.mjs` also checks that a made-up path is a 404 after
+every deployment.
 
 ### Only production is indexable
 
 The Worker sends `X-Robots-Tag: noindex` on every response from a host other
 than `terravisual.cloudils.com`, and on HTML at any path but `/`. Preview
 versions (`*.workers.dev`) and local runs serve the same page, and indexed they
-would compete with the site as duplicates; so would the fallback page served
-at made-up paths. `scripts/check-headers.mjs` verifies both directions against
+would compete with the site as duplicates. The 404 page and the legal pages
+are HTML at other paths and stay out of the index too. `scripts/check-headers.mjs` verifies both directions against
 the deployment it is pointed at.
 
 Locally, `wrangler dev` presents every request as the production route's

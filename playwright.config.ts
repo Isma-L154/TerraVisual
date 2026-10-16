@@ -63,8 +63,8 @@ export default defineConfig({
     url: BASE_URL,
     // Never reuse a server that is already running. Wrangler reads the asset
     // directory when it starts and does not notice a later rebuild: a
-    // long-running dev server answers requests for the new bundle with the
-    // index page, and the suite then tests a build nobody made. Observed, not
+    // long-running dev server answers requests for the new bundle with a 404,
+    // and the suite then tests a build nobody made. Observed, not
     // theorised — it cost an afternoon.
     reuseExistingServer: false,
     timeout: 120_000,

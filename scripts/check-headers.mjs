@@ -237,11 +237,11 @@ for (const path of paths) {
 }
 
 /*
- * Search engines. The single-page fallback answers any path with the index page
- * and a 200, so robots.txt and the sitemap are checked by content type: a
- * deployment that lost them would otherwise look fine. Production must be
- * indexable; every other host (previews, local runs) must ask not to be, or it
- * competes with the site in search results.
+ * Search engines. robots.txt and the sitemap are checked by content type as
+ * well as status, and a made-up path must be a real 404 (#155): a soft 404 is
+ * a duplicate of the site that Search Console complains about. Production must
+ * be indexable; every other host (previews, local runs) must ask not to be, or
+ * it competes with the site in search results.
  */
 const PRODUCTION_HOST = 'terravisual.cloudils.com';
 const indexable = new URL(target).hostname === PRODUCTION_HOST;
@@ -282,6 +282,23 @@ for (const { path, type } of crawled) {
   } else {
     console.log(`  ok       ${path}`);
   }
+}
+
+try {
+  const missing = await fetch(new URL('/this-page-does-not-exist', target), {
+    redirect: 'manual',
+    headers: BROWSER_HEADERS,
+  });
+  const type = missing.headers.get('content-type') ?? '';
+  if (missing.status !== 404 || !type.startsWith('text/html')) {
+    console.error(`  WRONG    unknown path — must be the 404 page, got ${missing.status} ${type}`);
+    failures++;
+  } else {
+    console.log('  ok       unknown path is a 404');
+  }
+} catch (error) {
+  console.error(`  FAIL     unknown path — could not be fetched: ${error.message}`);
+  failures++;
 }
 
 if (failures > 0) {

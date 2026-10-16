@@ -36,6 +36,32 @@ for (const { path, heading } of PAGES) {
   });
 }
 
+// #155: a mistyped address says so, with a 404, instead of opening the application.
+test('an unknown path is a 404 page that leads back to the application', async ({ page }) => {
+  const refusals: string[] = [];
+  page.on('console', (message) => {
+    if (/content security policy|refused to/i.test(message.text())) refusals.push(message.text());
+  });
+
+  const response = await page.goto('/no-such-page');
+  expect(response?.status()).toBe(404);
+  expect(response?.headers()['content-type']).toMatch(/^text\/html/);
+  expect(response?.headers()['content-security-policy']).toContain("default-src 'none'");
+  expect(response?.headers()['x-robots-tag']).toBe('noindex');
+
+  await expect(page).toHaveTitle(/not found/i);
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(results.violations.map((violation) => violation.id)).toEqual([]);
+  expect(refusals).toEqual([]);
+
+  await page.getByRole('main').getByRole('link', { name: 'Open TerraVisual' }).click();
+  await expect(page.getByTestId('diagram')).toBeVisible({ timeout: 30_000 });
+});
+
 test('the application links to both, and they link back', async ({ page }) => {
   await openApp(page);
 
