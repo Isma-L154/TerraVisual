@@ -176,6 +176,30 @@ describe('caching', () => {
 
     expect(headers.get('Cache-Control')).toContain('must-revalidate');
   });
+
+  // An error is not the file its path names. A bundle missed during a rollback
+  // would otherwise stay a 404 in the browser for a year.
+  it('never caches an error, whatever the path', () => {
+    for (const path of ['/assets/index-B4MOF_Ed.js', '/no-such-page', '/analyzer.wasm']) {
+      const response = withSecurityHeaders(
+        new Response('x', { status: 404 }),
+        NONCE,
+        new URL(`https://example.test${path}`)
+      );
+      expect(response.headers.get('Cache-Control'), path).toBe('no-cache');
+    }
+  });
+
+  // A 304's headers replace those of the stored copy, so it keeps the path's rule.
+  it('keeps the path rule on a not-modified response', () => {
+    const response = withSecurityHeaders(
+      new Response(null, { status: 304 }),
+      NONCE,
+      new URL('https://example.test/analyzer.wasm')
+    );
+
+    expect(response.headers.get('Cache-Control')).toContain('must-revalidate');
+  });
 });
 
 // A nonce that repeats is worth exactly as much as 'unsafe-inline': anything
