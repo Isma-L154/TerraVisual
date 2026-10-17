@@ -284,21 +284,28 @@ for (const { path, type } of crawled) {
   }
 }
 
-try {
-  const missing = await fetch(new URL('/this-page-does-not-exist', target), {
-    redirect: 'manual',
-    headers: BROWSER_HEADERS,
-  });
-  const type = missing.headers.get('content-type') ?? '';
-  if (missing.status !== 404 || !type.startsWith('text/html')) {
-    console.error(`  WRONG    unknown path — must be the 404 page, got ${missing.status} ${type}`);
+// A missing bundle is checked too: its path alone would earn a year of caching (#159).
+for (const path of ['/this-page-does-not-exist', '/assets/missing-AbCd1234.js']) {
+  try {
+    const missing = await fetch(new URL(path, target), {
+      redirect: 'manual',
+      headers: BROWSER_HEADERS,
+    });
+    const type = missing.headers.get('content-type') ?? '';
+    const cache = missing.headers.get('cache-control') ?? '';
+    if (missing.status !== 404 || !type.startsWith('text/html')) {
+      console.error(`  WRONG    ${path} — must be the 404 page, got ${missing.status} ${type}`);
+      failures++;
+    } else if (cache !== 'no-cache') {
+      console.error(`  WRONG    ${path} — a 404 must not be cached, got cache-control: ${cache}`);
+      failures++;
+    } else {
+      console.log(`  ok       ${path} is an uncached 404`);
+    }
+  } catch (error) {
+    console.error(`  FAIL     ${path} — could not be fetched: ${error.message}`);
     failures++;
-  } else {
-    console.log('  ok       unknown path is a 404');
   }
-} catch (error) {
-  console.error(`  FAIL     unknown path — could not be fetched: ${error.message}`);
-  failures++;
 }
 
 if (failures > 0) {

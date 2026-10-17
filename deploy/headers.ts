@@ -75,7 +75,10 @@ export function withSecurityHeaders(response: Response, nonce: string, url?: URL
   headers.delete('Access-Control-Allow-Origin');
 
   if (url) {
-    applyCaching(headers, url.pathname);
+    // An error is not the file the path names. Not `!ok`: a 304's headers
+    // replace the stored copy's, so it must keep the path's rule.
+    if (response.status >= 400) headers.set('Cache-Control', 'no-cache');
+    else applyCaching(headers, url.pathname);
     applyIndexing(headers, url);
   }
 
@@ -106,6 +109,7 @@ function applyIndexing(headers: Headers, url: URL): void {
 /**
  * Hashed bundles are immutable, the analyzer is revalidated, and HTML is never
  * cached: it points at the current bundle and carries this response's nonce.
+ * Only for successful responses; errors are never cached.
  */
 export function applyCaching(headers: Headers, pathname: string): void {
   // Vite hashes with a dash, other bundlers with a dot; the length bound keeps
