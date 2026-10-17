@@ -3,10 +3,9 @@ import { expect, test } from '@playwright/test';
 /**
  * The icons the page declares, fetched from the Worker that serves them.
  *
- * Checked by content type rather than by status, because a status proves
- * nothing here: the Worker answers unknown paths with the index page and a 200
- * (the single-page-application fallback), which is exactly how /favicon.ico
- * was being served before the site had one.
+ * Checked by content type as well as status: before #155 the Worker answered
+ * unknown paths with the index page and a 200, which is exactly how
+ * /favicon.ico was being served before the site had one.
  */
 
 test('every icon the page declares is served as an image', async ({ page, request }) => {
@@ -85,10 +84,8 @@ test.describe('social card', () => {
 });
 
 /**
- * What Search Console reads. Every check is on the served bytes: the files sit
- * behind a single-page fallback that answers any path with the index page and
- * a 200, so a missing robots.txt or sitemap looks present unless its type and
- * body are checked.
+ * What Search Console reads. Every check is on the served bytes, type and body,
+ * not only on whether something answered.
  */
 test.describe('search engines', () => {
   const SITE = 'https://terravisual.cloudils.com/';

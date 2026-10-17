@@ -137,8 +137,8 @@ describe('indexing', () => {
     }
   });
 
-  // Unknown paths get the index page with a 200: a duplicate, not a page.
-  it('keeps the single-page fallback out of the index', () => {
+  // Only `/` is the application; the 404 page and /index.html are not pages to list.
+  it('keeps HTML at any other path out of the index', () => {
     expect(robotsTag(`https://${PRODUCTION_HOST}/anything`)).toBe('noindex');
     expect(robotsTag(`https://${PRODUCTION_HOST}/index.html`)).toBe('noindex');
   });
