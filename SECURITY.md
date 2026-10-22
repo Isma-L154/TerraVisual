@@ -54,3 +54,13 @@ Every pull request runs dependency vulnerability scanning across the JavaScript
 and Go modules, and every deployment verifies its own security headers against a
 real response rather than against configuration. The seven-control baseline
 audits live in [docs/security/](docs/security/), blind spots included.
+
+## Baseline security controls
+
+1. **Secrets in environment variables — implemented.** The application and the Worker read no secrets and no environment variables, so there is no `.env.example` to keep. The only secrets are the deployment credentials (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, optionally `PRODUCTION_URL`), held as GitHub Actions secrets and exposed only to the steps that use them. gitleaks scans the full history on every change.
+2. **CORS — implemented.** There is no API to call from elsewhere; the Worker deletes any `Access-Control-Allow-Origin` header (`deploy/headers.ts`).
+3. **Backend validation — N/A.** There is no backend ([ADR-0001](docs/adr/0001-client-only-architecture.md)): the Worker serves static assets and accepts only `GET` and `HEAD`. Untrusted input (Terraform, imported folders, share links) is bounded and validated in the browser and the analyzer instead.
+4. **Sanitize before storage — implemented, client-side.** No HTML sinks (ESLint bans `dangerouslySetInnerHTML`), paths are confined to the workspace, share links are size-checked before and while decompressing, and imports are size-checked before reading.
+5. **Rate limiting — implemented.** One layer exists, the Worker: 1000 requests a minute per address, failing open by design. Per-account limits are N/A because there are no accounts, and no path is more expensive than another.
+6. **Row Level Security — N/A.** There is no database and no server-held user data; each visitor's workspace stays in their own IndexedDB.
+7. **Content Security Policy — implemented.** Set from code in `deploy/headers.ts` and checked against the real response after every deployment by `scripts/check-headers.mjs`. Accepted exception: `style-src-attr 'unsafe-inline'`, because React Flow positions nodes with inline style attributes, which no nonce can cover. With `default-src 'none'` an injected style attribute can load nothing from another origin.
