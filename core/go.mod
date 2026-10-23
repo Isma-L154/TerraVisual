@@ -1,6 +1,6 @@
 module github.com/Isma-L154/TerraVisual/core
 
-go 1.27.0
+go 1.27.3
 
 require (
 	github.com/hashicorp/go-cty-funcs v0.1.0
