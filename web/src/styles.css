@@ -921,6 +921,8 @@ code {
   font-size: 10px;
 }
 
+/* Drawn here rather than written in the markup, so the glyph stays out of the
+   item's visible text, which its accessible name must contain (WCAG 2.5.3). */
 .outline-item[aria-expanded='true'] .outline-twisty::before {
   content: '▾';
 }
