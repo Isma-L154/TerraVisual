@@ -113,6 +113,12 @@ describe('announcements', () => {
     expect(describeItem(find('some_exotic_thing.x'))).toContain('not in the catalog');
   });
 
+  it('says "uncatalogued" right after the type, where the flag is printed', () => {
+    expect(describeItem(find('some_exotic_thing.x'))).toMatch(
+      /^x, some_exotic_thing, uncatalogued, /,
+    );
+  });
+
   it('says when something could not be placed', () => {
     expect(describeItem(find('some_exotic_thing.x'))).toContain('could not be placed');
   });
@@ -123,6 +129,17 @@ describe('announcements', () => {
 });
 
 describe('tree semantics', () => {
+  // WCAG 2.5.3, as axe's label-content-name-mismatch checks it: the visible
+  // words, punctuation aside, appear in the accessible name in the same order.
+  it('names every item with the words it shows', () => {
+    renderOutline();
+    const words = (text: string) => text.replace(/[^\p{L}\p{N}_]+/gu, ' ').trim();
+
+    for (const item of screen.getAllByRole('treeitem')) {
+      expect(words(item.getAttribute('aria-label')!)).toContain(words(item.textContent!));
+    }
+  });
+
   it('is a tree with items at the right levels', () => {
     renderOutline();
 
