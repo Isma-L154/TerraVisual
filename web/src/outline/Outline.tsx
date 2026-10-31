@@ -160,11 +160,16 @@ export function Outline({ model, selectedId, onSelect }: OutlineProps) {
         {/* Hidden from assistive technology: the item's own label is the
             description, and reading the pieces again would double it. */}
         <span className="outline-row" aria-hidden="true">
-          <span className="outline-twisty">{hasChildren ? (expanded ? '▾' : '▸') : ''}</span>
+          <span className="outline-twisty" />
           <CategoryIcon category={node.category} size={13} />
-          <span className="outline-label">{node.label}</span>
+          <span className="outline-label">{node.label}</span>{' '}
           <span className="outline-type">{displayType(node.type)}</span>
-          {!node.catalogued ? <span className="outline-flag">uncatalogued</span> : null}
+          {!node.catalogued ? (
+            <>
+              {' '}
+              <span className="outline-flag">uncatalogued</span>
+            </>
+          ) : null}
         </span>
       </li>
     );

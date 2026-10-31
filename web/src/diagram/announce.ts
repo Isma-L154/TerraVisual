@@ -35,11 +35,13 @@ export function announce(
 ): string {
   const parts: string[] = [`${node.label}, ${displayType(node.type)}`];
 
+  // Right after the type, where the outline prints its "uncatalogued" flag:
+  // somebody using speech input says the words they see, in that order.
+  if (!node.catalogued) parts.push('uncatalogued, resource type not in the catalog');
   if (node.provider && node.provider !== 'unknown' && node.type !== 'provider') {
     parts.push(node.provider);
   }
   if (parent) parts.push(`in ${parent.label}`);
-  if (!node.catalogued) parts.push('resource type not in the catalog');
   if (node.unplaced) parts.push('could not be placed');
 
   const unknown = Object.values(node.attributes).filter((attribute) => !attribute.known).length;

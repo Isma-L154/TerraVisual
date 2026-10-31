@@ -921,6 +921,14 @@ code {
   font-size: 10px;
 }
 
+.outline-item[aria-expanded='true'] .outline-twisty::before {
+  content: '▾';
+}
+
+.outline-item[aria-expanded='false'] .outline-twisty::before {
+  content: '▸';
+}
+
 .outline-label {
   font-weight: 600;
 }
