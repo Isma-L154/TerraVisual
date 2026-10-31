@@ -1,0 +1,9 @@
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2026-12-31
+reason = """
+minimatch is fixed only in 11.x, and eslint and typescript-eslint still require
+^10.2. It is reached only by lint tooling, which matches globs written in this
+repository, never untrusted input, and none of it ships to the browser. Drop
+this entry once the eslint toolchain accepts minimatch 11.
+"""
