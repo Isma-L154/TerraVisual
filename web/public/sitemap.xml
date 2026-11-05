@@ -3,9 +3,11 @@
   One URL, on purpose. The application is a single page, and a shared
   workspace lives in the URL fragment (#...), which crawlers never send.
   Add a <url> here only when a real, separately servable page exists.
+  Update <lastmod> whenever the page's static text in index.html changes.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://terravisual.cloudils.com/</loc>
+    <lastmod>2026-11-04</lastmod>
   </url>
 </urlset>

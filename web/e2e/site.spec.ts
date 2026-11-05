@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { openApp } from './app';
+
 /**
  * The icons the page declares, fetched from the Worker that serves them.
  *
@@ -108,6 +110,53 @@ test.describe('search engines', () => {
     expect(body).toMatch(/^<\?xml version="1\.0" encoding="UTF-8"\?>/);
     expect(body).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
     expect([...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1])).toEqual([SITE]);
+
+    const lastmod = /<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>/.exec(body)?.[1] ?? '';
+    expect(lastmod).not.toBe('');
+    expect(Date.parse(lastmod)).toBeLessThanOrEqual(Date.now());
+  });
+
+  // #186: Google crawled the page and judged it too thin to index, because all
+  // of its text was inside <noscript>. This reads the served bytes, as a
+  // crawler that runs no scripts would.
+  test('the served HTML describes the application without running scripts', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    const body = /<body>([\s\S]*)<\/body>/.exec(html)?.[1] ?? '';
+    const visible = body.replace(
+      /<!--[\s\S]*?-->|<noscript>[\s\S]*?<\/noscript>|<script[\s\S]*?<\/script>/g,
+      '',
+    );
+
+    const headings = [...visible.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map((match) => match[1]);
+    expect(headings).toEqual([
+      'What TerraVisual is',
+      'How it works',
+      'What it draws',
+      'Your code stays in your browser',
+      'Questions',
+    ]);
+
+    const words = visible
+      .replace(/<[^>]+>/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+    expect(words.length).toBeGreaterThanOrEqual(400);
+    expect(words.length).toBeLessThanOrEqual(900);
+
+    expect(visible).toContain('href="https://cloudils.com/"');
+    expect(visible).toContain('href="https://github.com/Isma-L154/TerraVisual"');
+  });
+
+  test('the description sits below the application, which still fills the screen', async ({
+    page,
+  }) => {
+    await openApp(page);
+
+    const viewport = page.viewportSize()?.height ?? 0;
+    const app = await page.locator('#root').boundingBox();
+    const about = await page.getByRole('region', { name: 'About TerraVisual' }).boundingBox();
+    expect(app?.height).toBe(viewport);
+    expect(about?.y).toBeGreaterThanOrEqual(viewport);
   });
 
   test('the page names its canonical URL and describes itself', async ({ request }) => {

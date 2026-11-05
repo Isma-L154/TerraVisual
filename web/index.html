@@ -80,6 +80,130 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!--
+      Static on purpose (#186): crawlers that run no scripts index this text,
+      and readers who scroll past the editor find what the tool is. When it
+      changes, update <lastmod> in public/sitemap.xml.
+    -->
+    <section class="about" aria-label="About TerraVisual">
+      <section>
+        <h2>What TerraVisual is</h2>
+        <p>
+          TerraVisual is a free Terraform visualizer for people learning Infrastructure as Code. You
+          write HCL, or import an existing project, and the infrastructure it describes is drawn as
+          a diagram that redraws as the code changes. Resources appear inside the containers they
+          belong to (provider, region, network, subnet), so you can see what a configuration builds
+          before you ever run <code>terraform plan</code>.
+        </p>
+        <p>
+          It is made for students, engineers picking up Terraform for the first time, and anyone
+          reviewing a configuration who would rather see its shape than read it line by line. Click
+          a box in the diagram to jump to the code that declares it, or move the cursor in the code
+          and the diagram selects what you are editing. An outline lists the same infrastructure as
+          a tree you can navigate with the keyboard or a screen reader.
+        </p>
+      </section>
+
+      <section>
+        <h2>How it works</h2>
+        <ol class="about-steps">
+          <li>
+            <h3>Write or paste Terraform</h3>
+            <p>
+              Type into the editor, start from one of the examples, or import a folder of
+              <code>.tf</code> and <code>.tfvars</code> files. Nothing to install, no account to
+              create.
+            </p>
+          </li>
+          <li>
+            <h3>Watch the diagram update</h3>
+            <p>
+              Every change is analyzed as you type, with HashiCorp's own HCL parser. Variables,
+              locals, functions, conditionals, <code>count</code>, <code>for_each</code> and local
+              modules are evaluated.
+            </p>
+          </li>
+          <li>
+            <h3>Share or save it</h3>
+            <p>
+              Copy a link that carries the whole workspace inside the URL, or save the diagram as a
+              PNG. Your work is also kept in this browser between visits.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>What it draws</h2>
+        <p>
+          AWS, Azure and Google Cloud are covered at comparable depth, through a catalog that knows
+          which resources live inside which:
+        </p>
+        <ul>
+          <li>
+            <strong>Networks:</strong> AWS VPCs and subnets, Azure resource groups and virtual
+            networks, Google Cloud VPC networks and subnetworks, with their gateways, routers and
+            addresses.
+          </li>
+          <li>
+            <strong>Compute and containers:</strong> EC2 instances, ECS clusters and services, Azure
+            virtual machines and AKS, Compute Engine instances and GKE.
+          </li>
+          <li>
+            <strong>Storage and databases:</strong> S3 buckets, RDS instances, Azure storage
+            accounts and PostgreSQL servers, Cloud Storage buckets and Cloud SQL.
+          </li>
+          <li>
+            <strong>Serverless, security and identity:</strong> Lambda, Azure Functions and Cloud
+            Functions; security groups and firewalls; IAM roles, managed identities and service
+            accounts; load balancers and logging.
+          </li>
+        </ul>
+        <p>
+          A resource type the catalog does not know is still drawn, marked as uncatalogued, so a
+          real project never looks empty and never looks more complete than it is.
+        </p>
+      </section>
+
+      <section>
+        <h2>Your code stays in your browser</h2>
+        <p>
+          The analyzer is written in Go and compiled to WebAssembly, so parsing, evaluation and
+          drawing all happen on this page. There is no backend, database or account, and the page's
+          Content Security Policy only lets it talk to its own origin. Real Terraform, with its
+          bucket names, internal CIDR ranges and account identifiers, is safe to open here.
+        </p>
+      </section>
+
+      <section>
+        <h2>Questions</h2>
+        <dl class="about-faq">
+          <dt>Is my code uploaded anywhere?</dt>
+          <dd>
+            No. It is analyzed in your browser and stored only in your browser. A share link does
+            contain your code, compressed into the part of the URL that browsers never send to a
+            server, so anyone holding the link can read it.
+          </dd>
+          <dt>Which Terraform features are supported?</dt>
+          <dd>
+            Resources, variables and <code>.tfvars</code> files, locals, outputs, conditionals,
+            <code>count</code>, <code>for_each</code>, local modules and over 80 built-in functions.
+            Remote modules, <code>data</code> sources that need a provider, and
+            <code>terraform plan</code> output are not. A value that cannot be known without cloud
+            credentials is shown as unknown, with the reason, never guessed.
+          </dd>
+          <dt>Is it free?</dt>
+          <dd>Yes. TerraVisual is free to use and open source under the Apache 2.0 license.</dd>
+        </dl>
+      </section>
+
+      <nav class="about-links" aria-label="Project">
+        <a href="https://github.com/Isma-L154/TerraVisual">Source code on GitHub</a>
+        <a href="https://cloudils.com/">More from Cloudils</a>
+      </nav>
+    </section>
+
     <noscript>
       <h1>TerraVisual</h1>
       <p>
